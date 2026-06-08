@@ -1,0 +1,17 @@
+{
+  "name": "kfood-commercial",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "web",
+    "packages/*"
+  ],
+  "scripts": {
+    "web:dev": "npm run dev --workspace web",
+    "web:build": "npm run build --workspace web",
+    "web:lint": "npm run lint --workspace web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "check": "npm run typecheck && npm run lint"
+  }
+}

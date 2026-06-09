@@ -1,12 +1,14 @@
 import Link from "next/link";
 
-import { alphaPlaces, getRegion } from "@kfood/data";
+import { getPublishedPlaces, getRegion } from "@kfood/data";
 
 export const metadata = {
   title: "K-food Places"
 };
 
-export default function PlacesPage() {
+export default async function PlacesPage() {
+  const places = await getPublishedPlaces();
+
   return (
     <main className="page-shell">
       <header className="detail-header">
@@ -18,7 +20,7 @@ export default function PlacesPage() {
         </p>
       </header>
       <ul className="content-list">
-        {alphaPlaces.map((place) => {
+        {places.map((place) => {
           const region = getRegion(place.regionSlug);
           return (
             <li key={place.slug}>

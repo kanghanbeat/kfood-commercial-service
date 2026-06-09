@@ -292,6 +292,41 @@ h3 {
   padding: 7px 10px;
 }
 
+.form-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 16px;
+  max-width: 780px;
+  padding: 18px;
+}
+
+.form-panel label {
+  color: var(--muted);
+  display: grid;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.form-panel input,
+.form-panel select,
+.form-panel textarea {
+  background: #fffaf4;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit;
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.form-panel textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
 @media (max-width: 900px) {
   .hero-grid,
   .directory-grid,

@@ -1,12 +1,14 @@
 import Link from "next/link";
 
-import { alphaRoutes, getRegion } from "@kfood/data";
+import { getPublishedRoutes, getRegion } from "@kfood/data";
 
 export const metadata = {
   title: "K-food Routes"
 };
 
-export default function RoutesPage() {
+export default async function RoutesPage() {
+  const routes = await getPublishedRoutes();
+
   return (
     <main className="page-shell">
       <header className="detail-header">
@@ -18,11 +20,11 @@ export default function RoutesPage() {
         </p>
       </header>
       <ul className="content-list">
-        {alphaRoutes.map((route) => {
+        {routes.map((route) => {
           const region = getRegion(route.regionSlug);
           return (
             <li key={route.slug}>
-              <Link href={region ? `/regions/${region.slug}` : "/regions"}>
+              <Link href={`/routes/${route.slug}`}>
                 <span className="meta-label">{route.estimatedDuration}</span>
                 <strong>{route.title}</strong>
                 <p>

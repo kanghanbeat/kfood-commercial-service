@@ -1,12 +1,14 @@
 import Link from "next/link";
 
-import { alphaFoods } from "@kfood/data";
+import { getPublishedFoods } from "@kfood/data";
 
 export const metadata = {
   title: "K-food Guide"
 };
 
-export default function FoodsPage() {
+export default async function FoodsPage() {
+  const foods = await getPublishedFoods();
+
   return (
     <main className="page-shell">
       <header className="detail-header">
@@ -18,7 +20,7 @@ export default function FoodsPage() {
         </p>
       </header>
       <ul className="directory-grid">
-        {alphaFoods.map((food) => (
+        {foods.map((food) => (
           <li className="directory-card" key={food.slug}>
             <Link href={`/foods/${food.slug}`}>
               <span>Spicy level {food.spicyLevel}/4</span>

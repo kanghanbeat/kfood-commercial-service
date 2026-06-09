@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 export type AlphaRegion = {
   slug: string;
   nameEn: string;
@@ -240,4 +242,231 @@ export function getRegionFoods(regionSlug: string) {
 
 export function getRegionPlaces(regionSlug: string) {
   return alphaPlaces.filter((place) => place.regionSlug === regionSlug);
+}
+
+type SupabaseConfig = {
+  url: string;
+  anonKey: string;
+};
+
+function getSupabaseConfig(): SupabaseConfig | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    return null;
+  }
+
+  return { url, anonKey };
+}
+
+function createPublicClient() {
+  const config = getSupabaseConfig();
+
+  if (!config) {
+    return null;
+  }
+
+  return createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: false
+    }
+  });
+}
+
+type RegionRow = {
+  slug: string;
+  name_en: string;
+  intro: string;
+  best_for_tags: string[];
+};
+
+type FoodRow = {
+  slug: string;
+  name_en: string;
+  name_ko: string;
+  description: string;
+  taste_profile: string | null;
+  spicy_level: 0 | 1 | 2 | 3 | 4;
+  beginner_note: string | null;
+};
+
+type PlaceRow = {
+  slug: string;
+  name_en: string;
+  editorial_note: string;
+  trust_tags: string[];
+  caution_tags: string[];
+  last_verified_at: string | null;
+  is_sponsored: boolean;
+  affiliate_url: string | null;
+  sponsorship_note: string | null;
+  regions: { slug: string } | null;
+};
+
+type RouteGuideRow = {
+  slug: string;
+  title: string;
+  summary: string;
+  estimated_duration: string | null;
+  regions: { slug: string } | null;
+};
+
+function mapRegion(row: RegionRow): AlphaRegion {
+  return {
+    slug: row.slug,
+    nameEn: row.name_en,
+    primaryAudience: row.best_for_tags[0] ?? "K-food travelers",
+    kfoodIdentity: row.best_for_tags.join(", "),
+    routeTheme: "Curated K-food route",
+    intro: row.intro,
+    bestForTags: row.best_for_tags
+  };
+}
+
+function mapFood(row: FoodRow): AlphaFood {
+  return {
+    slug: row.slug,
+    nameEn: row.name_en,
+    nameKo: row.name_ko,
+    regionSlugs: [],
+    summary: row.description,
+    tasteProfile: row.taste_profile ?? "editorial guide",
+    spicyLevel: row.spicy_level,
+    beginnerNote: row.beginner_note ?? "Check local notes before ordering."
+  };
+}
+
+function mapPlace(row: PlaceRow): AlphaPlace {
+  return {
+    slug: row.slug,
+    nameEn: row.name_en,
+    regionSlug: row.regions?.slug ?? "seoul",
+    foodSlugs: [],
+    editorialNote: row.editorial_note,
+    trustTags: [
+      ...row.trust_tags,
+      ...(row.is_sponsored ? ["sponsored"] : []),
+      ...(row.affiliate_url ? ["affiliate link"] : [])
+    ],
+    cautionTags: row.caution_tags,
+    lastVerifiedLabel: row.last_verified_at
+      ? `Last verified ${row.last_verified_at}`
+      : "Verification pending"
+  };
+}
+
+function mapRouteGuide(row: RouteGuideRow): AlphaRoute {
+  return {
+    slug: row.slug,
+    title: row.title,
+    regionSlug: row.regions?.slug ?? "seoul",
+    summary: row.summary,
+    placeSlugs: [],
+    estimatedDuration: row.estimated_duration ?? "Flexible"
+  };
+}
+
+export async function getPublishedRegions() {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return alphaRegions;
+  }
+
+  const { data, error } = await supabase
+    .from("regions")
+    .select("slug, name_en, intro, best_for_tags")
+    .eq("status", "published")
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return alphaRegions;
+  }
+
+  return data.map(mapRegion);
+}
+
+export async function getPublishedRegion(slug: string) {
+  const regions = await getPublishedRegions();
+  return regions.find((region) => region.slug === slug);
+}
+
+export async function getPublishedFoods() {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return alphaFoods;
+  }
+
+  const { data, error } = await supabase
+    .from("foods")
+    .select(
+      "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note"
+    )
+    .eq("status", "published")
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return alphaFoods;
+  }
+
+  return data.map(mapFood);
+}
+
+export async function getPublishedFood(slug: string) {
+  const foods = await getPublishedFoods();
+  return foods.find((food) => food.slug === slug);
+}
+
+export async function getPublishedPlaces() {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return alphaPlaces;
+  }
+
+  const { data, error } = await supabase
+    .from("places")
+    .select(
+      "slug, name_en, editorial_note, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+    )
+    .eq("status", "published")
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return alphaPlaces;
+  }
+
+  return data.map((row) => mapPlace(row as unknown as PlaceRow));
+}
+
+export async function getPublishedPlace(slug: string) {
+  const places = await getPublishedPlaces();
+  return places.find((place) => place.slug === slug);
+}
+
+export async function getPublishedRoutes() {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return alphaRoutes;
+  }
+
+  const { data, error } = await supabase
+    .from("route_guides")
+    .select("slug, title, summary, estimated_duration, regions(slug)")
+    .eq("status", "published")
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return alphaRoutes;
+  }
+
+  return data.map((row) => mapRouteGuide(row as unknown as RouteGuideRow));
+}
+
+export async function getPublishedRoute(slug: string) {
+  const routes = await getPublishedRoutes();
+  return routes.find((route) => route.slug === slug);
 }

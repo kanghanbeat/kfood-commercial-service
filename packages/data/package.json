@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kfood/types": "0.1.0"
+    "@kfood/types": "0.1.0",
+    "@supabase/supabase-js": "^2.84.0"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

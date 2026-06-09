@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 
 import {
   alphaRegions,
-  getRegion,
+  getPublishedRegion,
+  getPublishedFoods,
+  getPublishedPlaces,
   getRegionFoods,
   getRegionPlaces
 } from "@kfood/data";
@@ -18,7 +20,7 @@ export async function generateMetadata({
   params: Promise<{ regionSlug: string }>;
 }) {
   const { regionSlug } = await params;
-  const region = getRegion(regionSlug);
+  const region = await getPublishedRegion(regionSlug);
   return {
     title: region ? `${region.nameEn} K-food Guide` : "Region"
   };
@@ -30,14 +32,22 @@ export default async function RegionDetailPage({
   params: Promise<{ regionSlug: string }>;
 }) {
   const { regionSlug } = await params;
-  const region = getRegion(regionSlug);
+  const region = await getPublishedRegion(regionSlug);
 
   if (!region) {
     notFound();
   }
 
-  const foods = getRegionFoods(region.slug);
-  const places = getRegionPlaces(region.slug);
+  const [allFoods, allPlaces] = await Promise.all([
+    getPublishedFoods(),
+    getPublishedPlaces()
+  ]);
+  const foods = allFoods.some((food) => food.regionSlugs.length > 0)
+    ? allFoods.filter((food) => food.regionSlugs.includes(region.slug))
+    : getRegionFoods(region.slug);
+  const places = allPlaces.some((place) => place.regionSlug === region.slug)
+    ? allPlaces.filter((place) => place.regionSlug === region.slug)
+    : getRegionPlaces(region.slug);
 
   return (
     <main className="page-shell">

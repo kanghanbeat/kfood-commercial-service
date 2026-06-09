@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { alphaFoods, alphaPlaces, getFood, getRegion } from "@kfood/data";
+import {
+  alphaFoods,
+  alphaPlaces,
+  getPublishedFood,
+  getPublishedPlaces,
+  getRegion
+} from "@kfood/data";
 
 export function generateStaticParams() {
   return alphaFoods.map((food) => ({ foodSlug: food.slug }));
@@ -13,7 +19,7 @@ export async function generateMetadata({
   params: Promise<{ foodSlug: string }>;
 }) {
   const { foodSlug } = await params;
-  const food = getFood(foodSlug);
+  const food = await getPublishedFood(foodSlug);
   return {
     title: food ? `${food.nameEn} Guide` : "Food"
   };
@@ -25,13 +31,15 @@ export default async function FoodDetailPage({
   params: Promise<{ foodSlug: string }>;
 }) {
   const { foodSlug } = await params;
-  const food = getFood(foodSlug);
+  const food = await getPublishedFood(foodSlug);
 
   if (!food) {
     notFound();
   }
 
-  const places = alphaPlaces.filter((place) =>
+  const publishedPlaces = await getPublishedPlaces();
+  const sourcePlaces = publishedPlaces.length > 0 ? publishedPlaces : alphaPlaces;
+  const places = sourcePlaces.filter((place) =>
     place.foodSlugs.includes(food.slug)
   );
 

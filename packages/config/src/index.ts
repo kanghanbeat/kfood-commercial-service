@@ -1,8 +1,12 @@
+declare const process: {
+  env: Record<string, string | undefined>;
+};
+
 export const siteConfig = {
   name: "K-food Service",
   description:
     "Trusted K-food discovery for Korea travelers: regions, foods, places, and simple routes.",
-  url: "https://kfood.example.com"
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://kfood.example.com"
 } as const;
 
 export const trustLabels = [

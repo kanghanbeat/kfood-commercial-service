@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { alphaFoods, alphaPlaces, getPlace, getRegion } from "@kfood/data";
+import {
+  alphaFoods,
+  alphaPlaces,
+  getPublishedPlace,
+  getRegion
+} from "@kfood/data";
 
 export function generateStaticParams() {
   return alphaPlaces.map((place) => ({ placeSlug: place.slug }));
@@ -13,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ placeSlug: string }>;
 }) {
   const { placeSlug } = await params;
-  const place = getPlace(placeSlug);
+  const place = await getPublishedPlace(placeSlug);
   return {
     title: place ? place.nameEn : "Place"
   };
@@ -25,7 +30,7 @@ export default async function PlaceDetailPage({
   params: Promise<{ placeSlug: string }>;
 }) {
   const { placeSlug } = await params;
-  const place = getPlace(placeSlug);
+  const place = await getPublishedPlace(placeSlug);
 
   if (!place) {
     notFound();

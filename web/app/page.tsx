@@ -1,8 +1,20 @@
 import Link from "next/link";
 
-import { alphaFoods, alphaPlaces, alphaRegions, alphaRoutes } from "@kfood/data";
+import {
+  getPublishedFoods,
+  getPublishedPlaces,
+  getPublishedRegions,
+  getPublishedRoutes
+} from "@kfood/data";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [foods, places, regions, routes] = await Promise.all([
+    getPublishedFoods(),
+    getPublishedPlaces(),
+    getPublishedRegions(),
+    getPublishedRoutes()
+  ]);
+
   return (
     <main className="page-shell">
       <section className="hero-grid">
@@ -24,7 +36,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="route-visual" aria-label="Seoul alpha route preview">
-          {alphaRegions.map((region, index) => (
+          {regions.map((region, index) => (
             <Link
               className="route-node"
               href={`/regions/${region.slug}`}
@@ -39,19 +51,19 @@ export default function HomePage() {
 
       <section className="metric-strip" aria-label="Alpha coverage">
         <div>
-          <strong>{alphaRegions.length}</strong>
+          <strong>{regions.length}</strong>
           <span>regions</span>
         </div>
         <div>
-          <strong>{alphaFoods.length}</strong>
+          <strong>{foods.length}</strong>
           <span>foods</span>
         </div>
         <div>
-          <strong>{alphaPlaces.length}</strong>
+          <strong>{places.length}</strong>
           <span>place directions</span>
         </div>
         <div>
-          <strong>{alphaRoutes.length}</strong>
+          <strong>{routes.length}</strong>
           <span>routes</span>
         </div>
       </section>
@@ -62,7 +74,7 @@ export default function HomePage() {
           <h2 id="alpha-regions">Seoul alpha areas</h2>
         </div>
         <ul className="directory-grid">
-          {alphaRegions.map((region) => (
+          {regions.map((region) => (
             <li className="directory-card" key={region.slug}>
               <Link href={`/regions/${region.slug}`}>
                 <span>{region.primaryAudience}</span>

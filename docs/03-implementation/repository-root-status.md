@@ -1,6 +1,6 @@
 # Repository Root Status
 
-Status: Root workspace committed locally, remote pending  
+Status: Root workspace committed locally, remote blocked  
 Date: 2026-06-09
 
 ## Current State
@@ -86,9 +86,36 @@ root repo:     no remote
 frontend repo: https://github.com/kanghanbeat/kfood-commercial.git
 ```
 
+Sprint 1 re-check:
+
+```text
+gh auth status: invalid token for kanghanbeat
+existing GitHub repo: kanghanbeat/kfood-commercial, public, main
+root git remote: none
+```
+
 Before pushing the root workspace, decide whether to:
 
 - repoint `kanghanbeat/kfood-commercial` to the root workspace after backing up
   the prototype history, or
 - create a new root-only GitHub repo and leave the old remote as the prototype
   archive.
+
+## Current Blocker
+
+Root remote setup and push should wait until GitHub authentication is repaired:
+
+```bash
+gh auth login -h github.com
+```
+
+After authentication works, the recommended production path is:
+
+```text
+1. Create a new root-only production repository, or intentionally reuse the
+   existing repository after backing up the prototype.
+2. Add that remote to /Users/beat/Projects/kfood-commercial.
+3. Push root main.
+4. Keep frontend/ ignored as legacy reference unless a later history migration
+   is explicitly chosen.
+```

@@ -58,6 +58,8 @@ rollback;
 
 -- 3. Simulate anonymous report insert. Expected result:
 --    insert succeeds, then rollback removes the test row.
+--    For REST/PostgREST, use Prefer: return=minimal. Returning representation
+--    requires SELECT access to the inserted report, which anon should not have.
 begin;
 set local role anon;
 

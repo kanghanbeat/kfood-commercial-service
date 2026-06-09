@@ -1,19 +1,21 @@
 # Supabase Readiness Report
 
-Status: Local verification pass, staging pending  
-Date: 2026-06-09
+Status: Local and staging verification pass  
+Date: 2026-06-10
 
 ## Summary
 
 The real-service Supabase schema and RLS policy files have been drafted and
-verified against local Supabase. Local migrations, seed data, schema lint, and
-public anonymous REST checks now pass. Staging/remote verification is still
-pending.
+verified against local Supabase and a linked Supabase staging project. Local
+migrations, seed data, schema lint, and public anonymous REST checks pass.
+Remote staging REST checks also confirm that anonymous reads expose only
+published content and that report inserts do not expose report rows back to
+anonymous users.
 
 Decision:
 
 ```text
-LOCAL PASS
+LOCAL + STAGING PASS
 ```
 
 ## Evidence Created
@@ -36,8 +38,8 @@ supabase/config.toml
 | Publication model drafted | Pass | draft, published, hidden, archived |
 | Report lifecycle drafted | Pass | pending, in_review, resolved, ignored |
 | Admin/editor RLS intent drafted | Pass | helper functions and policies present |
-| Public read limited to published | Pass by design | requires DB verification |
-| Anonymous report insert | Pass by design | requires spam/rate-limit follow-up |
+| Public read limited to published | Pass | verified locally and through staging REST |
+| Anonymous report insert | Pass | verified locally and through staging REST; spam/rate-limit follow-up still required |
 | Storage bucket policy | Not done | bucket creation/policies still needed |
 | Supabase CLI init | Pass | `npx supabase init --workdir /Users/beat/Projects/kfood-commercial` |
 | Supabase CLI executable | Pass | `npx supabase --version` returns `2.105.0` |
@@ -51,7 +53,7 @@ supabase/config.toml
 | Anonymous public read | Pass | anon REST returns only published region/food/place/route rows |
 | Anonymous report insert | Pass | anon REST insert succeeds with `Prefer: return=minimal` |
 | Reports/audit anon select | Pass | anon REST returns no reports/audit log rows |
-| Migration dry run | Pass locally | staging/remote still pending |
+| Migration dry run | Pass locally and staging | user completed linked `db push --include-seed`; remote REST/RLS checks pass |
 | Seed data source review | Not done | verification seed only, not production content |
 
 ## Risks
@@ -64,12 +66,15 @@ supabase/config.toml
   production content.
 - REST report insert must use `Prefer: return=minimal`; anon users should not
   receive inserted report rows because there is no anon select policy.
-- Staging verification is still required before production deploy.
+- Linked DB lint from Codex was not rerun because Codex does not retain the
+  user's database password environment. REST/RLS verification was completed
+  without service-role credentials.
 
 ## Required Follow-ups
 
 1. Create storage bucket policies for `public-content-images` and
    `admin-working-assets`.
-2. Link a staging Supabase project and run the same migration/RLS checks there.
+2. Run `SUPABASE_DB_PASSWORD=... npx supabase db lint --linked` from the user's
+   terminal if an additional linked schema lint record is desired.
 3. Add report rate limiting or abuse controls before public launch.
 4. Add application-level audit log writes for admin mutations.

@@ -1,7 +1,7 @@
 # Sprint 1 Status
 
-Status: GitHub completed, local Supabase verified  
-Date: 2026-06-09
+Status: Completed  
+Date: 2026-06-10
 
 ## Goal
 
@@ -34,6 +34,8 @@ Docker Desktop: running
 local Supabase API: http://127.0.0.1:54321
 local Supabase Studio: http://127.0.0.1:54323
 local Postgres: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+staging project ref: gpwxiakwlghjzvoxwpnw
+staging project URL: https://gpwxiakwlghjzvoxwpnw.supabase.co
 ```
 
 Application checks:
@@ -44,6 +46,8 @@ npm run web:build: pass
 npx supabase migration up --local: pass
 npx supabase db reset --local: pass
 npx supabase db lint --local: pass
+staging db push --include-seed: completed by user
+staging anonymous REST/RLS checks: pass
 ```
 
 ## Completed In Sprint 1
@@ -69,21 +73,24 @@ npx supabase db lint --local: pass
 - Verified anon REST report insert succeeds with `Prefer: return=minimal`.
 - Verified anon REST cannot read reports or audit logs.
 - Verified all public service tables have RLS enabled.
+- Linked staging project `gpwxiakwlghjzvoxwpnw`.
+- Applied migrations and seed to staging through `db push --include-seed`.
+- Verified staging anonymous REST public reads expose only published content.
+- Verified staging anonymous REST report insert succeeds with
+  `Prefer: return=minimal`.
+- Verified staging anonymous REST cannot read reports or audit logs.
 
 ## Blockers
 
-### Supabase Staging
+None for Sprint 1.
 
-Local Supabase verification now passes. The remaining database blocker is
-staging/remote verification.
+Remaining production-readiness work moves to Sprint 2 and later:
 
-Required next action:
+- Connect public web env vars to staging.
+- Implement live `/report` insert from the web app.
+- Add storage policies, admin writes, and abuse controls.
 
-```text
-Create/link a Supabase staging project and run migrations there.
-```
-
-## Commands To Run After Blockers Are Cleared
+## Useful Re-run Commands
 
 Local Supabase path already verified:
 
@@ -101,11 +108,17 @@ supabase/sql/rls_audit_queries.sql
 supabase/sql/sprint_1_rls_verification.sql
 ```
 
-## Sprint 1 Exit Criteria Remaining
+Optional linked lint from the user's terminal:
+
+```bash
+SUPABASE_DB_PASSWORD=... npx supabase db lint --linked
+```
+
+## Sprint 1 Exit Criteria Result
 
 - root GitHub remote selected and pushed
 - migrations applied to local Supabase
 - RLS behavior verified with published/draft rows
 - anonymous report insert verified
-- readiness report updated from `Partial` to local pass
-- staging Supabase verification remains before production deploy
+- readiness report updated to local and staging pass
+- staging Supabase verification completed

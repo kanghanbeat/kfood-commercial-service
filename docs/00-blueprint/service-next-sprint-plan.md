@@ -32,7 +32,8 @@ npm run web:build
 
 Known constraints:
 
-- The root workspace has a local Git commit but no confirmed GitHub remote.
+- The root workspace is pushed to
+  `https://github.com/kanghanbeat/kfood-commercial-service`.
 - The legacy Expo prototype remains in `frontend/` as a separate nested Git
   repository and is ignored by the root repository.
 - Supabase migrations are drafted but not applied because local Docker/Postgres

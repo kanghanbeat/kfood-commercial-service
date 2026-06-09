@@ -1,6 +1,6 @@
 # Sprint 1 Status
 
-Status: Partially completed, external blockers remain  
+Status: GitHub completed, Supabase runtime blocked  
 Date: 2026-06-09
 
 ## Goal
@@ -16,6 +16,14 @@ Repository:
 root repo: local Git repository, no remote
 frontend repo: connected to https://github.com/kanghanbeat/kfood-commercial.git
 gh auth: invalid token for kanghanbeat
+```
+
+Updated repository state:
+
+```text
+root repo: pushed to https://github.com/kanghanbeat/kfood-commercial-service
+frontend repo: remains connected to https://github.com/kanghanbeat/kfood-commercial.git
+gh auth: valid token for kanghanbeat
 ```
 
 Supabase:
@@ -36,7 +44,10 @@ npm run check: pass
 ## Completed In Sprint 1
 
 - Re-confirmed root/legacy repository state.
-- Re-confirmed GitHub authentication blocker.
+- Repaired GitHub authentication.
+- Created root-only production repository:
+  `https://github.com/kanghanbeat/kfood-commercial-service`.
+- Pushed root `main` to `origin/main`.
 - Re-confirmed Supabase local runtime blocker.
 - Expanded `supabase/seed.sql` so verification has:
   - one published region
@@ -49,22 +60,6 @@ npm run check: pass
 - Added `supabase/sql/sprint_1_rls_verification.sql`.
 
 ## Blockers
-
-### GitHub Remote
-
-The GitHub CLI token is invalid.
-
-Required user-side action:
-
-```bash
-gh auth login -h github.com
-```
-
-After that, decide whether to:
-
-- create a new root-only GitHub repository, or
-- intentionally reuse `kanghanbeat/kfood-commercial` after backing up the
-  prototype history.
 
 ### Supabase Runtime
 

@@ -1,6 +1,6 @@
 # Repository Root Status
 
-Status: Root workspace committed locally, remote blocked  
+Status: Root workspace pushed to production remote  
 Date: 2026-06-09
 
 ## Current State
@@ -17,7 +17,11 @@ The root workspace now has its own local Git repository and baseline commit:
 bef2e28 chore: bootstrap kfood service workspace
 ```
 
-The root repository currently has no remote.
+The root repository now uses a root-only production remote:
+
+```text
+https://github.com/kanghanbeat/kfood-commercial-service
+```
 
 The existing GitHub-connected prototype repository still lives at:
 
@@ -25,8 +29,7 @@ The existing GitHub-connected prototype repository still lives at:
 /Users/beat/Projects/kfood-commercial/frontend/.git
 ```
 
-This means the new root files are tracked locally, but they are not pushed to a
-GitHub remote yet.
+The new root files are tracked locally and pushed to the root production remote.
 
 ## Why Git Was Not Moved Automatically
 
@@ -82,40 +85,36 @@ and the new service root is now the deployment-oriented structure.
 ## Current Remote State
 
 ```text
-root repo:     no remote
+root repo:     https://github.com/kanghanbeat/kfood-commercial-service.git
 frontend repo: https://github.com/kanghanbeat/kfood-commercial.git
 ```
 
 Sprint 1 re-check:
 
 ```text
-gh auth status: invalid token for kanghanbeat
+gh auth status: valid token for kanghanbeat
 existing GitHub repo: kanghanbeat/kfood-commercial, public, main
-root git remote: none
+root git remote: kanghanbeat/kfood-commercial-service, public, main
 ```
 
-Before pushing the root workspace, decide whether to:
-
-- repoint `kanghanbeat/kfood-commercial` to the root workspace after backing up
-  the prototype history, or
-- create a new root-only GitHub repo and leave the old remote as the prototype
-  archive.
-
-## Current Blocker
-
-Root remote setup and push should wait until GitHub authentication is repaired:
-
-```bash
-gh auth login -h github.com
-```
-
-After authentication works, the recommended production path is:
+Decision:
 
 ```text
-1. Create a new root-only production repository, or intentionally reuse the
-   existing repository after backing up the prototype.
-2. Add that remote to /Users/beat/Projects/kfood-commercial.
-3. Push root main.
-4. Keep frontend/ ignored as legacy reference unless a later history migration
-   is explicitly chosen.
+Create a new root-only production repository and leave the existing
+`kanghanbeat/kfood-commercial` repository attached to the legacy Expo prototype.
 ```
+
+## Completed GitHub Work
+
+```text
+Created: https://github.com/kanghanbeat/kfood-commercial-service
+Pushed: root main
+Remote: origin -> https://github.com/kanghanbeat/kfood-commercial-service.git
+```
+
+## Remaining Repository Notes
+
+- Keep `frontend/` ignored from the root repository.
+- Treat `kanghanbeat/kfood-commercial` as the legacy prototype repo unless a
+  later explicit archival/migration step is chosen.
+- Use `kanghanbeat/kfood-commercial-service` for production service work.

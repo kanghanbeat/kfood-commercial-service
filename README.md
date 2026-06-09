@@ -41,5 +41,8 @@ npm run dev --workspace web -- -H 127.0.0.1 -p 3000
 - Supabase schema and RLS migrations are drafted.
 - Supabase local apply is blocked until Docker Desktop or a staging project is
   available.
-- Git repository normalization is still pending because the existing Git repo
-  lives inside `frontend/`.
+- Root Git repository has a local baseline commit but no remote yet.
+- The existing GitHub-connected prototype repository still lives inside
+  `frontend/`.
+- Next planning entry point:
+  `docs/00-blueprint/service-next-sprint-plan.md`.

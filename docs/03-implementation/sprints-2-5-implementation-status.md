@@ -1,6 +1,6 @@
 # Sprints 2-5 Implementation Status
 
-Status: Sprint 2 public read implemented  
+Status: Sprint 3 started  
 Date: 2026-06-10
 
 ## Summary
@@ -83,6 +83,15 @@ Current limitation:
   needs real rate limiting before public launch.
 - Privacy/terms are launch placeholders and need final legal copy before
   public production release.
+
+Sprint 3 user decision:
+
+- Geography starts with the capital region: Seoul through Gyeonggi/Incheon.
+- Food draft target is about 30 famous or locally associated foods.
+- Codex creates the research draft; the user directly verifies reliability
+  before publication.
+- First draft document:
+  `docs/00-research/sprint-3-capital-region-food-draft.research.md`
 
 ## Sprint 4: Admin MVP Skeleton
 

@@ -1,6 +1,6 @@
 # Sprint 3 Capital Region Food Draft
 
-Status: Draft for user review  
+Status: User reviewed; promoted to local seed candidates  
 Date: 2026-06-10  
 Scope: Seoul, Gyeonggi, Incheon metropolitan launch content
 
@@ -11,8 +11,9 @@ launch geography is the capital region, starting with Seoul plus nearby
 Gyeonggi/Incheon cities that foreign travelers may reasonably visit by subway,
 rail, bus, or short day trip.
 
-This document is not production content yet. It is a research and review list.
-The user will verify reliability before any item becomes published seed data.
+This document started as a research and review list. The user completed review
+on 2026-06-10, and the items have been promoted into local alpha seed
+candidates. Remote staging apply is still pending.
 
 ## Content Principles
 

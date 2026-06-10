@@ -1,13 +1,16 @@
 import Link from "next/link";
 
-import { getPublishedRoutes, getRegion } from "@kfood/data";
+import { getPublishedRegions, getPublishedRoutes } from "@kfood/data";
 
 export const metadata = {
   title: "K-food Routes"
 };
 
 export default async function RoutesPage() {
-  const routes = await getPublishedRoutes();
+  const [routes, regions] = await Promise.all([
+    getPublishedRoutes(),
+    getPublishedRegions()
+  ]);
 
   return (
     <main className="page-shell">
@@ -21,7 +24,7 @@ export default async function RoutesPage() {
       </header>
       <ul className="content-list">
         {routes.map((route) => {
-          const region = getRegion(route.regionSlug);
+          const region = regions.find((item) => item.slug === route.regionSlug);
           return (
             <li key={route.slug}>
               <Link href={`/routes/${route.slug}`}>

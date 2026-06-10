@@ -105,3 +105,12 @@ Before inserting real content into Supabase, each item needs:
 - Public trust pages are alpha-launch ready.
 - Report rate-limit decision is documented.
 - Next seed migration plan is ready.
+
+## Progress
+
+- The user completed review of the 30-food draft.
+- `supabase/seed.sql` has been expanded locally with 23 published regions,
+  30 published foods, and 42 public region-food relationships.
+- Local Supabase reset and Next.js build against the expanded local seed pass.
+- Remote staging apply is pending because it requires the user's newly reset DB
+  password.

@@ -1,13 +1,16 @@
 import Link from "next/link";
 
-import { getPublishedPlaces, getRegion } from "@kfood/data";
+import { getPublishedPlaces, getPublishedRegions } from "@kfood/data";
 
 export const metadata = {
   title: "K-food Places"
 };
 
 export default async function PlacesPage() {
-  const places = await getPublishedPlaces();
+  const [places, regions] = await Promise.all([
+    getPublishedPlaces(),
+    getPublishedRegions()
+  ]);
 
   return (
     <main className="page-shell">
@@ -21,7 +24,7 @@ export default async function PlacesPage() {
       </header>
       <ul className="content-list">
         {places.map((place) => {
-          const region = getRegion(place.regionSlug);
+          const region = regions.find((item) => item.slug === place.regionSlug);
           return (
             <li key={place.slug}>
               <Link href={`/places/${place.slug}`}>

@@ -6,7 +6,7 @@ import {
   getPublishedFoods,
   getPublishedPlace,
   getPublishedPlaces,
-  getRegion
+  getPublishedRegion
 } from "@kfood/data";
 
 export async function generateStaticParams() {
@@ -40,7 +40,7 @@ export default async function PlaceDetailPage({
 
   const [publishedFoods, region] = await Promise.all([
     getPublishedFoods(),
-    Promise.resolve(getRegion(place.regionSlug))
+    getPublishedRegion(place.regionSlug)
   ]);
   const sourceFoods = publishedFoods.length > 0 ? publishedFoods : fallbackFoods;
   const foods = sourceFoods.filter((food) => place.foodSlugs.includes(food.slug));

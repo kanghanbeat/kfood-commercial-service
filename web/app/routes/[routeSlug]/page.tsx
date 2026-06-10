@@ -5,7 +5,7 @@ import {
   getPublishedRoute,
   getPublishedPlaces,
   getPublishedRoutes,
-  getRegion
+  getPublishedRegion
 } from "@kfood/data";
 
 export async function generateStaticParams() {
@@ -40,7 +40,7 @@ export default async function RouteDetailPage({
 
   const [places, region] = await Promise.all([
     getPublishedPlaces(),
-    Promise.resolve(getRegion(route.regionSlug))
+    getPublishedRegion(route.regionSlug)
   ]);
   const routePlaces = places.filter((place) =>
     route.placeSlugs.length > 0 ? route.placeSlugs.includes(place.slug) : true

@@ -92,6 +92,12 @@ Sprint 3 user decision:
   before publication.
 - First draft document:
   `docs/00-research/sprint-3-capital-region-food-draft.research.md`
+- User review of the 30-food draft is complete.
+- Local seed expansion is complete:
+  - 23 published regions
+  - 30 published foods
+  - 42 public region-food relationships
+- Remote staging seed apply is pending user-side DB password command.
 
 ## Sprint 4: Admin MVP Skeleton
 

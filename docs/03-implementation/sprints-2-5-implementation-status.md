@@ -97,7 +97,8 @@ Sprint 3 user decision:
   - 23 published regions
   - 30 published foods
   - 42 public region-food relationships
-- Remote staging seed apply is pending user-side DB password command.
+- Remote staging seed apply and REST/RLS verification are complete.
+- Staging build now generates 80 routes from the expanded seed.
 
 ## Sprint 4: Admin MVP Skeleton
 

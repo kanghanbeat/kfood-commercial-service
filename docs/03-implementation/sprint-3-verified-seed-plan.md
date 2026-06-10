@@ -1,6 +1,6 @@
 # Sprint 3 Verified Seed Plan
 
-Status: Local seed implemented, remote apply pending  
+Status: Local and staging seed verified  
 Date: 2026-06-10
 
 ## Decision
@@ -68,23 +68,20 @@ generated routes: 80
 
 ## Remote Staging Apply
 
-Remote staging has not yet been updated with the expanded seed because the
-database password was reset by the user and is not stored by Codex.
-
-From the project root, the user should run:
+The user completed `db push`, but the first REST check showed the previous
+small seed was still active. Codex then applied the seed directly with:
 
 ```bash
-cd /Users/beat/Projects/kfood-commercial
-SUPABASE_DB_PASSWORD='YOUR_NEW_DB_PASSWORD' npx supabase db push --include-seed
+npx supabase db query --linked --file supabase/seed.sql --workdir /Users/beat/Projects/kfood-commercial
 ```
 
-Then Codex can re-run public REST verification against:
+Remote staging REST verification passed against:
 
 ```text
 https://gpwxiakwlghjzvoxwpnw.supabase.co
 ```
 
-Expected staging result after apply:
+Verified staging result:
 
 ```text
 regions: 23
@@ -92,6 +89,19 @@ foods: 30
 region_foods: 42
 places: 1
 route_guides: 1
+content_reports anon select: 0
+admin_audit_logs anon select: 0
+```
+
+Next.js build against staging Supabase seed:
+
+```text
+npm run web:build: pass
+generated routes: 80
+/foods/[foodSlug]: 30 published food paths
+/regions/[regionSlug]: 23 published region paths
+/places/[placeSlug]: 1 published place path
+/routes/[routeSlug]: 1 published route path
 ```
 
 ## Important Limitation

@@ -1,6 +1,6 @@
 # Sprint 3 Verified Seed Quality Report
 
-Status: Local pass, staging pending  
+Status: Pass  
 Date: 2026-06-10
 
 ## Scope
@@ -46,15 +46,15 @@ npm run check: pass
 
 ## Staging Status
 
-Staging has not been updated with the expanded seed yet. The user reset the DB
-password, so the user must run the remote push command locally:
+The user reported `db push` completion. The first REST check still showed the
+previous small seed, so Codex executed the seed file directly against the linked
+staging project:
 
 ```bash
-cd /Users/beat/Projects/kfood-commercial
-SUPABASE_DB_PASSWORD='YOUR_NEW_DB_PASSWORD' npx supabase db push --include-seed
+npx supabase db query --linked --file supabase/seed.sql --workdir /Users/beat/Projects/kfood-commercial
 ```
 
-After that, Codex should verify remote REST counts:
+Remote staging REST counts now match the local seed:
 
 ```text
 regions: 23
@@ -62,17 +62,24 @@ foods: 30
 region_foods: 42
 places: 1
 route_guides: 1
+content_reports anon select: 0
+admin_audit_logs anon select: 0
+```
+
+Next.js build against staging:
+
+```text
+npm run web:build: pass
+generated routes: 80
 ```
 
 ## Decision
 
 ```text
-LOCAL READY / STAGING APPLY PENDING
+READY FOR TRUST SURFACE / PLACE SEED WORK
 ```
 
 ## Residual Risk
 
 - Food/region data is now locally seeded, but place-level details remain sparse.
-- Remote staging still serves the previous smaller seed until the user runs
-  `db push --include-seed`.
 - The 30 foods are alpha seed content, not final production editorial copy.

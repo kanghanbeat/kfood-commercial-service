@@ -312,6 +312,37 @@ type RouteGuideRow = {
   regions: { slug: string } | null;
 };
 
+type RelatedSlugRow = {
+  regions?: { slug: string } | { slug: string }[] | null;
+  foods?: { slug: string } | { slug: string }[] | null;
+  places?: { slug: string } | { slug: string }[] | null;
+  route_guides?: { slug: string } | { slug: string }[] | null;
+  step_order?: number | null;
+};
+
+export type ContentReportInput = {
+  pageUrl: string;
+  entityType?: string | null;
+  entityId?: string | null;
+  reportType: string;
+  message: string;
+  userEmail?: string | null;
+};
+
+export type ContentReportResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+function firstRelatedSlug(
+  related: { slug: string } | { slug: string }[] | null | undefined
+) {
+  if (Array.isArray(related)) {
+    return related[0]?.slug;
+  }
+
+  return related?.slug;
+}
+
 function mapRegion(row: RegionRow): AlphaRegion {
   return {
     slug: row.slug,
@@ -367,6 +398,80 @@ function mapRouteGuide(row: RouteGuideRow): AlphaRoute {
   };
 }
 
+function addRegionSlugs(
+  foods: AlphaFood[],
+  rows: RelatedSlugRow[]
+): AlphaFood[] {
+  const regionSlugsByFood = new Map<string, string[]>();
+
+  rows.forEach((row) => {
+    const foodSlug = firstRelatedSlug(row.foods);
+    const regionSlug = firstRelatedSlug(row.regions);
+
+    if (!foodSlug || !regionSlug) {
+      return;
+    }
+
+    const slugs = regionSlugsByFood.get(foodSlug) ?? [];
+    regionSlugsByFood.set(foodSlug, [...slugs, regionSlug]);
+  });
+
+  return foods.map((food) => ({
+    ...food,
+    regionSlugs: regionSlugsByFood.get(food.slug) ?? food.regionSlugs
+  }));
+}
+
+function addFoodSlugs(
+  places: AlphaPlace[],
+  rows: RelatedSlugRow[]
+): AlphaPlace[] {
+  const foodSlugsByPlace = new Map<string, string[]>();
+
+  rows.forEach((row) => {
+    const placeSlug = firstRelatedSlug(row.places);
+    const foodSlug = firstRelatedSlug(row.foods);
+
+    if (!placeSlug || !foodSlug) {
+      return;
+    }
+
+    const slugs = foodSlugsByPlace.get(placeSlug) ?? [];
+    foodSlugsByPlace.set(placeSlug, [...slugs, foodSlug]);
+  });
+
+  return places.map((place) => ({
+    ...place,
+    foodSlugs: foodSlugsByPlace.get(place.slug) ?? place.foodSlugs
+  }));
+}
+
+function addRoutePlaceSlugs(
+  routes: AlphaRoute[],
+  rows: RelatedSlugRow[]
+): AlphaRoute[] {
+  const placeSlugsByRoute = new Map<string, string[]>();
+
+  [...rows]
+    .sort((a, b) => (a.step_order ?? 100) - (b.step_order ?? 100))
+    .forEach((row) => {
+      const routeSlug = firstRelatedSlug(row.route_guides);
+      const placeSlug = firstRelatedSlug(row.places);
+
+      if (!routeSlug || !placeSlug) {
+        return;
+      }
+
+      const slugs = placeSlugsByRoute.get(routeSlug) ?? [];
+      placeSlugsByRoute.set(routeSlug, [...slugs, placeSlug]);
+    });
+
+  return routes.map((route) => ({
+    ...route,
+    placeSlugs: placeSlugsByRoute.get(route.slug) ?? route.placeSlugs
+  }));
+}
+
 export async function getPublishedRegions() {
   const supabase = createPublicClient();
 
@@ -399,19 +504,32 @@ export async function getPublishedFoods() {
     return alphaFoods;
   }
 
-  const { data, error } = await supabase
-    .from("foods")
-    .select(
-      "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note"
-    )
-    .eq("status", "published")
-    .order("display_order", { ascending: true });
+  const [{ data, error }, { data: regionFoodRows, error: relationError }] =
+    await Promise.all([
+      supabase
+        .from("foods")
+        .select(
+          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note"
+        )
+        .eq("status", "published")
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("region_foods")
+        .select("regions(slug), foods(slug), display_order")
+        .order("display_order", { ascending: true })
+    ]);
 
   if (error || !data) {
     return alphaFoods;
   }
 
-  return data.map(mapFood);
+  const foods = data.map(mapFood);
+
+  if (relationError || !regionFoodRows) {
+    return foods;
+  }
+
+  return addRegionSlugs(foods, regionFoodRows as unknown as RelatedSlugRow[]);
 }
 
 export async function getPublishedFood(slug: string) {
@@ -426,19 +544,32 @@ export async function getPublishedPlaces() {
     return alphaPlaces;
   }
 
-  const { data, error } = await supabase
-    .from("places")
-    .select(
-      "slug, name_en, editorial_note, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
-    )
-    .eq("status", "published")
-    .order("display_order", { ascending: true });
+  const [{ data, error }, { data: placeFoodRows, error: relationError }] =
+    await Promise.all([
+      supabase
+        .from("places")
+        .select(
+          "slug, name_en, editorial_note, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+        )
+        .eq("status", "published")
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("place_foods")
+        .select("places(slug), foods(slug), display_order")
+        .order("display_order", { ascending: true })
+    ]);
 
   if (error || !data) {
     return alphaPlaces;
   }
 
-  return data.map((row) => mapPlace(row as unknown as PlaceRow));
+  const places = data.map((row) => mapPlace(row as unknown as PlaceRow));
+
+  if (relationError || !placeFoodRows) {
+    return places;
+  }
+
+  return addFoodSlugs(places, placeFoodRows as unknown as RelatedSlugRow[]);
 }
 
 export async function getPublishedPlace(slug: string) {
@@ -453,20 +584,80 @@ export async function getPublishedRoutes() {
     return alphaRoutes;
   }
 
-  const { data, error } = await supabase
-    .from("route_guides")
-    .select("slug, title, summary, estimated_duration, regions(slug)")
-    .eq("status", "published")
-    .order("display_order", { ascending: true });
+  const [{ data, error }, { data: routePlaceRows, error: relationError }] =
+    await Promise.all([
+      supabase
+        .from("route_guides")
+        .select("slug, title, summary, estimated_duration, regions(slug)")
+        .eq("status", "published")
+        .order("display_order", { ascending: true }),
+      supabase
+        .from("route_guide_places")
+        .select("route_guides(slug), places(slug), step_order")
+        .order("step_order", { ascending: true })
+    ]);
 
   if (error || !data) {
     return alphaRoutes;
   }
 
-  return data.map((row) => mapRouteGuide(row as unknown as RouteGuideRow));
+  const routes = data.map((row) => mapRouteGuide(row as unknown as RouteGuideRow));
+
+  if (relationError || !routePlaceRows) {
+    return routes;
+  }
+
+  return addRoutePlaceSlugs(
+    routes,
+    routePlaceRows as unknown as RelatedSlugRow[]
+  );
 }
 
 export async function getPublishedRoute(slug: string) {
   const routes = await getPublishedRoutes();
   return routes.find((route) => route.slug === slug);
+}
+
+export async function submitContentReport(
+  input: ContentReportInput
+): Promise<ContentReportResult> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return {
+      ok: false,
+      message: "Supabase public environment variables are not configured."
+    };
+  }
+
+  const pageUrl = input.pageUrl.trim();
+  const reportType = input.reportType.trim();
+  const message = input.message.trim();
+  const userEmail = input.userEmail?.trim() || null;
+
+  if (!pageUrl || !reportType || !message) {
+    return { ok: false, message: "Page URL, issue type, and details are required." };
+  }
+
+  if (message.length > 2000) {
+    return { ok: false, message: "Details must be 2,000 characters or fewer." };
+  }
+
+  const { error } = await supabase.from("content_reports").insert({
+    page_url: pageUrl,
+    entity_type: input.entityType ?? null,
+    entity_id: input.entityId ?? null,
+    report_type: reportType,
+    message,
+    user_email: userEmail
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: "The report could not be submitted. Please try again later."
+    };
+  }
+
+  return { ok: true };
 }

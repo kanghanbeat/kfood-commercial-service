@@ -327,6 +327,24 @@ h3 {
   resize: vertical;
 }
 
+.status-message {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-weight: 800;
+  max-width: 780px;
+  padding: 14px 16px;
+}
+
+.status-message.success {
+  background: #edf4ef;
+  color: var(--leaf);
+}
+
+.status-message.error {
+  background: #fff0ed;
+  color: var(--accent-dark);
+}
+
 @media (max-width: 900px) {
   .hero-grid,
   .directory-grid,

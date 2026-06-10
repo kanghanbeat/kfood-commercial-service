@@ -1,6 +1,6 @@
 # Sprints 2-5 Implementation Status
 
-Status: Sprint 1 complete, Sprint 2 ready  
+Status: Sprint 2 public read implemented  
 Date: 2026-06-10
 
 ## Summary
@@ -37,13 +37,19 @@ Implemented:
   - `getPublishedRoute`
 - Public pages now call these helpers.
 - If Supabase env vars are missing, the helpers fall back to alpha data.
+- Detail route `generateStaticParams` now follows the published helper output.
+- `region_foods`, `place_foods`, and `route_guide_places` are read so detail
+  pages retain region/food/place relationships from staging data.
+- `/report` now submits into `content_reports` through a server action.
 
 Important:
 
 - Public read uses `NEXT_PUBLIC_SUPABASE_URL` and
   `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 - Service-role keys are not used in public pages.
-- Real `published` enforcement still depends on Supabase RLS verification.
+- Real `published` enforcement is verified through local and staging RLS.
+- Local `.env.local` and `web/.env.local` are ignored by Git and point the dev
+  app to staging.
 
 ## Sprint 3: SEO, Report, Contact, Trust Surface
 
@@ -65,9 +71,8 @@ Implemented public routes:
 
 Current limitation:
 
-- `/report` is a workflow surface only. Actual insert into
-  `content_reports` can now be enabled because Supabase local and staging
-  verification pass.
+- `/report` insert is enabled for alpha. It still needs spam/rate-limit
+  controls before public launch.
 - Privacy/terms are launch placeholders and need final legal copy before
   public production release.
 
@@ -106,9 +111,9 @@ Still required before alpha deploy:
 
 1. Connect deployed env vars.
 2. Replace placeholder content with verified Seoul alpha data.
-3. Enable report insert or clearly keep report as contact-only.
-4. Finalize privacy, terms, disclosures, and editorial policy.
-5. Add basic abuse controls for public report submission.
+3. Finalize privacy, terms, disclosures, and editorial policy.
+4. Add basic abuse controls for public report submission.
+5. Start Admin MVP auth and mutations.
 
 ## Verification Commands
 

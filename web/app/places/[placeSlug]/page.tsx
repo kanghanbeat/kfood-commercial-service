@@ -3,13 +3,15 @@ import { notFound } from "next/navigation";
 
 import {
   alphaFoods,
-  alphaPlaces,
+  getPublishedFoods,
   getPublishedPlace,
+  getPublishedPlaces,
   getRegion
 } from "@kfood/data";
 
-export function generateStaticParams() {
-  return alphaPlaces.map((place) => ({ placeSlug: place.slug }));
+export async function generateStaticParams() {
+  const places = await getPublishedPlaces();
+  return places.map((place) => ({ placeSlug: place.slug }));
 }
 
 export async function generateMetadata({
@@ -36,8 +38,12 @@ export default async function PlaceDetailPage({
     notFound();
   }
 
-  const region = getRegion(place.regionSlug);
-  const foods = alphaFoods.filter((food) => place.foodSlugs.includes(food.slug));
+  const [publishedFoods, region] = await Promise.all([
+    getPublishedFoods(),
+    Promise.resolve(getRegion(place.regionSlug))
+  ]);
+  const sourceFoods = publishedFoods.length > 0 ? publishedFoods : alphaFoods;
+  const foods = sourceFoods.filter((food) => place.foodSlugs.includes(food.slug));
 
   return (
     <main className="page-shell">

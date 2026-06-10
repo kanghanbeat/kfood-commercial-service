@@ -2,16 +2,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
-  alphaRegions,
   getPublishedRegion,
   getPublishedFoods,
   getPublishedPlaces,
+  getPublishedRegions,
   getRegionFoods,
   getRegionPlaces
 } from "@kfood/data";
 
-export function generateStaticParams() {
-  return alphaRegions.map((region) => ({ regionSlug: region.slug }));
+export async function generateStaticParams() {
+  const regions = await getPublishedRegions();
+  return regions.map((region) => ({ regionSlug: region.slug }));
 }
 
 export async function generateMetadata({

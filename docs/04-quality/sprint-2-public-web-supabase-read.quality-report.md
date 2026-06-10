@@ -45,6 +45,18 @@ Multipart POST to /report: 303 -> /report?submitted=1
 Success message rendered after submit
 ```
 
+Pre-Sprint 3 cleanup checks:
+
+```text
+Alpha* public type names removed from app/data code
+Production fallback disabled by default
+Report allowlist, URL validation, message guards, and honeypot added
+Server action too-short message: 303 -> /report?error=...
+Server action honeypot filled: 303 -> /report?submitted=1
+Server action valid report: 303 -> /report?submitted=1
+Supabase DB password rotated by user
+```
+
 ## Gate Result
 
 ```text
@@ -54,6 +66,7 @@ READY FOR SPRINT 3 / ADMIN MVP PREP
 ## Residual Risks
 
 - Report spam/rate-limit controls are not implemented yet.
+- Honeypot and validation are implemented, but deployed rate limiting is not.
 - Staging seed data is verification content, not final production content.
 - Deployed Vercel env vars are not configured yet.
 - Legal/privacy copy remains placeholder-level.

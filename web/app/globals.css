@@ -327,6 +327,10 @@ h3 {
   resize: vertical;
 }
 
+.trap-field {
+  display: none;
+}
+
 .status-message {
   border: 1px solid var(--line);
   border-radius: 8px;

@@ -13,7 +13,8 @@ async function submitReport(formData: FormData) {
     pageUrl: String(formData.get("page_url") ?? ""),
     reportType: String(formData.get("report_type") ?? ""),
     message: String(formData.get("message") ?? ""),
-    userEmail: String(formData.get("user_email") ?? "")
+    userEmail: String(formData.get("user_email") ?? ""),
+    honeypot: String(formData.get("website") ?? "")
   });
 
   if (!result.ok) {
@@ -89,6 +90,15 @@ export default async function ReportPage({
             name="user_email"
             placeholder="you@example.com"
             type="email"
+          />
+        </label>
+        <label className="trap-field" aria-hidden="true">
+          Website
+          <input
+            autoComplete="off"
+            name="website"
+            tabIndex={-1}
+            type="text"
           />
         </label>
         <button className="button primary" type="submit">

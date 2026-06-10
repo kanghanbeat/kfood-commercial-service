@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
-  alphaPlaces,
+  fallbackPlaces,
   getPublishedFood,
   getPublishedFoods,
   getPublishedPlaces,
@@ -39,7 +39,8 @@ export default async function FoodDetailPage({
   }
 
   const publishedPlaces = await getPublishedPlaces();
-  const sourcePlaces = publishedPlaces.length > 0 ? publishedPlaces : alphaPlaces;
+  const sourcePlaces =
+    publishedPlaces.length > 0 ? publishedPlaces : fallbackPlaces;
   const places = sourcePlaces.filter((place) =>
     place.foodSlugs.includes(food.slug)
   );

@@ -33,7 +33,8 @@ query modules, and tests.
 
 Keep the current `@kfood/data` public helper API, but make the helpers read
 published staging rows and relationship join tables when env vars are present.
-Keep alpha fallback when env vars or network are unavailable.
+Keep local fallback data only for development, and prevent silent placeholder
+fallback in production.
 
 - Preserves current pages and build behavior.
 - Uses anon Supabase access only; no service-role key in public code.
@@ -64,6 +65,15 @@ The `/report` page now submits into `content_reports` through a server action
 using the same public anon client. Insert returns minimal data and anon users
 still cannot read submitted reports.
 
+Pre-Sprint 3 cleanup adds:
+
+- `PublicRegion`, `PublicFood`, `PublicPlace`, and `PublicRoute` naming.
+- `fallbackRegions`, `fallbackFoods`, `fallbackPlaces`, and `fallbackRoutes`
+  for development-only fallback data.
+- `NEXT_PUBLIC_ALLOW_ALPHA_FALLBACK=true` as an explicit opt-in for local demos.
+- Report allowlist, URL validation, minimum message length, max length, email
+  length guard, and a honeypot field.
+
 ## Security Notes
 
 - Public pages use only `NEXT_PUBLIC_SUPABASE_URL` and
@@ -72,11 +82,16 @@ still cannot read submitted reports.
 - RLS remains the source of truth for published-only public reads.
 - Report insert is intentionally anonymous for alpha feedback, but abuse
   controls are still required before public launch.
+- Production must not enable `NEXT_PUBLIC_ALLOW_ALPHA_FALLBACK`; otherwise
+  placeholder fallback data could appear during an outage.
 
 ## Rollback
 
-If Supabase staging is unavailable, remove or omit env vars and the public web
-falls back to alpha data.
+In development, if Supabase staging is unavailable, remove or omit env vars and
+the public web can fall back to local fallback data.
+
+In production, fallback is disabled by default. Supabase errors should produce
+empty public result sets rather than silently showing placeholder data.
 
 ## Test Plan
 
@@ -87,3 +102,5 @@ falls back to alpha data.
 - Local dev route checks should show staging seed data and exclude alpha-only
   entries.
 - `/report` server action should redirect to `/report?submitted=1`.
+- Report validation should reject unsupported report types, invalid URLs, and
+  too-short messages.

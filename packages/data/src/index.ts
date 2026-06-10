@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-export type AlphaRegion = {
+export type PublicRegion = {
   slug: string;
   nameEn: string;
   primaryAudience: string;
@@ -10,7 +10,7 @@ export type AlphaRegion = {
   bestForTags: string[];
 };
 
-export const alphaRegions: AlphaRegion[] = [
+export const fallbackRegions: PublicRegion[] = [
   {
     slug: "myeongdong",
     nameEn: "Myeongdong",
@@ -63,7 +63,7 @@ export const alphaRegions: AlphaRegion[] = [
   }
 ];
 
-export type AlphaFood = {
+export type PublicFood = {
   slug: string;
   nameEn: string;
   nameKo: string;
@@ -74,7 +74,7 @@ export type AlphaFood = {
   beginnerNote: string;
 };
 
-export const alphaFoods: AlphaFood[] = [
+export const fallbackFoods: PublicFood[] = [
   {
     slug: "tteokbokki",
     nameEn: "Tteokbokki",
@@ -127,7 +127,7 @@ export const alphaFoods: AlphaFood[] = [
   }
 ];
 
-export type AlphaPlace = {
+export type PublicPlace = {
   slug: string;
   nameEn: string;
   regionSlug: string;
@@ -138,7 +138,7 @@ export type AlphaPlace = {
   lastVerifiedLabel: string;
 };
 
-export const alphaPlaces: AlphaPlace[] = [
+export const fallbackPlaces: PublicPlace[] = [
   {
     slug: "myeongdong-street-food-loop",
     nameEn: "Myeongdong Street Food Loop",
@@ -196,7 +196,7 @@ export const alphaPlaces: AlphaPlace[] = [
   }
 ];
 
-export type AlphaRoute = {
+export type PublicRoute = {
   slug: string;
   title: string;
   regionSlug: string;
@@ -205,7 +205,7 @@ export type AlphaRoute = {
   estimatedDuration: string;
 };
 
-export const alphaRoutes: AlphaRoute[] = [
+export const fallbackRoutes: PublicRoute[] = [
   {
     slug: "myeongdong-first-night",
     title: "Myeongdong First Night",
@@ -225,29 +225,48 @@ export const alphaRoutes: AlphaRoute[] = [
 ];
 
 export function getRegion(slug: string) {
-  return alphaRegions.find((region) => region.slug === slug);
+  return fallbackRegions.find((region) => region.slug === slug);
 }
 
 export function getFood(slug: string) {
-  return alphaFoods.find((food) => food.slug === slug);
+  return fallbackFoods.find((food) => food.slug === slug);
 }
 
 export function getPlace(slug: string) {
-  return alphaPlaces.find((place) => place.slug === slug);
+  return fallbackPlaces.find((place) => place.slug === slug);
 }
 
 export function getRegionFoods(regionSlug: string) {
-  return alphaFoods.filter((food) => food.regionSlugs.includes(regionSlug));
+  return fallbackFoods.filter((food) => food.regionSlugs.includes(regionSlug));
 }
 
 export function getRegionPlaces(regionSlug: string) {
-  return alphaPlaces.filter((place) => place.regionSlug === regionSlug);
+  return fallbackPlaces.filter((place) => place.regionSlug === regionSlug);
 }
 
 type SupabaseConfig = {
   url: string;
   anonKey: string;
 };
+
+const reportTypeAllowlist = new Set([
+  "incorrect_info",
+  "closed_place",
+  "map_issue",
+  "sponsorship_disclosure",
+  "other"
+]);
+
+function allowsFallbackData() {
+  return (
+    process.env.NODE_ENV !== "production" ||
+    process.env.NEXT_PUBLIC_ALLOW_ALPHA_FALLBACK === "true"
+  );
+}
+
+function fallbackData<T>(items: T[]): T[] {
+  return allowsFallbackData() ? items : [];
+}
 
 function getSupabaseConfig(): SupabaseConfig | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -327,6 +346,7 @@ export type ContentReportInput = {
   reportType: string;
   message: string;
   userEmail?: string | null;
+  honeypot?: string | null;
 };
 
 export type ContentReportResult =
@@ -343,7 +363,7 @@ function firstRelatedSlug(
   return related?.slug;
 }
 
-function mapRegion(row: RegionRow): AlphaRegion {
+function mapRegion(row: RegionRow): PublicRegion {
   return {
     slug: row.slug,
     nameEn: row.name_en,
@@ -355,7 +375,7 @@ function mapRegion(row: RegionRow): AlphaRegion {
   };
 }
 
-function mapFood(row: FoodRow): AlphaFood {
+function mapFood(row: FoodRow): PublicFood {
   return {
     slug: row.slug,
     nameEn: row.name_en,
@@ -368,7 +388,7 @@ function mapFood(row: FoodRow): AlphaFood {
   };
 }
 
-function mapPlace(row: PlaceRow): AlphaPlace {
+function mapPlace(row: PlaceRow): PublicPlace {
   return {
     slug: row.slug,
     nameEn: row.name_en,
@@ -387,7 +407,7 @@ function mapPlace(row: PlaceRow): AlphaPlace {
   };
 }
 
-function mapRouteGuide(row: RouteGuideRow): AlphaRoute {
+function mapRouteGuide(row: RouteGuideRow): PublicRoute {
   return {
     slug: row.slug,
     title: row.title,
@@ -399,9 +419,9 @@ function mapRouteGuide(row: RouteGuideRow): AlphaRoute {
 }
 
 function addRegionSlugs(
-  foods: AlphaFood[],
+  foods: PublicFood[],
   rows: RelatedSlugRow[]
-): AlphaFood[] {
+): PublicFood[] {
   const regionSlugsByFood = new Map<string, string[]>();
 
   rows.forEach((row) => {
@@ -423,9 +443,9 @@ function addRegionSlugs(
 }
 
 function addFoodSlugs(
-  places: AlphaPlace[],
+  places: PublicPlace[],
   rows: RelatedSlugRow[]
-): AlphaPlace[] {
+): PublicPlace[] {
   const foodSlugsByPlace = new Map<string, string[]>();
 
   rows.forEach((row) => {
@@ -447,9 +467,9 @@ function addFoodSlugs(
 }
 
 function addRoutePlaceSlugs(
-  routes: AlphaRoute[],
+  routes: PublicRoute[],
   rows: RelatedSlugRow[]
-): AlphaRoute[] {
+): PublicRoute[] {
   const placeSlugsByRoute = new Map<string, string[]>();
 
   [...rows]
@@ -476,7 +496,7 @@ export async function getPublishedRegions() {
   const supabase = createPublicClient();
 
   if (!supabase) {
-    return alphaRegions;
+    return fallbackData(fallbackRegions);
   }
 
   const { data, error } = await supabase
@@ -486,7 +506,7 @@ export async function getPublishedRegions() {
     .order("display_order", { ascending: true });
 
   if (error || !data) {
-    return alphaRegions;
+    return fallbackData(fallbackRegions);
   }
 
   return data.map(mapRegion);
@@ -501,7 +521,7 @@ export async function getPublishedFoods() {
   const supabase = createPublicClient();
 
   if (!supabase) {
-    return alphaFoods;
+    return fallbackData(fallbackFoods);
   }
 
   const [{ data, error }, { data: regionFoodRows, error: relationError }] =
@@ -520,7 +540,7 @@ export async function getPublishedFoods() {
     ]);
 
   if (error || !data) {
-    return alphaFoods;
+    return fallbackData(fallbackFoods);
   }
 
   const foods = data.map(mapFood);
@@ -541,7 +561,7 @@ export async function getPublishedPlaces() {
   const supabase = createPublicClient();
 
   if (!supabase) {
-    return alphaPlaces;
+    return fallbackData(fallbackPlaces);
   }
 
   const [{ data, error }, { data: placeFoodRows, error: relationError }] =
@@ -560,7 +580,7 @@ export async function getPublishedPlaces() {
     ]);
 
   if (error || !data) {
-    return alphaPlaces;
+    return fallbackData(fallbackPlaces);
   }
 
   const places = data.map((row) => mapPlace(row as unknown as PlaceRow));
@@ -581,7 +601,7 @@ export async function getPublishedRoutes() {
   const supabase = createPublicClient();
 
   if (!supabase) {
-    return alphaRoutes;
+    return fallbackData(fallbackRoutes);
   }
 
   const [{ data, error }, { data: routePlaceRows, error: relationError }] =
@@ -598,7 +618,7 @@ export async function getPublishedRoutes() {
     ]);
 
   if (error || !data) {
-    return alphaRoutes;
+    return fallbackData(fallbackRoutes);
   }
 
   const routes = data.map((row) => mapRouteGuide(row as unknown as RouteGuideRow));
@@ -634,13 +654,40 @@ export async function submitContentReport(
   const reportType = input.reportType.trim();
   const message = input.message.trim();
   const userEmail = input.userEmail?.trim() || null;
+  const honeypot = input.honeypot?.trim();
+
+  if (honeypot) {
+    return { ok: true };
+  }
 
   if (!pageUrl || !reportType || !message) {
     return { ok: false, message: "Page URL, issue type, and details are required." };
   }
 
+  if (!reportTypeAllowlist.has(reportType)) {
+    return { ok: false, message: "Choose a supported issue type." };
+  }
+
+  try {
+    const url = new URL(pageUrl);
+
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return { ok: false, message: "Page URL must start with http or https." };
+    }
+  } catch {
+    return { ok: false, message: "Enter a valid page URL." };
+  }
+
+  if (message.length < 10) {
+    return { ok: false, message: "Details must be at least 10 characters." };
+  }
+
   if (message.length > 2000) {
     return { ok: false, message: "Details must be 2,000 characters or fewer." };
+  }
+
+  if (userEmail && userEmail.length > 320) {
+    return { ok: false, message: "Email is too long." };
   }
 
   const { error } = await supabase.from("content_reports").insert({

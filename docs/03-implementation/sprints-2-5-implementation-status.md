@@ -36,11 +36,17 @@ Implemented:
   - `getPublishedRoutes`
   - `getPublishedRoute`
 - Public pages now call these helpers.
-- If Supabase env vars are missing, the helpers fall back to alpha data.
+- In development, missing or unavailable Supabase env vars can fall back to
+  local placeholder data.
+- Production fallback is disabled by default; local fallback requires
+  development mode or `NEXT_PUBLIC_ALLOW_ALPHA_FALLBACK=true`.
 - Detail route `generateStaticParams` now follows the published helper output.
 - `region_foods`, `place_foods`, and `route_guide_places` are read so detail
   pages retain region/food/place relationships from staging data.
 - `/report` now submits into `content_reports` through a server action.
+- Pre-Sprint 3 cleanup renamed public data types from `Alpha*` to `Public*`.
+- `/report` now includes supported report type validation, URL validation,
+  minimum message length, email length guard, and a honeypot field.
 
 Important:
 
@@ -50,6 +56,8 @@ Important:
 - Real `published` enforcement is verified through local and staging RLS.
 - Local `.env.local` and `web/.env.local` are ignored by Git and point the dev
   app to staging.
+- The exposed DB password from the earlier setup flow has been rotated by the
+  user.
 
 ## Sprint 3: SEO, Report, Contact, Trust Surface
 
@@ -71,8 +79,8 @@ Implemented public routes:
 
 Current limitation:
 
-- `/report` insert is enabled for alpha. It still needs spam/rate-limit
-  controls before public launch.
+- `/report` insert is enabled for alpha with minimum abuse checks. It still
+  needs real rate limiting before public launch.
 - Privacy/terms are launch placeholders and need final legal copy before
   public production release.
 
@@ -112,7 +120,7 @@ Still required before alpha deploy:
 1. Connect deployed env vars.
 2. Replace placeholder content with verified Seoul alpha data.
 3. Finalize privacy, terms, disclosures, and editorial policy.
-4. Add basic abuse controls for public report submission.
+4. Add deployed rate limiting for public report submission.
 5. Start Admin MVP auth and mutations.
 
 ## Verification Commands

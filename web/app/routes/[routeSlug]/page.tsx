@@ -42,9 +42,12 @@ export default async function RouteDetailPage({
     getPublishedPlaces(),
     getPublishedRegion(route.regionSlug)
   ]);
-  const routePlaces = places.filter((place) =>
-    route.placeSlugs.length > 0 ? route.placeSlugs.includes(place.slug) : true
-  );
+  const routePlaces =
+    route.placeSlugs.length > 0
+      ? route.placeSlugs
+          .map((placeSlug) => places.find((place) => place.slug === placeSlug))
+          .filter((place) => place !== undefined)
+      : places;
 
   return (
     <main className="page-shell">

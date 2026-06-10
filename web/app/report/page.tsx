@@ -39,8 +39,9 @@ export default async function ReportPage({
         <p className="eyebrow">Report</p>
         <h1>Report stale or incorrect information</h1>
         <p className="detail-intro">
-          Send map, closure, disclosure, or stale-content issues directly into
-          the service review queue.
+          Send map, closure, disclosure, or stale-content issues into the
+          service review queue. Reports help us correct public guidance, but
+          they are not emergency support or restaurant customer service.
         </p>
       </header>
 
@@ -80,7 +81,7 @@ export default async function ReportPage({
           <textarea
             maxLength={2000}
             name="message"
-            placeholder="What should be corrected?"
+            placeholder="What should be corrected? Include the specific detail that looks stale or wrong."
             required
           />
         </label>
@@ -105,6 +106,35 @@ export default async function ReportPage({
           Submit report
         </button>
       </form>
+
+      <section className="section-block">
+        <div className="section-heading">
+          <p className="eyebrow">Review process</p>
+          <h2>What happens after a report</h2>
+        </div>
+        <ul className="content-list">
+          <li>
+            <div className="list-item-body">
+              <span className="meta-label">Queue</span>
+              <strong>Reports are reviewed before public content changes</strong>
+              <p>
+                We check whether the issue affects a published page, map link,
+                disclosure, or traveler-facing caution note.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div className="list-item-body">
+              <span className="meta-label">Privacy</span>
+              <strong>Only share what is needed for the correction</strong>
+              <p>
+                Do not send private, medical, financial, or account information.
+                An email address is optional and used only for follow-up.
+              </p>
+            </div>
+          </li>
+        </ul>
+      </section>
     </main>
   );
 }

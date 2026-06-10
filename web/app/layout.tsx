@@ -39,6 +39,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </nav>
         </header>
         {children}
+        <footer className="site-footer">
+          <nav aria-label="Trust and policy navigation">
+            <Link href="/editorial-policy">Editorial Policy</Link>
+            <Link href="/content-policy">Content Policy</Link>
+            <Link href="/disclosures">Disclosures</Link>
+            <Link href="/maps-notice">Maps Notice</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms</Link>
+          </nav>
+        </footer>
       </body>
     </html>
   );

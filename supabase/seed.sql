@@ -747,6 +747,49 @@ set
   is_representative = excluded.is_representative,
   display_order = excluded.display_order;
 
+with place_seed (
+  slug,
+  region_slug,
+  name_en,
+  name_ko,
+  editorial_note,
+  tourist_tags,
+  trust_tags,
+  caution_tags,
+  display_order
+) as (
+  values
+    ('sindang-tteokbokki-town', 'sindang', 'Sindang-dong Tteokbokki Town', '신당동 떡볶이 타운', 'A practical first stop for spicy tteokbokki in a compact food-street setting.', array['food_street', 'casual'], array['area_level', 'near_transit'], array['confirm_hours', 'spice_varies'], 10),
+    ('tongin-market', 'jongno', 'Tongin Market', '통인시장', 'A traditional market candidate for gireum tteokbokki and lunchbox-style browsing near Gyeongbokgung.', array['market', 'daytime'], array['area_level', 'near_palace'], array['confirm_hours', 'stall_availability_varies'], 20),
+    ('imun-seolnongtang', 'jongno', 'Imun Seolnongtang', '이문설농탕', 'A historic Seoul seolleongtang candidate for travelers who want a classic soup stop.', array['historic', 'soup'], array['restaurant_candidate', 'heritage_story'], array['confirm_hours', 'queues_possible'], 30),
+    ('gwangjang-market', 'gwangjang-market', 'Gwangjang Market', '광장시장', 'A high-signal market stop for bindaetteok, mayak gimbap, and beginner-friendly Korean market eating.', array['market', 'street_food'], array['area_level', 'tourist_friendly'], array['crowds', 'prices_vary_by_stall'], 40),
+    ('dongdaemun-dakhanmari-alley', 'dongdaemun', 'Dongdaemun Dak Hanmari Alley', '동대문 닭한마리 골목', 'A dish-specific alley for whole-chicken soup, shared pots, noodles, and a longer seated meal.', array['food_alley', 'group_meal'], array['area_level', 'dish_specific'], array['shared_pot', 'portion_size'], 50),
+    ('jangchung-jokbal-street', 'jangchung', 'Jangchung-dong Jokbal Street', '장충동 족발 골목', 'A classic Seoul jokbal area suited to late meals, group orders, and anju-style eating.', array['food_street', 'group_meal'], array['area_level', 'dish_specific'], array['portion_size', 'late_hours_vary'], 60),
+    ('tosokchon-samgyetang', 'jongno', 'Tosokchon Samgyetang', '토속촌 삼계탕', 'A high-recognition samgyetang candidate near the palace area, useful for a classic chicken-ginseng soup stop.', array['restaurant_candidate', 'palace_area'], array['known_candidate', 'near_transit'], array['queues_possible', 'confirm_hours'], 70),
+    ('myeongdong-kyoja', 'myeongdong', 'Myeongdong Kyoja', '명동교자', 'A recognizable Myeongdong kalguksu candidate for a simple noodle meal in a dense shopping district.', array['restaurant_candidate', 'shopping'], array['known_candidate', 'tourist_friendly'], array['queues_possible', 'branch_choice'], 80),
+    ('wooraeok', 'seoul', 'Woo Lae Oak', '우래옥', 'A Seoul naengmyeon candidate for travelers interested in cold noodles with a long-standing restaurant story.', array['restaurant_candidate', 'noodles'], array['known_candidate', 'classic_food'], array['confirm_hours', 'price_level_varies'], 90),
+    ('mapo-jeong-daepo', 'mapo', 'Mapo Jeong Daepo', '마포정대포', 'A Mapo Korean barbecue candidate for a casual grilled-meat meal and first BBQ route planning.', array['restaurant_candidate', 'bbq'], array['known_candidate', 'group_meal'], array['smoke', 'confirm_hours'], 100),
+    ('mapo-gopchang-area', 'mapo', 'Mapo Gopchang Area', '마포 곱창 지역', 'An area-level gopchang candidate that can later be narrowed into specific verified shops.', array['area', 'grill'], array['area_level', 'specialty_cluster'], array['shop_selection_needed', 'strong_flavors'], 110),
+    ('hongdae-chimaek-area', 'hongdae', 'Hongdae Chimaek Area', '홍대 치맥 지역', 'A casual evening area candidate for fried chicken, beer, nightlife, and flexible group plans.', array['area', 'nightlife'], array['area_level', 'group_friendly'], array['noise', 'late_hours_vary'], 120),
+    ('namdaemun-market-hotteok', 'seoul', 'Namdaemun Market Hotteok Area', '남대문시장 호떡 지역', 'A market-level hotteok candidate for seasonal sweet street-food browsing.', array['market', 'street_food'], array['area_level', 'seasonal'], array['seasonal_availability', 'cash_may_help'], 130),
+    ('seoul-winter-bungeoppang-stalls', 'seoul', 'Seoul Winter Bungeoppang Stalls', '서울 겨울 붕어빵 노점', 'A seasonal guidance placeholder for bungeoppang until fixed winter stall data is verified.', array['seasonal', 'street_food'], array['food_only_bridge', 'seasonal'], array['seasonal_availability', 'stall_locations_change'], 140),
+    ('suwon-galbi-street', 'suwon', 'Suwon Galbi Street', '수원 갈비 거리', 'A city-signature galbi area for a Gyeonggi day-trip meal centered on marinated beef ribs.', array['food_street', 'day_trip'], array['area_level', 'city_signature'], array['price_level_varies', 'reservation_may_help'], 150),
+    ('uijeongbu-budaejjigae-street', 'uijeongbu', 'Uijeongbu Budaejjigae Street', '의정부 부대찌개 거리', 'A dish-specific street for army stew and an easy north-of-Seoul food trip.', array['food_street', 'day_trip'], array['area_level', 'dish_specific'], array['spicy', 'shared_pot'], 160),
+    ('incheon-chinatown-jajangmyeon-area', 'incheon', 'Incheon Chinatown Jajangmyeon Area', '인천 차이나타운 자장면 지역', 'A food-history district for jajangmyeon, Chinatown walking, and museum-adjacent context.', array['district', 'food_history'], array['area_level', 'route_ready'], array['crowds', 'restaurant_choice_needed'], 170),
+    ('sinpo-international-market', 'incheon', 'Sinpo International Market', '신포국제시장', 'A market-level dakgangjeong candidate that can support an Incheon snack route.', array['market', 'snack'], array['area_level', 'city_signature'], array['queues_possible', 'stall_availability_varies'], 180),
+    ('incheon-seafood-market-area', 'incheon', 'Incheon Seafood Market Area', '인천 해산물 시장 지역', 'A seafood-market candidate for seasonal Incheon seafood guidance after exact market choice is confirmed.', array['market', 'seafood'], array['area_level', 'seasonal'], array['prices_vary', 'confirm_market_choice'], 190),
+    ('anyang-central-market', 'anyang', 'Anyang Central Market', '안양중앙시장', 'A market-level candidate for sundae, gopchang, and casual local food discovery.', array['market', 'local_food'], array['area_level', 'local_market'], array['stall_availability_varies', 'confirm_hours'], 200),
+    ('icheon-rice-table-area', 'icheon', 'Icheon Rice Table Area', '이천 쌀밥 지역', 'A city-level rice-table candidate for Korean set meals built around Icheon rice.', array['area', 'day_trip'], array['city_signature', 'meal_candidate'], array['restaurant_choice_needed', 'travel_time'], 210),
+    ('pocheon-idong-galbi-village', 'pocheon', 'Pocheon Idong Galbi Village', '포천 이동갈비촌', 'A day-trip food village candidate centered on Pocheon Idong galbi.', array['food_village', 'day_trip'], array['area_level', 'city_signature'], array['driving_may_help', 'price_level_varies'], 220),
+    ('yangpyeong-haejangguk-area', 'yangpyeong', 'Yangpyeong Haejangguk Area', '양평 해장국 지역', 'An area-level haejangguk candidate for a hearty soup stop east of Seoul.', array['area', 'soup'], array['city_signature', 'meal_candidate'], array['restaurant_choice_needed', 'confirm_hours'], 230),
+    ('gapyeong-pine-nut-noodle-area', 'gapyeong', 'Gapyeong Pine Nut Noodle Area', '가평 잣국수 지역', 'A Gapyeong pine-nut noodle candidate for travelers pairing food with nature routes.', array['area', 'day_trip'], array['ingredient_region', 'seasonal'], array['dish_wording_to_confirm', 'travel_time'], 240),
+    ('namhansanseong-restaurant-area', 'namhansanseong', 'Namhansanseong Restaurant Area', '남한산성 식당 지역', 'A fortress-area chicken soup candidate that pairs food with a heritage walk.', array['area', 'heritage'], array['area_level', 'route_ready'], array['hillside_access', 'confirm_hours'], 250),
+    ('paju-jangdan-soybean-area', 'paju', 'Paju Jangdan Soybean Area', '파주 장단콩 지역', 'A Paju soybean-food candidate for future tofu or set-meal verification near day-trip routes.', array['area', 'ingredient'], array['ingredient_region', 'candidate'], array['restaurant_choice_needed', 'travel_time'], 260),
+    ('ansan-wongok-multicultural-food-street', 'ansan', 'Wongok-dong Multicultural Food Street', '원곡동 다문화 음식거리', 'A multicultural food-street candidate for a different side of capital-region food discovery.', array['food_street', 'multicultural'], array['area_level', 'distinctive'], array['cuisine_scope_varies', 'confirm_current_name'], 270),
+    ('yongin-jungang-market', 'yongin', 'Yongin Jungang Market', '용인중앙시장', 'A local market candidate for sundae and simple food stops near central Yongin.', array['market', 'local_food'], array['area_level', 'near_transit'], array['stall_availability_varies', 'confirm_hours'], 280),
+    ('gwangmyeong-traditional-market', 'gwangmyeong', 'Gwangmyeong Traditional Market', '광명전통시장', 'A market-level candidate for broad Gyeonggi snack and meal discovery.', array['market', 'local_food'], array['area_level', 'near_seoul'], array['food_items_to_confirm', 'crowds'], 290),
+    ('myeongdong-street-food-loop', 'myeongdong', 'Myeongdong Street Food Loop', '명동 길거리 음식 루프', 'A beginner-friendly evening walk for snacks, shopping, and easy transit.', array['first_time', 'shopping'], array['tourist_friendly', 'near_transit'], array['prices_vary_by_stall'], 300)
+)
 insert into public.places (
   slug,
   region_id,
@@ -761,19 +804,19 @@ insert into public.places (
   display_order
 )
 select
-  'myeongdong-street-food-loop',
+  place_seed.slug,
   regions.id,
-  'Myeongdong Street Food Loop',
-  '명동 길거리 음식 루프',
-  'A beginner-friendly evening walk for snacks, shopping, and easy transit.',
-  array['first_time', 'shopping'],
-  array['tourist_friendly', 'near_transit'],
-  array['prices_vary_by_stall'],
+  place_seed.name_en,
+  place_seed.name_ko,
+  place_seed.editorial_note,
+  place_seed.tourist_tags,
+  place_seed.trust_tags,
+  place_seed.caution_tags,
   current_date,
   'published',
-  10
-from public.regions
-where regions.slug = 'myeongdong'
+  place_seed.display_order
+from place_seed
+join public.regions on regions.slug = place_seed.region_slug
 on conflict (slug) do update
 set
   region_id = excluded.region_id,
@@ -787,6 +830,42 @@ set
   status = excluded.status,
   display_order = excluded.display_order;
 
+with links (place_slug, food_slug, is_signature, display_order) as (
+  values
+    ('sindang-tteokbokki-town', 'tteokbokki', true, 10),
+    ('tongin-market', 'gireum-tteokbokki', true, 20),
+    ('imun-seolnongtang', 'seolleongtang', true, 30),
+    ('gwangjang-market', 'gwangjang-bindaetteok', true, 40),
+    ('gwangjang-market', 'mayak-gimbap', true, 50),
+    ('dongdaemun-dakhanmari-alley', 'dakhanmari', true, 60),
+    ('jangchung-jokbal-street', 'jangchung-jokbal', true, 70),
+    ('tosokchon-samgyetang', 'samgyetang', true, 80),
+    ('myeongdong-kyoja', 'myeongdong-kalguksu', true, 90),
+    ('wooraeok', 'seoul-naengmyeon', true, 100),
+    ('mapo-jeong-daepo', 'korean-bbq', true, 110),
+    ('mapo-gopchang-area', 'gopchang-gui', true, 120),
+    ('hongdae-chimaek-area', 'chimaek', true, 130),
+    ('namdaemun-market-hotteok', 'hotteok', true, 140),
+    ('seoul-winter-bungeoppang-stalls', 'bungeoppang', true, 150),
+    ('suwon-galbi-street', 'suwon-galbi', true, 160),
+    ('uijeongbu-budaejjigae-street', 'uijeongbu-budae-jjigae', true, 170),
+    ('incheon-chinatown-jajangmyeon-area', 'incheon-jajangmyeon', true, 180),
+    ('sinpo-international-market', 'sinpo-dakgangjeong', true, 190),
+    ('incheon-seafood-market-area', 'incheon-seafood', true, 200),
+    ('anyang-central-market', 'anyang-sundae-gopchang', true, 210),
+    ('icheon-rice-table-area', 'icheon-rice-table', true, 220),
+    ('pocheon-idong-galbi-village', 'pocheon-idong-galbi', true, 230),
+    ('yangpyeong-haejangguk-area', 'yangpyeong-haejangguk', true, 240),
+    ('gapyeong-pine-nut-noodle-area', 'gapyeong-pine-nut-makguksu', true, 250),
+    ('namhansanseong-restaurant-area', 'namhansanseong-dakbaeksuk', true, 260),
+    ('paju-jangdan-soybean-area', 'paju-jangdan-soybean', true, 270),
+    ('ansan-wongok-multicultural-food-street', 'ansan-multicultural-food-street', true, 280),
+    ('yongin-jungang-market', 'yongin-market-sundae', true, 290),
+    ('gwangmyeong-traditional-market', 'gwangmyeong-market-food', true, 300),
+    ('myeongdong-street-food-loop', 'tteokbokki', false, 310),
+    ('myeongdong-street-food-loop', 'hotteok', false, 320),
+    ('myeongdong-street-food-loop', 'bungeoppang', false, 330)
+)
 insert into public.place_foods (
   place_id,
   food_id,
@@ -796,17 +875,33 @@ insert into public.place_foods (
 select
   places.id,
   foods.id,
-  true,
-  10
-from public.places
-cross join public.foods
-where places.slug = 'myeongdong-street-food-loop'
-  and foods.slug = 'tteokbokki'
+  links.is_signature,
+  links.display_order
+from links
+join public.places on places.slug = links.place_slug
+join public.foods on foods.slug = links.food_slug
 on conflict (place_id, food_id) do update
 set
   is_signature = excluded.is_signature,
   display_order = excluded.display_order;
 
+with route_seed (
+  slug,
+  region_slug,
+  title,
+  summary,
+  estimated_duration,
+  transport_mode,
+  recommended_for_tags,
+  display_order
+) as (
+  values
+    ('seoul-first-time-street-food', 'seoul', 'Seoul First-Time Street Food', 'A compact beginner route linking Myeongdong, Gwangjang Market, and Dongdaemun-style comfort food.', 'Half day', 'subway and walk', array['first_time', 'street_food', 'market'], 10),
+    ('historic-seoul-soups-and-noodles', 'jongno', 'Historic Seoul Soups and Noodles', 'A slower Seoul route for classic soup and noodle candidates near Jongno and Myeongdong.', 'Half day', 'subway and walk', array['classic_food', 'soup', 'noodles'], 20),
+    ('incheon-food-origins', 'incheon', 'Incheon Food Origins', 'A day-trip route for Chinatown jajangmyeon, Sinpo dakgangjeong, and seafood-market context.', 'Day trip', 'subway and walk', array['day_trip', 'food_history', 'market'], 30),
+    ('gyeonggi-signature-day-trips', 'suwon', 'Gyeonggi Signature Day Trips', 'A planning route for signature Gyeonggi foods across Suwon, Uijeongbu, Pocheon, Icheon, and nearby cities.', 'Multi-stop planning', 'rail, bus, or car', array['day_trip', 'signature_food', 'planning'], 40),
+    ('myeongdong-first-night', 'myeongdong', 'Myeongdong First Night', 'A low-risk first evening route for snacks, shopping, and easy transit.', '90 minutes', 'walk', array['first_time', 'street_food'], 50)
+)
 insert into public.route_guides (
   slug,
   region_id,
@@ -819,17 +914,17 @@ insert into public.route_guides (
   display_order
 )
 select
-  'myeongdong-first-night',
+  route_seed.slug,
   regions.id,
-  'Myeongdong First Night',
-  'A low-risk first evening route for snacks, shopping, and easy transit.',
-  '90 minutes',
-  'walk',
-  array['first_time', 'street_food'],
+  route_seed.title,
+  route_seed.summary,
+  route_seed.estimated_duration,
+  route_seed.transport_mode,
+  route_seed.recommended_for_tags,
   'published',
-  10
-from public.regions
-where regions.slug = 'myeongdong'
+  route_seed.display_order
+from route_seed
+join public.regions on regions.slug = route_seed.region_slug
 on conflict (slug) do update
 set
   region_id = excluded.region_id,
@@ -841,6 +936,24 @@ set
   status = excluded.status,
   display_order = excluded.display_order;
 
+with route_links (route_slug, place_slug, step_order, step_note) as (
+  values
+    ('seoul-first-time-street-food', 'myeongdong-street-food-loop', 1, 'Start with an easy shopping-district snack loop.'),
+    ('seoul-first-time-street-food', 'gwangjang-market', 2, 'Continue to a market stop for bindaetteok and mayak gimbap.'),
+    ('seoul-first-time-street-food', 'dongdaemun-dakhanmari-alley', 3, 'End with a seated shared-pot meal if the group wants dinner.'),
+    ('historic-seoul-soups-and-noodles', 'imun-seolnongtang', 1, 'Begin with a classic Seoul soup candidate.'),
+    ('historic-seoul-soups-and-noodles', 'myeongdong-kyoja', 2, 'Add a tourist-friendly kalguksu stop in Myeongdong.'),
+    ('historic-seoul-soups-and-noodles', 'wooraeok', 3, 'Use the naengmyeon candidate as a separate meal stop.'),
+    ('incheon-food-origins', 'incheon-chinatown-jajangmyeon-area', 1, 'Start with Chinatown and jajangmyeon history.'),
+    ('incheon-food-origins', 'sinpo-international-market', 2, 'Add a market snack stop for dakgangjeong.'),
+    ('incheon-food-origins', 'incheon-seafood-market-area', 3, 'Use the seafood market area as an optional final stop after verification.'),
+    ('gyeonggi-signature-day-trips', 'suwon-galbi-street', 1, 'Use Suwon galbi as the strongest first Gyeonggi day-trip anchor.'),
+    ('gyeonggi-signature-day-trips', 'uijeongbu-budaejjigae-street', 2, 'Plan Uijeongbu as a separate north-of-Seoul stew trip.'),
+    ('gyeonggi-signature-day-trips', 'pocheon-idong-galbi-village', 3, 'Treat Pocheon as a car-friendly or long day-trip option.'),
+    ('gyeonggi-signature-day-trips', 'icheon-rice-table-area', 4, 'Use Icheon rice-table meals as another separate day-trip branch.'),
+    ('gyeonggi-signature-day-trips', 'namhansanseong-restaurant-area', 5, 'Pair fortress walking with chicken soup candidates after transport checks.'),
+    ('myeongdong-first-night', 'myeongdong-street-food-loop', 1, 'Start with a compact snack loop near transit and shopping streets.')
+)
 insert into public.route_guide_places (
   route_guide_id,
   place_id,
@@ -850,12 +963,11 @@ insert into public.route_guide_places (
 select
   route_guides.id,
   places.id,
-  1,
-  'Start with a compact snack loop near transit and shopping streets.'
-from public.route_guides
-cross join public.places
-where route_guides.slug = 'myeongdong-first-night'
-  and places.slug = 'myeongdong-street-food-loop'
+  route_links.step_order,
+  route_links.step_note
+from route_links
+join public.route_guides on route_guides.slug = route_links.route_slug
+join public.places on places.slug = route_links.place_slug
 on conflict (route_guide_id, place_id) do update
 set
   step_order = excluded.step_order,

@@ -112,5 +112,19 @@ Before inserting real content into Supabase, each item needs:
 - `supabase/seed.sql` has been expanded locally with 23 published regions,
   30 published foods, and 42 public region-food relationships.
 - Local Supabase reset and Next.js build against the expanded local seed pass.
-- Remote staging apply is pending because it requires the user's newly reset DB
-  password.
+- Remote staging apply is complete after the user reset the DB password.
+- Staging REST/RLS verification confirmed 23 regions, 30 foods, and 42
+  region-food relationships.
+- Staging seed build generated 80 public routes.
+- Trust surface polish is implemented for editorial policy, content policy,
+  disclosures, maps notice, privacy, terms, report, and contact.
+- A reviewable place-candidate seed draft was created at
+  `docs/00-research/sprint-3-place-candidate-seed.research.md`.
+- The user completed review of the place-candidate seed draft.
+- `supabase/seed.sql` now promotes reviewed candidates into published alpha
+  `places`, `place_foods`, `route_guides`, and `route_guide_places`.
+
+## Current Next Step
+
+Verify the expanded seed locally and then apply it to staging. Later edits can
+be made by updating `supabase/seed.sql` until Admin MVP editing exists.

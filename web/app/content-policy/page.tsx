@@ -14,6 +14,40 @@ export default function ContentPolicyPage() {
           listings are deferred until moderation and audit workflows exist.
         </p>
       </header>
+      <ul className="content-list">
+        <li>
+          <div className="list-item-body">
+            <span className="meta-label">Included</span>
+            <strong>Curated discovery content</strong>
+            <p>
+              Alpha content may include regions, foods, place candidates, route
+              guides, trust labels, caution notes, map links, and correction
+              paths.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div className="list-item-body">
+            <span className="meta-label">Deferred</span>
+            <strong>User-generated content is not part of alpha</strong>
+            <p>
+              Public reviews, ratings, uploads, comments, restaurant owner
+              dashboards, and paid self-service listings are not enabled yet.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div className="list-item-body">
+            <span className="meta-label">Moderation</span>
+            <strong>Higher-risk features need moderation first</strong>
+            <p>
+              Any future UGC, restaurant claims, ads, or booking flows require
+              abuse controls, audit logs, and clearer user-facing rules before
+              release.
+            </p>
+          </div>
+        </li>
+      </ul>
     </main>
   );
 }

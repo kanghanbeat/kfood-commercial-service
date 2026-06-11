@@ -44,9 +44,14 @@ export default function AdminPage() {
         <p className="eyebrow">Admin MVP</p>
         <h1>Content operations dashboard</h1>
         <p className="detail-intro">
-          This skeleton defines the admin surface. Authentication, RLS-backed
-          writes, and audit log insertion are enabled after Supabase verification.
+          This alpha admin surface is protected by a server-side session cookie.
+          Supabase Auth, RLS-backed writes, and audit log insertion come next.
         </p>
+        <div className="action-row">
+          <Link className="button secondary" href="/admin/logout">
+            Sign out
+          </Link>
+        </div>
       </header>
       <ul className="directory-grid">
         {adminModules.map((module) => (

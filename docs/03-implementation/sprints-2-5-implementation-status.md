@@ -1,7 +1,7 @@
 # Sprints 2-5 Implementation Status
 
-Status: Sprint 3 started  
-Date: 2026-06-10
+Status: Operational MVP hardening in progress  
+Date: 2026-06-11
 
 ## Summary
 
@@ -47,6 +47,8 @@ Implemented:
 - Pre-Sprint 3 cleanup renamed public data types from `Alpha*` to `Public*`.
 - `/report` now includes supported report type validation, URL validation,
   minimum message length, email length guard, and a honeypot field.
+- `/report` now uses a hashed reporter fingerprint and Supabase RPC rate limit
+  to allow five submissions per 10-minute window before blocking the sixth.
 
 Important:
 
@@ -79,10 +81,10 @@ Implemented public routes:
 
 Current limitation:
 
-- `/report` insert is enabled for alpha with minimum abuse checks. It still
-  needs real rate limiting before public launch.
 - Privacy/terms are launch placeholders and need final legal copy before
   public production release.
+- `/photo-sources` remains an internal review board. It is not linked in the
+  public footer, is excluded from sitemap, and is marked noindex.
 
 Sprint 3 user decision:
 
@@ -99,6 +101,13 @@ Sprint 3 user decision:
   - 42 public region-food relationships
 - Remote staging seed apply and REST/RLS verification are complete.
 - Staging build now generates 80 routes from the expanded seed.
+- Place/route seed expansion is complete:
+  - 30 published places
+  - 33 place-food relationships
+  - 5 route guides
+  - 15 route-place relationships
+- Staging build now generates 114 routes from published Supabase data.
+- Place pages show Google Maps, Naver Map, and business-hours warning copy.
 
 ## Sprint 4: Admin MVP Skeleton
 
@@ -117,9 +126,9 @@ Implemented admin routes:
 
 Current limitation:
 
-- Admin auth, server-side mutations, RLS-backed writes, and audit-log inserts
-  are not enabled yet.
-- The skeleton defines workflow shape only.
+- Admin is protected by a temporary alpha session gate in production.
+- Supabase Auth, server-side mutations, RLS-backed writes, and audit-log
+  inserts are not enabled yet.
 
 ## Sprint 5: Alpha Deploy Readiness
 
@@ -130,14 +139,18 @@ Implemented:
 - public policy placeholders
 - admin route disallow in robots
 - deploy readiness checklist
+- temporary alpha admin route protection
+- `/photo-sources` public de-indexing
+- `docs/05-release/alpha-deploy-readiness.md`
 
 Still required before alpha deploy:
 
 1. Connect deployed env vars.
-2. Replace placeholder content with verified Seoul alpha data.
-3. Finalize privacy, terms, disclosures, and editorial policy.
-4. Add deployed rate limiting for public report submission.
-5. Start Admin MVP auth and mutations.
+2. Set `ADMIN_ACCESS_PASSWORD`, `ADMIN_SESSION_SECRET`, and
+   `REPORT_RATE_LIMIT_SALT`.
+3. Decide staging-vs-production Supabase project for alpha.
+4. Connect Vercel project and domain.
+5. Start Supabase Auth-based Admin MVP mutations and audit logs.
 
 ## Verification Commands
 

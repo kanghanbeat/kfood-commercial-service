@@ -1,22 +1,22 @@
 # Alpha Deploy Readiness Checklist
 
-Status: Not ready, foundation present  
-Date: 2026-06-09
+Status: Partially ready, operational hardening in progress  
+Date: 2026-06-11
 
 ## Build
 
 - [x] Root workspace exists.
 - [x] Next.js public routes build.
 - [x] `npm run check` passes.
-- [x] `npm run web:build` passes.
+- [x] `npm run web:build` passes against staging Supabase data.
 - [x] sitemap and robots routes exist.
 
 ## Repository
 
 - [x] Root local Git commits exist.
-- [ ] Root GitHub remote selected.
-- [ ] Root `main` pushed.
-- [ ] Legacy `frontend/` strategy finalized.
+- [x] Root GitHub remote selected.
+- [x] Root `main` pushed.
+- [x] Legacy `frontend/` strategy finalized as reference-only prototype.
 
 ## Supabase
 
@@ -24,9 +24,11 @@ Date: 2026-06-09
 - [x] RLS policies drafted.
 - [x] Verification seed prepared.
 - [x] RLS verification SQL prepared.
-- [ ] Migrations applied to local or staging Supabase.
-- [ ] RLS verified with published/draft rows.
-- [ ] Anonymous report insert verified.
+- [x] Migrations applied to local and/or staging Supabase.
+- [x] RLS verified with published/draft rows.
+- [x] Anonymous report insert verified.
+- [x] Report rate limit verified through Supabase RPC.
+- [x] Place map/business info applied to 30 published places.
 
 ## Public Trust Surface
 
@@ -36,22 +38,24 @@ Date: 2026-06-09
 - [x] Content policy exists.
 - [x] Disclosures page exists.
 - [x] Maps notice exists.
-- [ ] Final privacy policy.
-- [ ] Final terms.
-- [ ] Verified Seoul alpha content.
+- [x] Alpha privacy policy placeholder exists.
+- [x] Alpha terms placeholder exists.
+- [x] Verified capital-region alpha content seed exists.
+- [x] `/photo-sources` is hidden from footer/sitemap and marked noindex.
 
 ## Admin
 
 - [x] Admin route skeleton exists.
 - [x] Admin modules mapped.
+- [x] Temporary alpha admin route protection.
 - [ ] Supabase Auth login.
-- [ ] Admin route protection.
 - [ ] CRUD mutations.
 - [ ] Audit-log writes.
 
 ## Deploy
 
 - [x] `.env.example` exists.
+- [x] Alpha deploy readiness document exists.
 - [ ] Vercel project connected.
 - [ ] Supabase project linked.
 - [ ] Production env vars set.

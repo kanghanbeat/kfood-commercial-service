@@ -7,7 +7,11 @@ import {
 } from "@kfood/data";
 
 export const metadata = {
-  title: "Food Photo Sources"
+  title: "Food Photo Sources",
+  robots: {
+    follow: false,
+    index: false
+  }
 };
 
 export default async function PhotoSourcesPage() {

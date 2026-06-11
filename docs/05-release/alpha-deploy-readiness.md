@@ -19,6 +19,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://gpwxiakwlghjzvoxwpnw.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase anon public key>
 NEXT_PUBLIC_ALLOW_ALPHA_FALLBACK=
 REPORT_RATE_LIMIT_SALT=<long random server-only value>
+ADMIN_ACCESS_PASSWORD=<temporary alpha admin password>
+ADMIN_SESSION_SECRET=<long random server-only value>
 ```
 
 Do not set these as public variables:
@@ -26,6 +28,8 @@ Do not set these as public variables:
 ```text
 SUPABASE_SERVICE_ROLE_KEY
 REPORT_RATE_LIMIT_SALT
+ADMIN_ACCESS_PASSWORD
+ADMIN_SESSION_SECRET
 ```
 
 ## Release Checks
@@ -36,6 +40,9 @@ REPORT_RATE_LIMIT_SALT
 - `/places/[placeSlug]` shows Google Maps, Naver Map, and live-hours warnings.
 - `/photo-sources` remains a review board only; no actual food photos are
   published yet.
+- `/photo-sources` is not linked in the footer, is excluded from the sitemap,
+  and is marked noindex.
+- `/admin/*` requires the temporary alpha admin session in production.
 - `supabase/migrations/003_crawling_service_schema.sql` remains out of the
   current service release scope unless explicitly reintroduced.
 
@@ -45,5 +52,7 @@ REPORT_RATE_LIMIT_SALT
 - Add environment variables in the deployment dashboard.
 - Configure the production domain.
 - Configure Supabase Auth roles before enabling admin mutations.
+- Replace the temporary alpha admin gate with Supabase Auth before broader
+  launch.
 - Decide whether alpha uses the current staging Supabase project or a separate
   production Supabase project.

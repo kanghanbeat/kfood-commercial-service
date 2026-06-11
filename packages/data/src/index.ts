@@ -355,6 +355,25 @@ function createPublicClient() {
   });
 }
 
+function createAuthenticatedClient(accessToken: string) {
+  const config = getSupabaseConfig();
+
+  if (!config) {
+    return null;
+  }
+
+  return createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: false
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
+  });
+}
+
 type RegionRow = {
   slug: string;
   name_en: string;
@@ -422,6 +441,51 @@ export type ContentReportResult =
   | { ok: true }
   | { ok: false; message: string };
 
+export type AdminReportStatus =
+  | "pending"
+  | "in_review"
+  | "resolved"
+  | "ignored";
+
+export type AdminReport = {
+  id: string;
+  pageUrl: string;
+  entityType: string | null;
+  entityId: string | null;
+  reportType: string;
+  message: string;
+  userEmail: string | null;
+  status: AdminReportStatus;
+  adminNote: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+};
+
+type AdminReportRow = {
+  id: string;
+  page_url: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  report_type: string;
+  message: string;
+  user_email: string | null;
+  status: AdminReportStatus;
+  admin_note: string | null;
+  resolved_at: string | null;
+  created_at: string;
+};
+
+export type UpdateAdminReportInput = {
+  reportId: string;
+  status: AdminReportStatus;
+  adminNote?: string | null;
+  actorId: string;
+};
+
+export type AdminMutationResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
 const reportRateLimitWindowMs = 10 * 60 * 1000;
 
 function getReportRateLimitWindow(date = new Date()) {
@@ -439,6 +503,22 @@ function firstRelatedSlug(
   }
 
   return related?.slug;
+}
+
+function mapAdminReport(row: AdminReportRow): AdminReport {
+  return {
+    adminNote: row.admin_note,
+    createdAt: row.created_at,
+    entityId: row.entity_id,
+    entityType: row.entity_type,
+    id: row.id,
+    message: row.message,
+    pageUrl: row.page_url,
+    reportType: row.report_type,
+    resolvedAt: row.resolved_at,
+    status: row.status,
+    userEmail: row.user_email
+  };
 }
 
 function mapRegion(row: RegionRow): PublicRegion {
@@ -933,6 +1013,83 @@ export async function getPublishedRoutes() {
 export async function getPublishedRoute(slug: string) {
   const routes = await getPublishedRoutes();
   return routes.find((route) => route.slug === slug);
+}
+
+export async function getAdminReports(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("content_reports")
+    .select(
+      "id, page_url, entity_type, entity_id, report_type, message, user_email, status, admin_note, resolved_at, created_at"
+    )
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminReport(row as AdminReportRow));
+}
+
+export async function updateAdminReportStatus(
+  accessToken: string,
+  input: UpdateAdminReportInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("content_reports")
+    .select("*")
+    .eq("id", input.reportId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Report was not found." };
+  }
+
+  const isTerminal = ["resolved", "ignored"].includes(input.status);
+  const updatePayload = {
+    admin_note: input.adminNote?.trim() || null,
+    resolved_at: isTerminal ? new Date().toISOString() : null,
+    resolved_by: isTerminal ? input.actorId : null,
+    status: input.status
+  };
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("content_reports")
+    .update(updatePayload)
+    .eq("id", input.reportId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Report status could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "content_report.update_status",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.reportId,
+    entity_type: "content_report"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Report updated, but audit log failed." };
+  }
+
+  return { ok: true };
 }
 
 export async function submitContentReport(

@@ -47,10 +47,12 @@ Date: 2026-06-11
 
 - [x] Admin route skeleton exists.
 - [x] Admin modules mapped.
-- [x] Temporary alpha admin route protection.
-- [ ] Supabase Auth login.
+- [x] Supabase Auth login.
+- [x] Admin route protection.
+- [x] Reports read/update workflow.
+- [x] Report audit-log writes.
 - [ ] CRUD mutations.
-- [ ] Audit-log writes.
+- [ ] Places edit mutations.
 
 ## Deploy
 
@@ -59,6 +61,7 @@ Date: 2026-06-11
 - [ ] Vercel project connected.
 - [ ] Supabase project linked.
 - [ ] Production env vars set.
+- [ ] First Supabase Auth admin account created.
 - [ ] Analytics selected.
 - [ ] Error monitoring selected.
 - [ ] Rollback process documented.

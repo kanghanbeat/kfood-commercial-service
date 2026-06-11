@@ -126,9 +126,11 @@ Implemented admin routes:
 
 Current limitation:
 
-- Admin is protected by a temporary alpha session gate in production.
-- Supabase Auth, server-side mutations, RLS-backed writes, and audit-log
-  inserts are not enabled yet.
+- Admin login uses Supabase Auth email/password.
+- Admin pages verify `profiles.role` server-side through `requireAdminSession()`.
+- `/admin/reports` reads real `content_reports` rows through RLS.
+- Report status updates write `content_reports` and insert `admin_audit_logs`.
+- Places, foods, regions, and routes edit mutations are not enabled yet.
 
 ## Sprint 5: Alpha Deploy Readiness
 
@@ -139,18 +141,19 @@ Implemented:
 - public policy placeholders
 - admin route disallow in robots
 - deploy readiness checklist
-- temporary alpha admin route protection
+- Supabase Auth admin route protection
+- report review workflow and audit-log writes
 - `/photo-sources` public de-indexing
 - `docs/05-release/alpha-deploy-readiness.md`
 
 Still required before alpha deploy:
 
 1. Connect deployed env vars.
-2. Set `ADMIN_ACCESS_PASSWORD`, `ADMIN_SESSION_SECRET`, and
-   `REPORT_RATE_LIMIT_SALT`.
+2. Set `REPORT_RATE_LIMIT_SALT`.
 3. Decide staging-vs-production Supabase project for alpha.
 4. Connect Vercel project and domain.
-5. Start Supabase Auth-based Admin MVP mutations and audit logs.
+5. Create the first Supabase Auth admin account and profile row.
+6. Start Places edit mutations.
 
 ## Verification Commands
 

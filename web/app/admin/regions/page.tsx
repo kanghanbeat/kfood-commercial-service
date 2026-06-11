@@ -1,10 +1,13 @@
 import { getPublishedRegions } from "@kfood/data";
 
+import { requireAdminSession } from "@/lib/admin-auth";
+
 export const metadata = {
   title: "Admin Regions"
 };
 
 export default async function AdminRegionsPage() {
+  await requireAdminSession();
   const regions = await getPublishedRegions();
 
   return (

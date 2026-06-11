@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { requireAdminSession } from "@/lib/admin-auth";
+
 export const metadata = {
   title: "Admin"
 };
@@ -37,15 +39,17 @@ const adminModules = [
   }
 ];
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const session = await requireAdminSession();
+
   return (
     <main className="page-shell">
       <header className="detail-header">
         <p className="eyebrow">Admin MVP</p>
         <h1>Content operations dashboard</h1>
         <p className="detail-intro">
-          This alpha admin surface is protected by a server-side session cookie.
-          Supabase Auth, RLS-backed writes, and audit log insertion come next.
+          Signed in as {session.email ?? session.userId} with {session.role}
+          access. Reports now use Supabase Auth and RLS-backed operations.
         </p>
         <div className="action-row">
           <Link className="button secondary" href="/admin/logout">

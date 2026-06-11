@@ -1,8 +1,12 @@
+import { requireAdminSession } from "@/lib/admin-auth";
+
 export const metadata = {
   title: "Admin Audit Logs"
 };
 
-export default function AdminAuditLogsPage() {
+export default async function AdminAuditLogsPage() {
+  await requireAdminSession();
+
   return (
     <main className="page-shell">
       <header className="detail-header">

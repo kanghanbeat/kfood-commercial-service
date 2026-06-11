@@ -1,10 +1,13 @@
 import { getPublishedRoutes } from "@kfood/data";
 
+import { requireAdminSession } from "@/lib/admin-auth";
+
 export const metadata = {
   title: "Admin Routes"
 };
 
 export default async function AdminRoutesPage() {
+  await requireAdminSession();
   const routes = await getPublishedRoutes();
 
   return (

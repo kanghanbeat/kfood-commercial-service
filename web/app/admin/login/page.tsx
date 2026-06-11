@@ -1,57 +1,65 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
-
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+
+import {
+  createSupabaseAuthClient,
+  createSupabaseUserClient,
+  setAdminAuthCookies
+} from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Admin Login"
 };
 
-const adminSessionCookie = "kfood_admin_session";
-const sessionDurationMs = 8 * 60 * 60 * 1000;
-
-function safeEquals(value: string, expected: string) {
-  const valueBuffer = Buffer.from(value);
-  const expectedBuffer = Buffer.from(expected);
-
-  if (valueBuffer.length !== expectedBuffer.length) {
-    return false;
-  }
-
-  return timingSafeEqual(valueBuffer, expectedBuffer);
-}
-
-function sign(value: string, secret: string) {
-  return createHmac("sha256", secret).update(value).digest("hex");
+function redirectWithError(message: string): never {
+  redirect(`/admin/login?error=${encodeURIComponent(message)}`);
 }
 
 async function signIn(formData: FormData) {
   "use server";
 
+  const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const nextPath = String(formData.get("next") ?? "/admin");
-  const expectedPassword = process.env.ADMIN_ACCESS_PASSWORD;
-  const sessionSecret = process.env.ADMIN_SESSION_SECRET;
+  const supabase = createSupabaseAuthClient();
 
-  if (!expectedPassword || !sessionSecret) {
-    redirect("/admin/login?error=Admin access is not configured.");
+  if (!supabase) {
+    redirectWithError("Supabase Auth is not configured.");
   }
 
-  if (!safeEquals(password, expectedPassword)) {
-    redirect("/admin/login?error=Invalid admin password.");
-  }
-
-  const expiresAt = String(Date.now() + sessionDurationMs);
-  const token = `${expiresAt}.${sign(expiresAt, sessionSecret)}`;
-  const cookieStore = await cookies();
-
-  cookieStore.set(adminSessionCookie, token, {
-    httpOnly: true,
-    maxAge: sessionDurationMs / 1000,
-    path: "/admin",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production"
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
   });
+
+  if (error || !data.session || !data.user) {
+    redirectWithError("Invalid admin credentials.");
+  }
+
+  const userClient = createSupabaseUserClient(data.session.access_token);
+
+  if (!userClient) {
+    redirectWithError("Supabase Auth is not configured.");
+  }
+
+  const { data: profile, error: profileError } = await userClient
+    .from("profiles")
+    .select("role, is_active")
+    .eq("id", data.user.id)
+    .maybeSingle<{ role: "user" | "editor" | "admin"; is_active: boolean }>();
+
+  if (
+    profileError ||
+    !profile ||
+    !profile.is_active ||
+    !["admin", "editor"].includes(profile.role)
+  ) {
+    redirectWithError("This account is not allowed to access admin.");
+  }
+
+  await setAdminAuthCookies(
+    data.session.access_token,
+    data.session.refresh_token
+  );
 
   redirect(nextPath.startsWith("/admin") ? nextPath : "/admin");
 }
@@ -69,13 +77,22 @@ export default async function AdminLoginPage({
         <p className="eyebrow">Admin login</p>
         <h1>Sign in to manage content</h1>
         <p className="detail-intro">
-          This alpha admin gate protects operational review screens while
-          Supabase role-based editing is prepared.
+          Sign in with a Supabase account whose profile role is admin or editor.
         </p>
       </header>
       {params?.error ? <p className="status-message error">{params.error}</p> : null}
       <form action={signIn} className="form-panel">
         <input name="next" type="hidden" value={params?.next ?? "/admin"} />
+        <label>
+          Email
+          <input
+            autoComplete="email"
+            name="email"
+            placeholder="admin@example.com"
+            required
+            type="email"
+          />
+        </label>
         <label>
           Password
           <input

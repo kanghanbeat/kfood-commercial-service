@@ -1,10 +1,13 @@
 import { getPublishedPlaces } from "@kfood/data";
 
+import { requireAdminSession } from "@/lib/admin-auth";
+
 export const metadata = {
   title: "Admin Places"
 };
 
 export default async function AdminPlacesPage() {
+  await requireAdminSession();
   const places = await getPublishedPlaces();
 
   return (

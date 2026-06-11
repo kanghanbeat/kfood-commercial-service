@@ -43,6 +43,8 @@ export type Place = {
   editorialNote: string;
   googleMapsUrl?: string | null;
   naverMapsUrl?: string | null;
+  businessHoursNote?: string | null;
+  businessInfoNote?: string | null;
   touristTags: string[];
   trustTags: string[];
   cautionTags: string[];

@@ -74,6 +74,29 @@ export type PublicFood = {
   beginnerNote: string;
 };
 
+export type PhotoSourceCandidate = {
+  sourceName: string;
+  href: string;
+  licenseFit: string;
+  reviewNote: string;
+};
+
+export type PhotoReviewState =
+  | "candidate_ok"
+  | "candidate_found"
+  | "association_proposal"
+  | "needs_people_free"
+  | "no_candidate"
+  | "wrong_subject"
+  | "unreviewed";
+
+export type PhotoReviewNote = {
+  state: PhotoReviewState;
+  label: string;
+  note: string;
+  nextAction: string;
+};
+
 export const fallbackFoods: PublicFood[] = [
   {
     slug: "tteokbokki",
@@ -133,6 +156,10 @@ export type PublicPlace = {
   regionSlug: string;
   foodSlugs: string[];
   editorialNote: string;
+  googleMapsUrl: string | null;
+  naverMapsUrl: string | null;
+  businessHoursNote: string | null;
+  businessInfoNote: string | null;
   trustTags: string[];
   cautionTags: string[];
   lastVerifiedLabel: string;
@@ -146,6 +173,13 @@ export const fallbackPlaces: PublicPlace[] = [
     foodSlugs: ["tteokbokki"],
     editorialNote:
       "A beginner-friendly evening walk where the value is variety and convenience rather than one destination restaurant.",
+    googleMapsUrl:
+      "https://www.google.com/maps/search/?api=1&query=Myeongdong+Street+Food+Loop",
+    naverMapsUrl: "https://map.naver.com/p/search/명동%20길거리%20음식",
+    businessHoursNote:
+      "Street stall hours vary by weather, season, and vendor. Check the live map before visiting.",
+    businessInfoNote:
+      "Area-level guide. Use map search to choose the exact stall or street segment.",
     trustTags: ["tourist friendly", "near transit"],
     cautionTags: ["prices vary by stall"],
     lastVerifiedLabel: "Editorial placeholder"
@@ -157,6 +191,13 @@ export const fallbackPlaces: PublicPlace[] = [
     foodSlugs: ["chimaek"],
     editorialNote:
       "Best used as a casual late-meal option after cafes, shopping, or music venues.",
+    googleMapsUrl:
+      "https://www.google.com/maps/search/?api=1&query=Hongdae+Chimaek",
+    naverMapsUrl: "https://map.naver.com/p/search/홍대%20치맥",
+    businessHoursNote:
+      "Many shops open later, but hours and last orders vary. Check the live map before visiting.",
+    businessInfoNote:
+      "Area-level guide. Pick a currently open shop from the linked map results.",
     trustTags: ["solo friendly", "late hours"],
     cautionTags: ["wait times on weekends"],
     lastVerifiedLabel: "Editorial placeholder"
@@ -168,6 +209,13 @@ export const fallbackPlaces: PublicPlace[] = [
     foodSlugs: ["korean-bbq"],
     editorialNote:
       "A cleaner, reservation-friendly BBQ direction for travelers who want less friction.",
+    googleMapsUrl:
+      "https://www.google.com/maps/search/?api=1&query=Gangnam+Korean+BBQ",
+    naverMapsUrl: "https://map.naver.com/p/search/강남%20고기집",
+    businessHoursNote:
+      "Restaurant hours, break times, and reservations vary. Check the live map before visiting.",
+    businessInfoNote:
+      "Area-level guide. Confirm the exact branch, reservation policy, and current reviews.",
     trustTags: ["card accepted", "premium"],
     cautionTags: ["confirm reservation"],
     lastVerifiedLabel: "Editorial placeholder"
@@ -179,6 +227,13 @@ export const fallbackPlaces: PublicPlace[] = [
     foodSlugs: ["samgyetang"],
     editorialNote:
       "A mild traditional meal direction that pairs well with palace or old-city walking routes.",
+    googleMapsUrl:
+      "https://www.google.com/maps/search/?api=1&query=Jongno+Samgyetang",
+    naverMapsUrl: "https://map.naver.com/p/search/종로%20삼계탕",
+    businessHoursNote:
+      "Restaurant hours and queue patterns vary. Check the live map before visiting.",
+    businessInfoNote:
+      "Area-level guide. Confirm exact restaurant choice and current operation.",
     trustTags: ["traditional", "non spicy"],
     cautionTags: ["peak lunch queue"],
     lastVerifiedLabel: "Editorial placeholder"
@@ -190,6 +245,13 @@ export const fallbackPlaces: PublicPlace[] = [
     foodSlugs: ["bindaetteok"],
     editorialNote:
       "A market-first experience where visitors should expect energy, crowds, and quick seating.",
+    googleMapsUrl:
+      "https://www.google.com/maps/search/?api=1&query=Gwangjang+Market+Bindaetteok",
+    naverMapsUrl: "https://map.naver.com/p/search/광장시장%20빈대떡",
+    businessHoursNote:
+      "Market stall hours vary by stall and day. Check the live map before visiting.",
+    businessInfoNote:
+      "Area-level guide. Use the map results to choose a current stall or row.",
     trustTags: ["local classic", "market"],
     cautionTags: ["crowded"],
     lastVerifiedLabel: "Editorial placeholder"
@@ -313,8 +375,14 @@ type FoodRow = {
 type PlaceRow = {
   slug: string;
   name_en: string;
+  name_ko: string | null;
   editorial_note: string;
+  google_maps_url?: string | null;
+  naver_maps_url?: string | null;
+  business_hours_note?: string | null;
+  business_info_note?: string | null;
   trust_tags: string[];
+  tourist_tags?: string[];
   caution_tags: string[];
   last_verified_at: string | null;
   is_sponsored: boolean;
@@ -347,11 +415,21 @@ export type ContentReportInput = {
   message: string;
   userEmail?: string | null;
   honeypot?: string | null;
+  reporterFingerprint?: string | null;
 };
 
 export type ContentReportResult =
   | { ok: true }
   | { ok: false; message: string };
+
+const reportRateLimitWindowMs = 10 * 60 * 1000;
+
+function getReportRateLimitWindow(date = new Date()) {
+  return new Date(
+    Math.floor(date.getTime() / reportRateLimitWindowMs) *
+      reportRateLimitWindowMs
+  ).toISOString();
+}
 
 function firstRelatedSlug(
   related: { slug: string } | { slug: string }[] | null | undefined
@@ -388,6 +466,218 @@ function mapFood(row: FoodRow): PublicFood {
   };
 }
 
+function photoSearchQuery(food: PublicFood) {
+  return `${food.nameEn} ${food.nameKo} Korean food`;
+}
+
+function googleMapSearchUrl(query: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+function naverMapSearchUrl(query: string) {
+  return `https://map.naver.com/p/search/${encodeURIComponent(query)}`;
+}
+
+function businessHoursNote(tags: string[], touristTags: string[] = []) {
+  if (tags.includes("area_level")) {
+    return "Area-level guide. Opening hours vary by individual shop or stall, so check the linked live map before visiting.";
+  }
+
+  if (touristTags.includes("seasonal")) {
+    return "Seasonal availability can change quickly. Check the linked live map and recent reviews before visiting.";
+  }
+
+  if (touristTags.includes("restaurant_candidate")) {
+    return "Restaurant hours, break times, last orders, and holidays can change. Check the linked live map before visiting.";
+  }
+
+  if (touristTags.includes("market")) {
+    return "Market and stall hours can vary by vendor and day. Check the linked live map before visiting.";
+  }
+
+  return "Business hours are not independently verified yet. Check the linked live map before visiting.";
+}
+
+function businessInfoNote(tags: string[], touristTags: string[] = []) {
+  if (tags.includes("area_level")) {
+    return "This is an area-level place direction, not a single verified storefront. Use map results to choose a current shop.";
+  }
+
+  if (touristTags.includes("restaurant_candidate")) {
+    return "This is a restaurant candidate. Confirm the exact branch, current operation, and queue/reservation conditions.";
+  }
+
+  if (touristTags.includes("market")) {
+    return "This is a market-level candidate. Individual stalls, prices, menus, and availability may change.";
+  }
+
+  return "Confirm address, current operation, and route fit in the linked map before relying on this place.";
+}
+
+const photoSearchOverrides: Record<string, string> = {
+  "gwangjang-bindaetteok": "bindaetteok mung bean pancake close-up no people",
+  "myeongdong-kalguksu": "kalguksu Korean knife cut noodle soup close-up",
+  chimaek: "Korean fried chicken beer chimaek close-up",
+  "uijeongbu-budae-jjigae": "budae jjigae Korean army stew close-up",
+  "incheon-jajangmyeon": "jajangmyeon Korean black bean noodles close-up"
+};
+
+const proposedPhotoCandidates: Record<string, PhotoSourceCandidate> = {
+  "gwangjang-bindaetteok": {
+    sourceName: "Proposed Commons candidate",
+    href: "https://commons.wikimedia.org/wiki/File:Bindae-tteok.jpg",
+    licenseFit: "KOGL Type 1: commercial use allowed with attribution",
+    reviewNote:
+      "People-free bindaetteok photo from Korean Culture and Information Service. Verify attribution wording before approval."
+  },
+  "myeongdong-kalguksu": {
+    sourceName: "Proposed Commons candidate",
+    href: "https://commons.wikimedia.org/wiki/File:Kalguksu-01.jpg",
+    licenseFit: "CC BY 2.0: commercial use allowed with attribution",
+    reviewNote:
+      "Generic kalguksu photo, not Myeongdong-specific. Use only as an associated dish image if the subject match is approved."
+  },
+  chimaek: {
+    sourceName: "Proposed Commons candidate",
+    href: "https://commons.wikimedia.org/wiki/File:Iksan_City_48_Korean_Style_Fried_chicken.jpg",
+    licenseFit: "CC BY-SA 2.0: commercial use allowed with attribution and share-alike",
+    reviewNote:
+      "Shows Korean fried chicken with beer. Verify share-alike implications before using modified/cropped versions."
+  },
+  "uijeongbu-budae-jjigae": {
+    sourceName: "Proposed Commons candidate",
+    href: "https://commons.wikimedia.org/wiki/File:Budae_jjigae_before_boiling.jpg",
+    licenseFit: "CC BY-SA 2.5: commercial use allowed with attribution and share-alike",
+    reviewNote:
+      "Generic budae-jjigae photo, not Uijeongbu-specific. Use only as an associated dish image if approved."
+  },
+  "incheon-jajangmyeon": {
+    sourceName: "Proposed Commons candidate",
+    href: "https://commons.wikimedia.org/wiki/File:Jajangmyeon_by_KFoodaddict.jpg",
+    licenseFit: "CC BY 2.0: commercial use allowed with attribution",
+    reviewNote:
+      "Jajangmyeon photo reviewed from Flickr on Commons. Verify dish match and attribution text before approval."
+  }
+};
+
+const photoReviewNotes: Record<string, PhotoReviewNote> = {
+  tteokbokki: {
+    state: "candidate_ok",
+    label: "Food match confirmed",
+    note: "User confirmed the candidate photo subject matches the dish.",
+    nextAction: "Next check license, author, source URL, and attribution text."
+  },
+  "gwangjang-bindaetteok": {
+    state: "candidate_found",
+    label: "People-free candidate found",
+    note:
+      "A people-free Commons candidate was found after excluding portrait-risk photos.",
+    nextAction:
+      "Open the proposed candidate and verify KOGL attribution before approval."
+  },
+  samgyetang: {
+    state: "candidate_ok",
+    label: "Food match confirmed",
+    note: "User confirmed the candidate photo subject matches the dish.",
+    nextAction: "Next check license, author, source URL, and attribution text."
+  },
+  "myeongdong-kalguksu": {
+    state: "candidate_found",
+    label: "Generic kalguksu candidate found",
+    note:
+      "No Myeongdong-specific candidate was found, but a generic kalguksu photo is available for association.",
+    nextAction:
+      "Verify the dish match and label it as associated with Myeongdong Kalguksu, not as a restaurant-specific image."
+  },
+  "korean-bbq": {
+    state: "candidate_ok",
+    label: "Food match confirmed",
+    note: "User confirmed the candidate photo subject matches the dish.",
+    nextAction: "Next check license, author, source URL, and attribution text."
+  },
+  chimaek: {
+    state: "candidate_found",
+    label: "Chicken and beer candidate found",
+    note:
+      "A Commons candidate showing fried chicken and beer together was found.",
+    nextAction:
+      "Verify attribution and share-alike implications before approval."
+  },
+  "suwon-galbi": {
+    state: "no_candidate",
+    label: "No usable candidate found",
+    note: "User could not find a usable candidate in the current source links.",
+    nextAction:
+      "Search again with galbi, grilled beef ribs, or use original photography later."
+  },
+  "uijeongbu-budae-jjigae": {
+    state: "candidate_found",
+    label: "Generic budae-jjigae candidate found",
+    note:
+      "No Uijeongbu-specific candidate was found, but a generic budae-jjigae photo is available for association.",
+    nextAction:
+      "Verify the dish match and label it as associated with Uijeongbu Budae-jjigae, not as a restaurant-specific image."
+  },
+  "incheon-jajangmyeon": {
+    state: "candidate_found",
+    label: "Jajangmyeon candidate found",
+    note: "A Commons candidate for jajangmyeon was found after the current pass.",
+    nextAction:
+      "Verify dish match and attribution text before associating it with Incheon Jajangmyeon."
+  },
+  hotteok: {
+    state: "candidate_ok",
+    label: "Food match confirmed",
+    note: "User confirmed the candidate photo subject matches the dish.",
+    nextAction: "Next check license, author, source URL, and attribution text."
+  }
+};
+
+export function getFoodPhotoReviewNote(food: PublicFood): PhotoReviewNote {
+  return (
+    photoReviewNotes[food.slug] ?? {
+      state: "unreviewed",
+      label: "Not reviewed yet",
+      note: "This food has not been checked by the user yet.",
+      nextAction: "Open source links and check dish match, people, and license."
+    }
+  );
+}
+
+export function getFoodPhotoSourceCandidates(
+  food: PublicFood
+): PhotoSourceCandidate[] {
+  const baseQuery = photoSearchOverrides[food.slug] ?? photoSearchQuery(food);
+  const query = encodeURIComponent(baseQuery);
+  const commonsQuery = encodeURIComponent(baseQuery);
+  const proposedCandidate = proposedPhotoCandidates[food.slug];
+
+  return [
+    ...(proposedCandidate ? [proposedCandidate] : []),
+    {
+      sourceName: "Wikimedia Commons",
+      href: `https://commons.wikimedia.org/w/index.php?search=${commonsQuery}&title=Special:MediaSearch&type=image`,
+      licenseFit: "Best first check: public domain, CC BY, or CC BY-SA",
+      reviewNote:
+        "Open each file page and verify title, author, source URL, license, and attribution requirements before use."
+    },
+    {
+      sourceName: "Openverse",
+      href: `https://openverse.org/search/image?q=${query}`,
+      licenseFit: "Useful discovery source for CC-licensed or public-domain images",
+      reviewNote:
+        "Filter out NonCommercial and NoDerivatives licenses for a monetized service; verify the original source page."
+    },
+    {
+      sourceName: "Unsplash / Pexels fallback",
+      href: `https://unsplash.com/s/photos/${query}`,
+      licenseFit: "Fallback only for generic food mood photos",
+      reviewNote:
+        "Use only if the photo accurately represents the dish; do not imply restaurant, brand, or person endorsement."
+    }
+  ];
+}
+
 function mapPlace(row: PlaceRow): PublicPlace {
   return {
     slug: row.slug,
@@ -395,6 +685,13 @@ function mapPlace(row: PlaceRow): PublicPlace {
     regionSlug: row.regions?.slug ?? "seoul",
     foodSlugs: [],
     editorialNote: row.editorial_note,
+    googleMapsUrl: row.google_maps_url ?? googleMapSearchUrl(row.name_en),
+    naverMapsUrl: row.naver_maps_url ?? naverMapSearchUrl(row.name_ko ?? row.name_en),
+    businessHoursNote:
+      row.business_hours_note ??
+      businessHoursNote(row.trust_tags, row.tourist_tags),
+    businessInfoNote:
+      row.business_info_note ?? businessInfoNote(row.trust_tags, row.tourist_tags),
     trustTags: [
       ...row.trust_tags,
       ...(row.is_sponsored ? ["sponsored"] : []),
@@ -569,7 +866,7 @@ export async function getPublishedPlaces() {
       supabase
         .from("places")
         .select(
-          "slug, name_en, editorial_note, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+          "slug, name_en, name_ko, editorial_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
         )
         .eq("status", "published")
         .order("display_order", { ascending: true }),
@@ -655,6 +952,7 @@ export async function submitContentReport(
   const message = input.message.trim();
   const userEmail = input.userEmail?.trim() || null;
   const honeypot = input.honeypot?.trim();
+  const reporterFingerprint = input.reporterFingerprint?.trim() || null;
 
   if (honeypot) {
     return { ok: true };
@@ -690,13 +988,35 @@ export async function submitContentReport(
     return { ok: false, message: "Email is too long." };
   }
 
+  const rateLimitWindow = getReportRateLimitWindow();
+
+  if (reporterFingerprint) {
+    const { data: rateLimitAccepted, error: rateLimitError } = await supabase.rpc(
+      "register_report_submission",
+      {
+        p_limit: 5,
+        p_reporter_fingerprint: reporterFingerprint,
+        p_window_start: rateLimitWindow
+      }
+    );
+
+    if (rateLimitError || rateLimitAccepted !== true) {
+      return {
+        ok: false,
+        message: "Too many reports were submitted recently. Please try again later."
+      };
+    }
+  }
+
   const { error } = await supabase.from("content_reports").insert({
     page_url: pageUrl,
     entity_type: input.entityType ?? null,
     entity_id: input.entityId ?? null,
     report_type: reportType,
     message,
-    user_email: userEmail
+    user_email: userEmail,
+    reporter_fingerprint: reporterFingerprint,
+    rate_limit_window: reporterFingerprint ? rateLimitWindow : null
   });
 
   if (error) {

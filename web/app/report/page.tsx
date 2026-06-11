@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { submitContentReport } from "@kfood/data";
@@ -9,12 +12,25 @@ export const metadata = {
 async function submitReport(formData: FormData) {
   "use server";
 
+  const requestHeaders = await headers();
+  const forwardedFor = requestHeaders.get("x-forwarded-for") ?? "";
+  const realIp = requestHeaders.get("x-real-ip") ?? "";
+  const userAgent = requestHeaders.get("user-agent") ?? "";
+  const rateLimitSalt =
+    process.env.REPORT_RATE_LIMIT_SALT ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "kfood-service-local";
+  const reporterFingerprint = createHash("sha256")
+    .update(`${forwardedFor.split(",")[0].trim()}|${realIp}|${userAgent}|${rateLimitSalt}`)
+    .digest("hex");
+
   const result = await submitContentReport({
     pageUrl: String(formData.get("page_url") ?? ""),
     reportType: String(formData.get("report_type") ?? ""),
     message: String(formData.get("message") ?? ""),
     userEmail: String(formData.get("user_email") ?? ""),
-    honeypot: String(formData.get("website") ?? "")
+    honeypot: String(formData.get("website") ?? ""),
+    reporterFingerprint
   });
 
   if (!result.ok) {

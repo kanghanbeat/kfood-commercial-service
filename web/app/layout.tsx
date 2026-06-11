@@ -45,6 +45,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Link href="/content-policy">Content Policy</Link>
             <Link href="/disclosures">Disclosures</Link>
             <Link href="/maps-notice">Maps Notice</Link>
+            <Link href="/photo-sources">Photo Sources</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
           </nav>

@@ -85,6 +85,57 @@ export default async function PlaceDetailPage({
         </ul>
       </section>
 
+      <section className="section-block" aria-labelledby="place-map-business">
+        <div className="section-heading">
+          <p className="eyebrow">Map and business info</p>
+          <h2 id="place-map-business">Check before visiting</h2>
+        </div>
+        <div className="action-row" aria-label="Map links">
+          {place.googleMapsUrl ? (
+            <a
+              className="button primary"
+              href={place.googleMapsUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Google Maps
+            </a>
+          ) : null}
+          {place.naverMapsUrl ? (
+            <a
+              className="button secondary"
+              href={place.naverMapsUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Naver Map
+            </a>
+          ) : null}
+        </div>
+        <ul className="content-list">
+          <li>
+            <div className="list-item-body">
+              <span className="meta-label">Hours</span>
+              <strong>Live map confirmation required</strong>
+              <p>
+                {place.businessHoursNote ??
+                  "Business hours are not independently verified yet. Check the linked live map before visiting."}
+              </p>
+            </div>
+          </li>
+          <li>
+            <div className="list-item-body">
+              <span className="meta-label">Scope</span>
+              <strong>What this place record means</strong>
+              <p>
+                {place.businessInfoNote ??
+                  "Confirm address, current operation, and route fit in the linked map before relying on this place."}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
       <section className="section-block" aria-labelledby="place-foods">
         <div className="section-heading">
           <p className="eyebrow">Food match</p>

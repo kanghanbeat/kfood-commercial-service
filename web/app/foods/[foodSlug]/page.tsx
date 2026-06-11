@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 
 import {
   fallbackPlaces,
+  getFoodPhotoReviewNote,
+  getFoodPhotoSourceCandidates,
   getPublishedFood,
   getPublishedFoods,
   getPublishedPlaces,
@@ -47,6 +49,7 @@ export default async function FoodDetailPage({
   const places = sourcePlaces.filter((place) =>
     place.foodSlugs.includes(food.slug)
   );
+  const photoReview = getFoodPhotoReviewNote(food);
 
   return (
     <main className="page-shell">
@@ -78,6 +81,39 @@ export default async function FoodDetailPage({
               </li>
             ) : null;
           })}
+        </ul>
+      </section>
+
+      <section className="section-block" aria-labelledby="food-photo-sources">
+        <div className="section-heading">
+          <p className="eyebrow">Photo sourcing</p>
+          <h2 id="food-photo-sources">Copyright-safe image candidates</h2>
+          <p>
+            Use these links to review candidate photos before storing or
+            displaying an image. A photo is not approved until title, author,
+            source, license, and attribution requirements are recorded.
+          </p>
+        </div>
+        <div className="review-note">
+          <span>{photoReview.label}</span>
+          <p>{photoReview.note}</p>
+          <small>{photoReview.nextAction}</small>
+        </div>
+        <ul className="content-list">
+          {getFoodPhotoSourceCandidates(food).map((candidate) => (
+            <li key={candidate.sourceName}>
+              <a
+                className="list-item-body"
+                href={candidate.href}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <span className="meta-label">{candidate.sourceName}</span>
+                <strong>{candidate.licenseFit}</strong>
+                <p>{candidate.reviewNote}</p>
+              </a>
+            </li>
+          ))}
         </ul>
       </section>
 

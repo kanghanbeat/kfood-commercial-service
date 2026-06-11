@@ -18,6 +18,11 @@ export default async function FoodsPage() {
           Food pages explain taste, spice level, and where each dish fits in a
           Seoul trip.
         </p>
+        <div className="action-row">
+          <Link className="button secondary" href="/photo-sources">
+            Review photo sources
+          </Link>
+        </div>
       </header>
       <ul className="directory-grid">
         {foods.map((food) => (

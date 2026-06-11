@@ -796,9 +796,13 @@ insert into public.places (
   name_en,
   name_ko,
   editorial_note,
+  google_maps_url,
+  naver_maps_url,
   tourist_tags,
   trust_tags,
   caution_tags,
+  business_hours_note,
+  business_info_note,
   last_verified_at,
   status,
   display_order
@@ -809,9 +813,33 @@ select
   place_seed.name_en,
   place_seed.name_ko,
   place_seed.editorial_note,
+  'https://www.google.com/maps/search/?api=1&query=' || replace(place_seed.name_en, ' ', '+'),
+  'https://map.naver.com/p/search/' || replace(place_seed.name_ko, ' ', '%20'),
   place_seed.tourist_tags,
   place_seed.trust_tags,
   place_seed.caution_tags,
+  case
+    when 'area_level' = any(place_seed.trust_tags) then
+      'Area-level guide. Opening hours vary by individual shop or stall, so check the linked live map before visiting.'
+    when 'seasonal' = any(place_seed.tourist_tags) then
+      'Seasonal availability can change quickly. Check the linked live map and recent reviews before visiting.'
+    when 'restaurant_candidate' = any(place_seed.tourist_tags) then
+      'Restaurant hours, break times, last orders, and holidays can change. Check the linked live map before visiting.'
+    when 'market' = any(place_seed.tourist_tags) then
+      'Market and stall hours can vary by vendor and day. Check the linked live map before visiting.'
+    else
+      'Business hours are not independently verified yet. Check the linked live map before visiting.'
+  end,
+  case
+    when 'area_level' = any(place_seed.trust_tags) then
+      'This is an area-level place direction, not a single verified storefront. Use map results to choose a current shop.'
+    when 'restaurant_candidate' = any(place_seed.tourist_tags) then
+      'This is a restaurant candidate. Confirm the exact branch, current operation, and queue/reservation conditions.'
+    when 'market' = any(place_seed.tourist_tags) then
+      'This is a market-level candidate. Individual stalls, prices, menus, and availability may change.'
+    else
+      'Confirm address, current operation, and route fit in the linked map before relying on this place.'
+  end,
   current_date,
   'published',
   place_seed.display_order
@@ -823,9 +851,13 @@ set
   name_en = excluded.name_en,
   name_ko = excluded.name_ko,
   editorial_note = excluded.editorial_note,
+  google_maps_url = excluded.google_maps_url,
+  naver_maps_url = excluded.naver_maps_url,
   tourist_tags = excluded.tourist_tags,
   trust_tags = excluded.trust_tags,
   caution_tags = excluded.caution_tags,
+  business_hours_note = excluded.business_hours_note,
+  business_info_note = excluded.business_info_note,
   last_verified_at = excluded.last_verified_at,
   status = excluded.status,
   display_order = excluded.display_order;

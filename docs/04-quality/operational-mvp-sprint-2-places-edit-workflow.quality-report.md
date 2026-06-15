@@ -1,6 +1,6 @@
 # Operational MVP Sprint 2 Quality Report
 
-Status: PARTIAL  
+Status: READY  
 Date: 2026-06-15
 
 ## Scope
@@ -23,12 +23,10 @@ Date: 2026-06-15
 | M6 Critical issues | Pass | No blocking build/type/lint issue found. |
 | M8 Build/user flow | Pass | Admin places and audit logs render in local browser. |
 | M10 Docs drift | Pass | Sprint status, release readiness, and external plan page updated. |
+| Manual save verification | Pass | User confirmed a low-risk place edit saved and `place.update` appeared in `/admin/audit-logs`. |
 
 ## Residual Risks
 
-- Final status is `PARTIAL` because a real place save was not submitted during
-  automated verification. The next manual check should save one low-risk place
-  note and confirm a `place.update` row appears in `/admin/audit-logs`.
 - Audit writes happen after the place update. If the audit insert fails, the
   page reports the failure, but rollback is not automated yet.
 - Relationship editing, route steps, and image storage remain out of scope.
@@ -39,3 +37,5 @@ Date: 2026-06-15
 - `npm run web:build`: passed.
 - Browser smoke check: `/admin/places` rendered editable place forms.
 - Browser smoke check: `/admin/audit-logs` rendered the current audit state.
+- Manual verification: user confirmed a real low-risk place update and
+  `place.update` audit-log creation.

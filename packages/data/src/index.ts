@@ -486,6 +486,80 @@ export type AdminMutationResult =
   | { ok: true }
   | { ok: false; message: string };
 
+export type PublicationStatus =
+  | "draft"
+  | "published"
+  | "hidden"
+  | "archived";
+
+export type AdminPlace = {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameKo: string | null;
+  regionSlug: string;
+  status: PublicationStatus;
+  editorialNote: string;
+  googleMapsUrl: string | null;
+  naverMapsUrl: string | null;
+  businessHoursNote: string | null;
+  businessInfoNote: string | null;
+  trustTags: string[];
+  cautionTags: string[];
+  lastVerifiedAt: string | null;
+  updatedAt: string;
+};
+
+type AdminPlaceRow = {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_ko: string | null;
+  status: PublicationStatus;
+  editorial_note: string;
+  google_maps_url: string | null;
+  naver_maps_url: string | null;
+  business_hours_note: string | null;
+  business_info_note: string | null;
+  trust_tags: string[];
+  caution_tags: string[];
+  last_verified_at: string | null;
+  updated_at: string;
+  regions: { slug: string } | { slug: string }[] | null;
+};
+
+export type UpdateAdminPlaceInput = {
+  actorId: string;
+  businessHoursNote?: string | null;
+  businessInfoNote?: string | null;
+  cautionTags?: string[];
+  editorialNote: string;
+  googleMapsUrl?: string | null;
+  markVerifiedToday?: boolean;
+  naverMapsUrl?: string | null;
+  placeId: string;
+  status: PublicationStatus;
+  trustTags?: string[];
+};
+
+export type AdminAuditLog = {
+  id: string;
+  actorId: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  createdAt: string;
+};
+
+type AdminAuditLogRow = {
+  id: string;
+  actor_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  created_at: string;
+};
+
 const reportRateLimitWindowMs = 10 * 60 * 1000;
 
 function getReportRateLimitWindow(date = new Date()) {
@@ -518,6 +592,37 @@ function mapAdminReport(row: AdminReportRow): AdminReport {
     resolvedAt: row.resolved_at,
     status: row.status,
     userEmail: row.user_email
+  };
+}
+
+function mapAdminPlace(row: AdminPlaceRow): AdminPlace {
+  return {
+    businessHoursNote: row.business_hours_note,
+    businessInfoNote: row.business_info_note,
+    cautionTags: row.caution_tags,
+    editorialNote: row.editorial_note,
+    googleMapsUrl: row.google_maps_url,
+    id: row.id,
+    lastVerifiedAt: row.last_verified_at,
+    nameEn: row.name_en,
+    nameKo: row.name_ko,
+    naverMapsUrl: row.naver_maps_url,
+    regionSlug: firstRelatedSlug(row.regions) ?? "unknown",
+    slug: row.slug,
+    status: row.status,
+    trustTags: row.trust_tags,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapAdminAuditLog(row: AdminAuditLogRow): AdminAuditLog {
+  return {
+    action: row.action,
+    actorId: row.actor_id,
+    createdAt: row.created_at,
+    entityId: row.entity_id,
+    entityType: row.entity_type,
+    id: row.id
   };
 }
 
@@ -946,7 +1051,7 @@ export async function getPublishedPlaces() {
       supabase
         .from("places")
         .select(
-          "slug, name_en, name_ko, editorial_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
         )
         .eq("status", "published")
         .order("display_order", { ascending: true }),
@@ -1037,6 +1142,47 @@ export async function getAdminReports(accessToken: string) {
   return data.map((row) => mapAdminReport(row as AdminReportRow));
 }
 
+export async function getAdminPlaces(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("places")
+    .select(
+      "id, slug, name_en, name_ko, status, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, trust_tags, caution_tags, last_verified_at, updated_at, regions(slug)"
+    )
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminPlace(row as unknown as AdminPlaceRow));
+}
+
+export async function getAdminAuditLogs(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("admin_audit_logs")
+    .select("id, actor_id, action, entity_type, entity_id, created_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminAuditLog(row as AdminAuditLogRow));
+}
+
 export async function updateAdminReportStatus(
   accessToken: string,
   input: UpdateAdminReportInput
@@ -1087,6 +1233,84 @@ export async function updateAdminReportStatus(
 
   if (auditError) {
     return { ok: false, message: "Report updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminPlace(
+  accessToken: string,
+  input: UpdateAdminPlaceInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("places")
+    .select("*")
+    .eq("id", input.placeId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Place was not found." };
+  }
+
+  const existingReview = beforeData as {
+    last_verified_at?: string | null;
+    reviewed_at?: string | null;
+    reviewed_by?: string | null;
+  };
+  const today = new Date().toISOString().slice(0, 10);
+  const updatePayload = {
+    business_hours_note: input.businessHoursNote?.trim() || null,
+    business_info_note: input.businessInfoNote?.trim() || null,
+    caution_tags: input.cautionTags ?? [],
+    editorial_note: input.editorialNote.trim(),
+    google_maps_url: input.googleMapsUrl?.trim() || null,
+    last_verified_at: input.markVerifiedToday
+      ? today
+      : existingReview.last_verified_at ?? null,
+    naver_maps_url: input.naverMapsUrl?.trim() || null,
+    reviewed_at: input.markVerifiedToday
+      ? new Date().toISOString()
+      : existingReview.reviewed_at ?? null,
+    reviewed_by: input.markVerifiedToday
+      ? input.actorId
+      : existingReview.reviewed_by ?? null,
+    status: input.status,
+    trust_tags: input.trustTags ?? [],
+    updated_at: new Date().toISOString()
+  };
+
+  if (!updatePayload.editorial_note) {
+    return { ok: false, message: "Editorial note is required." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("places")
+    .update(updatePayload)
+    .eq("id", input.placeId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Place could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "place.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.placeId,
+    entity_type: "place"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Place updated, but audit log failed." };
   }
 
   return { ok: true };

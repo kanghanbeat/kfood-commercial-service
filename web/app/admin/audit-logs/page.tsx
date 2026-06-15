@@ -1,3 +1,5 @@
+import { getAdminAuditLogs } from "@kfood/data";
+
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -5,7 +7,8 @@ export const metadata = {
 };
 
 export default async function AdminAuditLogsPage() {
-  await requireAdminSession();
+  const session = await requireAdminSession();
+  const logs = await getAdminAuditLogs(session.accessToken);
 
   return (
     <main className="page-shell">
@@ -13,18 +16,34 @@ export default async function AdminAuditLogsPage() {
         <p className="eyebrow">Admin</p>
         <h1>Audit logs</h1>
         <p className="detail-intro">
-          Admin mutations should write before/after snapshots into
-          `admin_audit_logs`.
+          Track admin report and place mutations for trust, debugging, and
+          rollback planning.
         </p>
       </header>
       <ul className="content-list">
-        <li>
-          <div className="list-item-body">
-            <span className="meta-label">Required before beta</span>
-            <strong>Track publish, hide, and correction actions</strong>
-            <p>Audit logs protect trust, debugging, and rollback workflows.</p>
-          </div>
-        </li>
+        {logs.length === 0 ? (
+          <li>
+            <div className="list-item-body">
+              <span className="meta-label">No audit logs</span>
+              <strong>Admin changes will appear here</strong>
+              <p>Save a report or place update to create the first entry.</p>
+            </div>
+          </li>
+        ) : null}
+        {logs.map((log) => (
+          <li key={log.id}>
+            <div className="list-item-body">
+              <span className="meta-label">
+                {new Date(log.createdAt).toLocaleString("en")}
+              </span>
+              <strong>{log.action}</strong>
+              <p>
+                {log.entityType} {log.entityId ?? "unknown entity"}
+              </p>
+              <p>Actor: {log.actorId ?? "unknown actor"}</p>
+            </div>
+          </li>
+        ))}
       </ul>
     </main>
   );

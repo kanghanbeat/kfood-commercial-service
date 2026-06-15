@@ -51,8 +51,9 @@ Date: 2026-06-11
 - [x] Admin route protection.
 - [x] Reports read/update workflow.
 - [x] Report audit-log writes.
+- [x] Places edit mutations.
+- [x] Place audit-log writes.
 - [ ] CRUD mutations.
-- [ ] Places edit mutations.
 
 ## Deploy
 
@@ -61,7 +62,7 @@ Date: 2026-06-11
 - [ ] Vercel project connected.
 - [ ] Supabase project linked.
 - [ ] Production env vars set.
-- [ ] First Supabase Auth admin account created.
+- [x] First Supabase Auth admin account created.
 - [ ] Analytics selected.
 - [ ] Error monitoring selected.
 - [ ] Rollback process documented.

@@ -414,6 +414,18 @@ h3 {
   resize: vertical;
 }
 
+.form-panel .checkbox-label {
+  align-items: center;
+  color: var(--ink);
+  display: flex;
+  gap: 10px;
+}
+
+.form-panel .checkbox-label input {
+  min-height: auto;
+  width: auto;
+}
+
 .trap-field {
   display: none;
 }

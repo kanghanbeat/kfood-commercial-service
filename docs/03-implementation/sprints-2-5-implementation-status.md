@@ -130,7 +130,9 @@ Current limitation:
 - Admin pages verify `profiles.role` server-side through `requireAdminSession()`.
 - `/admin/reports` reads real `content_reports` rows through RLS.
 - Report status updates write `content_reports` and insert `admin_audit_logs`.
-- Places, foods, regions, and routes edit mutations are not enabled yet.
+- `/admin/places` supports focused place corrections for status, map URLs,
+  business notes, trust/caution tags, verification date, and audit-log writes.
+- Foods, regions, and routes edit mutations are not enabled yet.
 
 ## Sprint 5: Alpha Deploy Readiness
 
@@ -152,8 +154,8 @@ Still required before alpha deploy:
 2. Set `REPORT_RATE_LIMIT_SALT`.
 3. Decide staging-vs-production Supabase project for alpha.
 4. Connect Vercel project and domain.
-5. Create the first Supabase Auth admin account and profile row.
-6. Start Places edit mutations.
+5. Verify first Supabase Auth admin login in the deployed environment.
+6. Add region/food/route edit mutations after Places workflow is validated.
 
 ## Verification Commands
 

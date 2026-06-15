@@ -40,6 +40,8 @@ REPORT_RATE_LIMIT_SALT
   and is marked noindex.
 - `/admin/*` requires a Supabase Auth user with an active `admin` or `editor`
   profile.
+- `/admin/places` supports focused place corrections and writes audit logs.
+- `/admin/audit-logs` reads recent admin mutation logs.
 - `supabase/migrations/003_crawling_service_schema.sql` remains out of the
   current service release scope unless explicitly reintroduced.
 
@@ -48,8 +50,7 @@ REPORT_RATE_LIMIT_SALT
 - Create or connect the deployment project.
 - Add environment variables in the deployment dashboard.
 - Configure the production domain.
-- Create at least one Supabase Auth admin account.
-- Insert a matching `public.profiles` row with `role = 'admin'` and
-  `is_active = true`.
+- Verify the first Supabase Auth admin account can sign in to the deployed
+  admin route.
 - Decide whether alpha uses the current staging Supabase project or a separate
   production Supabase project.

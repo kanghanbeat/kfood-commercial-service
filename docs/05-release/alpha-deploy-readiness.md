@@ -1,13 +1,13 @@
 # Alpha Deploy Readiness
 
-Status: Draft for alpha preparation  
-Date: 2026-06-11
+Status: Ready for Vercel project connection  
+Date: 2026-06-15
 
 ## Current Release Position
 
-The public web can build against staging Supabase data and generate 114 routes.
-The service is not ready for broad public launch until deployment environment
-variables and admin auth are configured.
+The public web can build against staging Supabase data and generate 27 app
+routes. The service is ready for a controlled alpha deployment setup after
+Vercel environment variables are configured.
 
 ## Required Deployment Environment Variables
 
@@ -42,8 +42,9 @@ REPORT_RATE_LIMIT_SALT
   profile.
 - `/admin/places` supports focused place corrections and writes audit logs.
 - `/admin/audit-logs` reads recent admin mutation logs.
-- `supabase/migrations/003_crawling_service_schema.sql` remains out of the
-  current service release scope unless explicitly reintroduced.
+- Crawling work is separated from the current service build under the local
+  `_separated/crawling/` workspace and remains out of the release scope unless
+  explicitly reintroduced.
 
 ## External Work Still Needed
 
@@ -54,3 +55,5 @@ REPORT_RATE_LIMIT_SALT
   admin route.
 - Decide whether alpha uses the current staging Supabase project or a separate
   production Supabase project.
+- Follow `docs/05-release/vercel-alpha-deploy-plan.md` for Vercel settings and
+  smoke tests.

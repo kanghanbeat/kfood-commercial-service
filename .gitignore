@@ -31,3 +31,7 @@ yarn-error.log*
 
 # local separated experiments
 _separated/
+
+# separated crawling lane; do not include in current service commits
+packages/crawler/
+supabase/migrations/003_crawling_service_schema.sql

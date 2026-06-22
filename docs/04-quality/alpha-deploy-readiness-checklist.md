@@ -61,9 +61,10 @@ Date: 2026-06-11
 - [x] Alpha deploy readiness document exists.
 - [x] Vercel alpha deploy plan exists.
 - [x] Crawling work is separated from the current service build.
-- [ ] Vercel project connected.
-- [ ] Supabase project linked.
-- [ ] Production env vars set.
+- [x] Vercel project connected.
+- [x] Supabase project linked.
+- [x] Production env vars set.
+- [x] Home page Supabase read verified on deployed URL.
 - [x] First Supabase Auth admin account created.
 - [ ] Analytics selected.
 - [ ] Error monitoring selected.

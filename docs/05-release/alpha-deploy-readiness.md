@@ -1,13 +1,17 @@
 # Alpha Deploy Readiness
 
-Status: Ready for Vercel project connection  
-Date: 2026-06-15
+Status: Alpha deployed, smoke tests in progress  
+Date: 2026-06-22
 
 ## Current Release Position
 
-The public web can build against staging Supabase data and generate 27 app
-routes. The service is ready for a controlled alpha deployment setup after
-Vercel environment variables are configured.
+The public web is deployed on Vercel and reads staging Supabase data.
+
+```text
+Alpha URL: https://kfood-commercial-service-web.vercel.app
+Home data check: 23 regions, 30 foods, 30 place directions, 5 routes
+Deployment source: main / bdcf67d
+```
 
 ## Required Deployment Environment Variables
 
@@ -48,11 +52,12 @@ REPORT_RATE_LIMIT_SALT
 
 ## External Work Still Needed
 
-- Create or connect the deployment project.
-- Add environment variables in the deployment dashboard.
-- Configure the production domain.
-- Verify the first Supabase Auth admin account can sign in to the deployed
-  admin route.
+- Complete deployed smoke tests for `/foods`, `/places`, `/routes`, `/report`,
+  `/admin/login`, `/admin/reports`, `/admin/places`, and `/admin/audit-logs`.
+- Verify the first Supabase Auth admin account can sign in to the deployed admin
+  route.
+- Decide whether to keep the generated Vercel URL for alpha or configure a
+  custom domain later.
 - Decide whether alpha uses the current staging Supabase project or a separate
   production Supabase project.
 - Follow `docs/05-release/vercel-alpha-deploy-plan.md` for Vercel settings and

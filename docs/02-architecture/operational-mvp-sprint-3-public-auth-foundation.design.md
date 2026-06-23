@@ -1,6 +1,6 @@
 # Operational MVP Sprint 3: Public Auth Foundation Design
 
-Status: Proposed  
+Status: Implemented foundation  
 Date: 2026-06-23
 
 ## Context
@@ -72,14 +72,19 @@ Cons:
 
 ## Recommendation
 
-Choose Option C.
+Choose Option C, with a staged implementation.
 
-Do not implement public login buttons until Google and Kakao OAuth provider
-setup is ready. Make Public Auth Foundation the next candidate sprint after:
+The code now includes the public auth route foundation and header auth UI.
+Google and Kakao buttons are wired to Supabase OAuth, but the provider
+dashboards still need to be configured before real sign-in succeeds in
+production.
 
-1. deployed smoke test is documented,
-2. teammate admin/editor access is verified,
-3. analytics/error monitoring decision is made.
+Do not treat public auth as fully launched until:
+
+1. Supabase Google provider is enabled,
+2. Supabase Kakao provider is enabled,
+3. provider redirect URLs are registered,
+4. `/auth/login -> /auth/callback -> /profile` is smoke-tested on Vercel.
 
 ## Proposed Scope
 
@@ -99,6 +104,8 @@ Capabilities:
 - minimal profile page.
 - nav shows `Sign in` or `Profile`.
 - `profiles` row is created or upserted for public users with `role = 'user'`.
+- login/profile pages are marked noindex.
+- public auth hint uses a non-sensitive cookie so public pages can remain static.
 
 Out of scope:
 
@@ -138,3 +145,26 @@ Vercel:
 - Public auth must not expose service role keys.
 - User deletion, privacy copy, and terms copy should be reviewed before broad
   launch.
+- The visible header state must not rely on readable tokens. It uses only a
+  non-sensitive signed-in hint cookie; access and refresh tokens remain
+  httpOnly.
+
+## Implemented Files
+
+```text
+web/app/auth/login/page.tsx
+web/app/auth/callback/route.ts
+web/app/auth/logout/route.ts
+web/app/profile/page.tsx
+web/components/header-auth-link.tsx
+web/lib/public-auth.ts
+supabase/migrations/006_profiles_public_user_insert.sql
+```
+
+## Required Migration
+
+Run this before expecting profile row creation to work for new public users:
+
+```bash
+npx supabase db push
+```

@@ -39,6 +39,17 @@ export default function TermsPage() {
         </li>
         <li>
           <div className="list-item-body">
+            <span className="meta-label">Accounts</span>
+            <strong>Member accounts are a lightweight alpha feature</strong>
+            <p>
+              Social sign-in may be used to identify a member for future saved
+              places, report history, or personalization. Community posting,
+              ratings, and reviews are not part of the current alpha.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div className="list-item-body">
             <span className="meta-label">Corrections</span>
             <strong>We may update, hide, or remove content</strong>
             <p>

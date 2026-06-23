@@ -63,6 +63,10 @@ a {
   font-weight: 700;
 }
 
+.site-header nav a.auth-link {
+  color: var(--accent);
+}
+
 .site-footer {
   border-top: 1px solid var(--line);
   padding: 24px clamp(20px, 5vw, 64px) 36px;
@@ -168,6 +172,16 @@ h3 {
 
 .button.secondary {
   background: transparent;
+}
+
+.button.full-width {
+  width: 100%;
+}
+
+.muted-copy {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 .route-visual {
@@ -446,6 +460,31 @@ h3 {
 .status-message.error {
   background: #fff0ed;
   color: var(--accent-dark);
+}
+
+.definition-list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.definition-list div {
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  gap: 4px;
+  padding-bottom: 12px;
+}
+
+.definition-list dt {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.definition-list dd {
+  font-weight: 800;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 900px) {

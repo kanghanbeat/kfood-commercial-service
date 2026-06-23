@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 
 import { siteConfig } from "@kfood/config";
 
+import { HeaderAuthLink } from "@/components/header-auth-link";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -36,6 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Link href="/routes">Routes</Link>
             <Link href="/report">Report</Link>
             <Link href="/contact">Contact</Link>
+            <HeaderAuthLink />
           </nav>
         </header>
         {children}

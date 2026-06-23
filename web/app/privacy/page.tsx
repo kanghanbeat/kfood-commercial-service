@@ -29,6 +29,17 @@ export default function PrivacyPage() {
         </li>
         <li>
           <div className="list-item-body">
+            <span className="meta-label">Accounts</span>
+            <strong>Social sign-in creates a lightweight service profile</strong>
+            <p>
+              Google or Kakao sign-in may provide account identifiers, email,
+              display name, and provider metadata. During alpha, this is used
+              only to support basic profile access and future member features.
+            </p>
+          </div>
+        </li>
+        <li>
+          <div className="list-item-body">
             <span className="meta-label">Operations</span>
             <strong>Admin access is limited to service maintenance</strong>
             <p>

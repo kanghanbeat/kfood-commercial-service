@@ -1,7 +1,7 @@
 # Alpha Deploy Readiness Checklist
 
-Status: Partially ready, operational hardening in progress  
-Date: 2026-06-11
+Status: Alpha deployed, public smoke tests passed  
+Date: 2026-06-23
 
 ## Build
 
@@ -65,7 +65,18 @@ Date: 2026-06-11
 - [x] Supabase project linked.
 - [x] Production env vars set.
 - [x] Home page Supabase read verified on deployed URL.
+- [x] Public deployed smoke test passed for `/`, `/foods`, `/places`, `/routes`, `/report`, and `/contact`.
+- [x] SEO deployed smoke test passed for `/robots.txt` and `/sitemap.xml`.
+- [x] Unauthenticated admin route protection verified on deployed URL.
 - [x] First Supabase Auth admin account created.
 - [ ] Analytics selected.
 - [ ] Error monitoring selected.
 - [ ] Rollback process documented.
+
+## Near-Term Foundation Gaps
+
+- [ ] Add next teammate as Supabase Auth user and grant `editor` or `admin`
+  profile role.
+- [ ] Repeat authenticated deployed admin save/audit smoke test with the
+  teammate account.
+- [ ] Decide public auth timing for Google/Kakao login.

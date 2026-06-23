@@ -89,9 +89,44 @@ Read in this order:
 - Public pages must not use the Supabase service role key.
 - RLS must remain the primary access boundary.
 - Admin pages require Supabase Auth and active admin profiles.
+- GitHub collaborator access does not automatically grant service admin access.
+  A teammate also needs a Supabase Auth user and a matching `profiles` row with
+  `role = 'editor'` or `role = 'admin'`.
 - Supabase migrations must be ordered and reviewed.
 - Environment variables should be documented in `.env.example`.
 - Do not commit generated build output or local env files.
+
+## Admin Access for Teammates
+
+Use this for a trusted teammate such as `sori030` after GitHub collaboration is
+already enabled:
+
+1. Create or invite the teammate in Supabase Dashboard under Authentication.
+2. Copy the Auth user UUID.
+3. Run this in Supabase SQL Editor:
+
+```sql
+insert into public.profiles (id, display_name, role, is_active)
+values ('<auth-user-uuid>', 'sori030', 'editor', true)
+on conflict (id) do update
+set
+  display_name = 'sori030',
+  role = 'editor',
+  is_active = true,
+  updated_at = now();
+```
+
+Use `editor` first for content/report operations. Upgrade to `admin` only if the
+teammate should manage higher-risk operations.
+
+4. Ask the teammate to sign in:
+
+```text
+https://kfood-commercial-service-web.vercel.app/admin/login
+```
+
+5. Verify a low-risk `/admin/places` save and confirm the new
+`/admin/audit-logs` row.
 
 ## Work That Is Currently Separate
 

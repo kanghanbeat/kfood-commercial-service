@@ -1,7 +1,7 @@
 # Alpha Deploy Readiness
 
-Status: Alpha deployed, smoke tests in progress  
-Date: 2026-06-22
+Status: Alpha deployed, public smoke tests passed  
+Date: 2026-06-23
 
 ## Current Release Position
 
@@ -11,6 +11,7 @@ The public web is deployed on Vercel and reads staging Supabase data.
 Alpha URL: https://kfood-commercial-service-web.vercel.app
 Home data check: 23 regions, 30 foods, 30 place directions, 5 routes
 Deployment source: main / bdcf67d
+Smoke test result: public routes, SEO routes, and unauthenticated admin guard pass
 ```
 
 ## Required Deployment Environment Variables
@@ -52,13 +53,12 @@ REPORT_RATE_LIMIT_SALT
 
 ## External Work Still Needed
 
-- Complete deployed smoke tests for `/foods`, `/places`, `/routes`, `/report`,
-  `/admin/login`, `/admin/reports`, `/admin/places`, and `/admin/audit-logs`.
-- Verify the first Supabase Auth admin account can sign in to the deployed admin
-  route.
+- Repeat authenticated admin smoke tests after adding the next teammate profile:
+  `/admin/login`, `/admin/places` save, and `/admin/audit-logs` write check.
 - Decide whether to keep the generated Vercel URL for alpha or configure a
   custom domain later.
 - Decide whether alpha uses the current staging Supabase project or a separate
   production Supabase project.
-- Follow `docs/05-release/vercel-alpha-deploy-plan.md` for Vercel settings and
-  smoke tests.
+- Decide whether to add public Google/Kakao login as the next foundation sprint
+  before saved places, reviews, personalization, or user-specific report
+  history.

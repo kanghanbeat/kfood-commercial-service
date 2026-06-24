@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { siteConfig } from "@kfood/config";
 
+import { AuthHashRedirector } from "@/components/auth-hash-redirector";
 import { HeaderAuthLink } from "@/components/header-auth-link";
 
 import "./globals.css";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
+        <AuthHashRedirector />
         <header className="site-header">
           <Link className="brand" href="/">
             K-food Service

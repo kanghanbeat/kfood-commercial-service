@@ -125,6 +125,22 @@ teammate should manage higher-risk operations.
 https://kfood-commercial-service-web.vercel.app/admin/login
 ```
 
+If the teammate was invited by email and has not set a password yet, ask them
+to open the latest invitation or password recovery email first. The app should
+send secure invite/recovery links to:
+
+```text
+https://kfood-commercial-service-web.vercel.app/auth/update-password
+```
+
+After setting the password, they can use the same email and new password on
+`/admin/login`. If they see `Invalid admin credentials`, confirm that:
+
+- the password was actually set from the latest email link
+- the email address matches the Supabase Auth user exactly
+- the `profiles` row exists with `role = 'editor'` or `role = 'admin'`
+- `is_active = true`
+
 5. Verify a low-risk `/admin/places` save and confirm the new
 `/admin/audit-logs` row.
 

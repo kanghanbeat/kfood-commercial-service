@@ -32,7 +32,9 @@ async function signIn(formData: FormData) {
   });
 
   if (error || !data.session || !data.user) {
-    redirectWithError("Invalid admin credentials.");
+    redirectWithError(
+      "Invalid admin credentials. Newly invited accounts must set a password first."
+    );
   }
 
   const userClient = createSupabaseUserClient(data.session.access_token);
@@ -67,7 +69,7 @@ async function signIn(formData: FormData) {
 export default async function AdminLoginPage({
   searchParams
 }: {
-  searchParams?: Promise<{ error?: string; next?: string }>;
+  searchParams?: Promise<{ error?: string; next?: string; notice?: string }>;
 }) {
   const params = await searchParams;
 
@@ -80,6 +82,9 @@ export default async function AdminLoginPage({
           Sign in with a Supabase account whose profile role is admin or editor.
         </p>
       </header>
+      {params?.notice ? (
+        <p className="status-message success">{params.notice}</p>
+      ) : null}
       {params?.error ? <p className="status-message error">{params.error}</p> : null}
       <form action={signIn} className="form-panel">
         <input name="next" type="hidden" value={params?.next ?? "/admin"} />

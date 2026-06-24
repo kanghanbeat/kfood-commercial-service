@@ -8,7 +8,10 @@ Date: 2026-06-23
 - Added `/auth/login`.
 - Added `/auth/callback`.
 - Added `/auth/logout`.
+- Added `/auth/update-password` for invite/recovery password setup.
 - Added `/profile`.
+- Added auth hash detection so invite/recovery links that land on `/` are moved
+  to `/auth/update-password`.
 - Added header `Sign in` / `Profile` auth UI.
 - Added public auth cookies separate from admin auth cookies.
 - Added a non-sensitive signed-in hint cookie for the header.
@@ -31,12 +34,14 @@ Provider redirect URL:
 
 ```text
 https://kfood-commercial-service-web.vercel.app/auth/callback
+https://kfood-commercial-service-web.vercel.app/auth/update-password
 ```
 
 Local redirect URL:
 
 ```text
 http://localhost:3000/auth/callback
+http://localhost:3000/auth/update-password
 ```
 
 ## Required Supabase Migration
@@ -64,6 +69,8 @@ After provider setup and migration:
 6. Confirm redirect returns to /profile.
 7. Confirm public user profile row has role=user.
 8. Confirm /admin remains inaccessible without admin/editor role.
+9. Send an invite or password recovery email to an editor account.
+10. Confirm the user can set a password and then sign in at /admin/login.
 ```
 
 ## Not Included

@@ -7,6 +7,7 @@ import {
 } from "@kfood/data";
 import type { PublicationStatus } from "@kfood/data";
 
+import { AdminNav } from "@/components/admin-nav";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -85,6 +86,7 @@ export default async function AdminPlacesPage({
           status. Every successful save writes an audit log.
         </p>
       </header>
+      <AdminNav />
       {params?.updated ? (
         <p className="status-message success">Place updated and audit logged.</p>
       ) : null}

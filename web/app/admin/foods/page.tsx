@@ -1,5 +1,6 @@
 import { getPublishedFoods } from "@kfood/data";
 
+import { AdminNav } from "@/components/admin-nav";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -19,6 +20,7 @@ export default async function AdminFoodsPage() {
           Maintain dish descriptions, spice levels, and traveler notes.
         </p>
       </header>
+      <AdminNav />
       <ul className="content-list">
         {foods.map((food) => (
           <li key={food.slug}>

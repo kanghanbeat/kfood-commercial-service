@@ -1,5 +1,6 @@
 import { getAdminAuditLogs } from "@kfood/data";
 
+import { AdminNav } from "@/components/admin-nav";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -20,6 +21,7 @@ export default async function AdminAuditLogsPage() {
           rollback planning.
         </p>
       </header>
+      <AdminNav />
       <ul className="content-list">
         {logs.length === 0 ? (
           <li>

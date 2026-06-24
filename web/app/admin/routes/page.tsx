@@ -1,5 +1,6 @@
 import { getPublishedRoutes } from "@kfood/data";
 
+import { AdminNav } from "@/components/admin-nav";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -19,6 +20,7 @@ export default async function AdminRoutesPage() {
           Manage route summaries, linked places, duration, and publication state.
         </p>
       </header>
+      <AdminNav />
       <ul className="content-list">
         {routes.map((route) => (
           <li key={route.slug}>

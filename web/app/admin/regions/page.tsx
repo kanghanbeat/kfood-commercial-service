@@ -1,5 +1,6 @@
 import { getPublishedRegions } from "@kfood/data";
 
+import { AdminNav } from "@/components/admin-nav";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -19,6 +20,7 @@ export default async function AdminRegionsPage() {
           First admin pass: list published region records and define edit states.
         </p>
       </header>
+      <AdminNav />
       <ul className="content-list">
         {regions.map((region) => (
           <li key={region.slug}>

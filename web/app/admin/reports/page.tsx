@@ -7,6 +7,7 @@ import {
 } from "@kfood/data";
 import type { AdminReportStatus } from "@kfood/data";
 
+import { AdminNav } from "@/components/admin-nav";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -71,6 +72,7 @@ export default async function AdminReportsPage({
           Review public content reports, update status, and record audit logs.
         </p>
       </header>
+      <AdminNav />
       {params?.updated ? (
         <p className="status-message success">Report status updated.</p>
       ) : null}

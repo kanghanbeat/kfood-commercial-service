@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminNav } from "@/components/admin-nav";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -57,6 +58,7 @@ export default async function AdminPage() {
           </Link>
         </div>
       </header>
+      <AdminNav />
       <ul className="directory-grid">
         {adminModules.map((module) => (
           <li className="directory-card" key={module.href}>

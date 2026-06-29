@@ -1,14 +1,37 @@
 :root {
   color-scheme: light;
-  --ink: #1f2523;
-  --muted: #5d6863;
-  --line: #d9dfd6;
-  --surface: #f7f5ef;
-  --panel: #ffffff;
-  --accent: #b3362d;
-  --accent-dark: #812820;
-  --leaf: #28705a;
-  --gold: #c8942f;
+
+  /* ── DESIGN.md v2 토큰 (정식 이름 — 새 컴포넌트는 이 이름을 쓴다) ── */
+  --brand:          #8500FF;   /* 메인 바이올렛 (기존 빨강 자리 대체) */
+  --brand-strong:   #6A00CC;   /* 버튼 호버 */
+  --brand-soft:     #F0E5FF;   /* 연보라 배경·칩 */
+  --accent:         #FF5E00;   /* 서브 강조 오렌지 (포인트·핵심 CTA용, v2 정식) */
+  --accent-soft:    #FFE9DC;
+  --surface:        #FFFFFF;   /* 페이지 배경 (항상 흰색) */
+  --card:           #FFFFFF;   /* 카드·패널 (경계선으로 구분) */
+  --sidebar-dark:   #1C0033;   /* 어드민 사이드바·푸터 */
+  --sidebar-muted:  #D9CDEA;
+  --border-default: #ECE7F2;   /* 경계선 1px */
+  --text-heading:   #17141C;   /* 제목·강조 */
+  --text-body:      #6A6273;   /* 본문·라벨 */
+  --ivory:          #FCF7EF;   /* 따뜻한 보조 배경 */
+  --mint:           #DCF2F3;   /* 시원한 포인트 */
+  --success:        #16A34A;  --success-soft: #E4EFE8;
+  --warning:        #D97706;  --warning-soft: #F7EEDB;
+  --danger:         #DC2626;  --danger-soft:  #F3E2E6;
+  --card-radius:    12px;  --control-radius: 8px;  --pill-radius: 9999px;
+  --font-main:      'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ── 한빛 기존 이름 → v2 연결 (기존 CSS 수십 군데가 안 깨지게 alias) ── */
+  --muted:       var(--text-body);
+  --line:        var(--border-default);
+  --panel:       var(--card);
+  --leaf:        var(--success);   /* 초록 → success */
+  --gold:        var(--warning);   /* 금색 → warning */
+  --accent-dark: var(--danger);    /* error 텍스트용으로만 쓰이던 진빨강 → danger */
+  /* --ink(글자)·--accent(주황) 은 위 v2 토큰으로 직접 정의됨.
+     기존에 --accent(빨강=primary)로 쓰던 자리는 아래 규칙에서 var(--brand)로 교체. */
+  --ink: var(--text-heading);
 }
 
 * {
@@ -18,10 +41,22 @@
 html {
   background: var(--surface);
   color: var(--ink);
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--font-main);
 }
+
+/* Pretendard 로컬 woff2 사용 (CDN 금지 — 프로젝트 기준).
+   ⚠️ 폰트 파일(woff2)을 web/public/fonts/ 에 추가해야 실제 적용됨. 없으면 system 폰트로 fallback.
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/fonts/Pretendard-Regular.woff2') format('woff2');
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/fonts/Pretendard-Bold.woff2') format('woff2');
+  font-weight: 700; font-display: swap;
+}
+*/
 
 body {
   margin: 0;
@@ -64,7 +99,7 @@ a {
 }
 
 .site-header nav a.auth-link {
-  color: var(--accent);
+  color: var(--brand);
 }
 
 .site-footer {
@@ -110,7 +145,7 @@ a {
 }
 
 .admin-nav a.admin-nav-signout {
-  color: var(--accent);
+  color: var(--brand);
   margin-left: auto;
 }
 
@@ -136,7 +171,7 @@ a {
 }
 
 .eyebrow {
-  color: var(--accent);
+  color: var(--brand);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;
@@ -195,9 +230,14 @@ h3 {
 }
 
 .button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fffaf4;
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+}
+
+.button.primary:hover {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
 }
 
 .button.secondary {
@@ -216,9 +256,9 @@ h3 {
 
 .route-visual {
   background:
-    linear-gradient(135deg, rgba(179, 54, 45, 0.18), transparent 36%),
-    linear-gradient(225deg, rgba(40, 112, 90, 0.18), transparent 42%),
-    #fffaf4;
+    linear-gradient(135deg, rgba(133, 0, 255, 0.16), transparent 36%),
+    linear-gradient(225deg, rgba(220, 242, 243, 0.6), transparent 42%),
+    var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   min-height: 420px;
@@ -348,7 +388,7 @@ h3 {
 }
 
 .tag {
-  background: #edf4ef;
+  background: var(--success-soft);
   border-radius: 999px;
   padding: 7px 10px;
 }
@@ -369,7 +409,7 @@ h3 {
 
 .source-link span,
 .inline-link {
-  color: var(--accent);
+  color: var(--brand);
   font-size: 13px;
   font-weight: 900;
 }
@@ -420,7 +460,7 @@ h3 {
 
 .review-no_candidate .review-note,
 .review-wrong_subject .review-note {
-  border-left-color: var(--accent);
+  border-left-color: var(--danger);
 }
 
 .form-panel {
@@ -483,13 +523,13 @@ h3 {
 }
 
 .status-message.success {
-  background: #edf4ef;
-  color: var(--leaf);
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .status-message.error {
-  background: #fff0ed;
-  color: var(--accent-dark);
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .definition-list {

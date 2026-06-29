@@ -18,6 +18,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const staticRoutes = [
     "",
+    "/feed",
+    "/search",
+    "/recommend",
     "/regions",
     "/foods",
     "/places",

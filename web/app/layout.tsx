@@ -34,12 +34,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             K-food Service
           </Link>
           <nav aria-label="Primary navigation">
-            <Link href="/regions">Regions</Link>
-            <Link href="/foods">Foods</Link>
-            <Link href="/places">Places</Link>
-            <Link href="/routes">Routes</Link>
-            <Link href="/report">Report</Link>
-            <Link href="/contact">Contact</Link>
+            <Link href="/feed">Feed</Link>
+            <Link href="/search">Search</Link>
+            <Link href="/recommend">Recommend</Link>
+            <Link href="/mypage">Mypage</Link>
             <HeaderAuthLink />
           </nav>
         </header>
@@ -50,6 +48,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Link href="/content-policy">Content Policy</Link>
             <Link href="/disclosures">Disclosures</Link>
             <Link href="/maps-notice">Maps Notice</Link>
+            <Link href="/report">Report</Link>
+            <Link href="/contact">Contact</Link>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
           </nav>

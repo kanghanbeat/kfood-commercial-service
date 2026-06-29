@@ -208,11 +208,11 @@ export async function getPublicSession(): Promise<PublicSession | null> {
   };
 }
 
-export async function requirePublicSession() {
+export async function requirePublicSession(nextPath = "/mypage") {
   const session = await getPublicSession();
 
   if (!session) {
-    redirect("/auth/login?next=/profile");
+    redirect(`/auth/login?next=${encodeURIComponent(nextPath)}`);
   }
 
   return session;

@@ -184,6 +184,12 @@ h3 {
   gap: 12px;
 }
 
+.entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .button {
   border: 1px solid var(--ink);
   border-radius: 6px;
@@ -212,6 +218,44 @@ h3 {
   color: var(--muted);
   font-size: 15px;
   line-height: 1.6;
+}
+
+.utility-bar,
+.search-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.utility-bar {
+  align-items: center;
+  grid-template-columns: repeat(3, minmax(120px, 1fr)) auto;
+}
+
+.utility-bar span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.search-panel label {
+  color: var(--muted);
+  display: grid;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.search-panel input {
+  background: #fffaf4;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font: inherit;
+  padding: 13px 14px;
 }
 
 .route-visual {
@@ -538,6 +582,10 @@ h3 {
   }
 
   .source-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .utility-bar {
     grid-template-columns: 1fr;
   }
 }

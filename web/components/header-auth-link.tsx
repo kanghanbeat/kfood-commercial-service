@@ -21,12 +21,12 @@ export function HeaderAuthLink() {
     ) === "1";
 
   return signedIn ? (
-    <Link className="auth-link" href="/profile">
-      Profile
+    <Link className="auth-link" href="/mypage">
+      Mypage
     </Link>
   ) : (
     <Link className="auth-link" href="/auth/login">
-      Sign in
+      Log in
     </Link>
   );
 }

@@ -23,15 +23,18 @@ export default async function HomePage() {
           <h1>Find what to eat, where to try it, and how to route it.</h1>
           <p>
             A web-first K-food guide for travelers who need practical food
-            choices, trusted editorial notes, and routes that work on the
-            ground.
+            choices, trusted editorial notes, real user records, and routes
+            that work on the ground.
           </p>
-          <div className="action-row">
-            <Link className="button primary" href="/regions">
-              Browse regions
+          <div className="entry-actions" aria-label="Start options">
+            <Link className="button primary" href="/feed">
+              Be guest
             </Link>
-            <Link className="button secondary" href="/foods">
-              Explore foods
+            <Link className="button secondary" href="/auth/login?next=/mypage">
+              Sign up
+            </Link>
+            <Link className="button secondary" href="/auth/login?next=/feed">
+              Log in
             </Link>
           </div>
         </div>
@@ -68,9 +71,43 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="section-block" aria-labelledby="community-start">
+        <div className="section-heading">
+          <p className="eyebrow">Directory core + community layer</p>
+          <h2 id="community-start">Start from records, search, or recommendations</h2>
+          <p>
+            User records add lived context, while verified foods, regions,
+            places, and routes remain the service&apos;s trusted base.
+          </p>
+        </div>
+        <ul className="directory-grid">
+          <li className="directory-card">
+            <Link href="/feed">
+              <span>Community records</span>
+              <strong>Feed</strong>
+              <p>See public K-food moments connected to trusted food and area data.</p>
+            </Link>
+          </li>
+          <li className="directory-card">
+            <Link href="/search">
+              <span>Unified discovery</span>
+              <strong>Search</strong>
+              <p>Find foods, areas, places, routes, posts, and users from one surface.</p>
+            </Link>
+          </li>
+          <li className="directory-card">
+            <Link href="/recommend">
+              <span>Curated guidance</span>
+              <strong>Recommend</strong>
+              <p>Browse editorial picks and route ideas before personalization arrives.</p>
+            </Link>
+          </li>
+        </ul>
+      </section>
+
       <section className="section-block" aria-labelledby="alpha-regions">
         <div className="section-heading">
-          <p className="eyebrow">Start by area</p>
+          <p className="eyebrow">Trusted data layer</p>
           <h2 id="alpha-regions">Seoul alpha areas</h2>
         </div>
         <ul className="directory-grid">

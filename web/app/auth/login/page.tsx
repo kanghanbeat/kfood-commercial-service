@@ -31,7 +31,7 @@ async function signInWithProvider(formData: FormData) {
   "use server";
 
   const provider = String(formData.get("provider") ?? "") as AuthProvider;
-  const nextPath = getSafeNextPath(String(formData.get("next") ?? "/profile"));
+  const nextPath = getSafeNextPath(String(formData.get("next") ?? "/mypage"));
 
   if (!["google", "kakao"].includes(provider)) {
     redirectWithError("Choose Google or Kakao to continue.", nextPath);
@@ -70,7 +70,7 @@ export default async function PublicLoginPage({
   searchParams?: Promise<{ error?: string; next?: string }>;
 }) {
   const params = await searchParams;
-  const nextPath = getSafeNextPath(params?.next ?? "/profile");
+  const nextPath = getSafeNextPath(params?.next ?? "/mypage");
 
   return (
     <main className="page-shell">

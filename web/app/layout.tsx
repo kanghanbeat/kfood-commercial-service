@@ -37,22 +37,30 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Link href="/feed">Feed</Link>
             <Link href="/search">Search</Link>
             <Link href="/recommend">Recommend</Link>
-            <Link href="/mypage">Mypage</Link>
             <HeaderAuthLink />
           </nav>
         </header>
         {children}
         <footer className="site-footer">
-          <nav aria-label="Trust and policy navigation">
-            <Link href="/editorial-policy">Editorial Policy</Link>
-            <Link href="/content-policy">Content Policy</Link>
-            <Link href="/disclosures">Disclosures</Link>
-            <Link href="/maps-notice">Maps Notice</Link>
-            <Link href="/report">Report</Link>
-            <Link href="/contact">Contact</Link>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/terms">Terms</Link>
-          </nav>
+          <div className="footer-grid" aria-label="Trust and policy navigation">
+            <nav aria-labelledby="footer-support">
+              <h2 id="footer-support">Support</h2>
+              <Link href="/report">Report</Link>
+              <Link href="/contact">Contact</Link>
+            </nav>
+            <nav aria-labelledby="footer-trust">
+              <h2 id="footer-trust">Trust</h2>
+              <Link href="/editorial-policy">Editorial Policy</Link>
+              <Link href="/content-policy">Content Policy</Link>
+              <Link href="/disclosures">Disclosures</Link>
+              <Link href="/maps-notice">Maps Notice</Link>
+            </nav>
+            <nav aria-labelledby="footer-legal">
+              <h2 id="footer-legal">Legal</h2>
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
+            </nav>
+          </div>
         </footer>
       </body>
     </html>

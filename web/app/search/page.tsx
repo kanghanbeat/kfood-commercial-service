@@ -29,19 +29,49 @@ export default async function SearchPage() {
           records and user search are prepared behind the next data model.
         </p>
       </header>
-      <section className="search-panel" aria-label="Search input">
-        <label>
-          Search
-          <input
-            disabled
-            placeholder="Try kalguksu, Myeongdong, Seoul, or a user name"
-            type="search"
-          />
-        </label>
+      <section className="search-panel" aria-label="Search preview">
+        <div className="search-preview-input">
+          Try kalguksu, Myeongdong, Seoul, or a user name
+        </div>
         <p className="muted-copy">
-          Live cross-entity search will be enabled after the community search
-          schema and ranking rules are implemented.
+          Search preview. Live cross-entity search will be enabled after the
+          community search schema and ranking rules are connected.
         </p>
+        <div className="tab-row" aria-label="Future search filters">
+          {["All", "Foods", "Areas", "Places", "Posts", "Users"].map((tab) => (
+            <span className={tab === "All" ? "active-tab" : ""} key={tab}>
+              {tab}
+            </span>
+          ))}
+        </div>
+      </section>
+      <section className="section-block" aria-labelledby="search-intents">
+        <div className="section-heading">
+          <p className="eyebrow">Search paths</p>
+          <h2 id="search-intents">Choose the kind of discovery you need</h2>
+        </div>
+        <ul className="intent-grid">
+          <li>
+            <span>Food to Area</span>
+            <strong>Find where a dish is known</strong>
+            <p>Start with a food, then compare representative Seoul and metro areas.</p>
+          </li>
+          <li>
+            <span>Area to Food</span>
+            <strong>Find what to eat nearby</strong>
+            <p>Start with an area, then browse verified foods and route ideas.</p>
+          </li>
+          <li>
+            <span>Place lookup</span>
+            <strong>Check map-linked directions</strong>
+            <p>Use trust notes, map URLs, and last verified context before visiting.</p>
+          </li>
+          <li>
+            <span>Community</span>
+            <strong>Posts and users later</strong>
+            <p>User records will be searchable after moderation and profile rules land.</p>
+          </li>
+        </ul>
       </section>
       <section className="section-block" aria-labelledby="search-tabs">
         <div className="section-heading">

@@ -27,14 +27,28 @@ export default async function HomePage() {
             that work on the ground.
           </p>
           <div className="entry-actions" aria-label="Start options">
-            <Link className="button primary" href="/feed">
-              Be guest
+            <div className="entry-choice-card">
+              <span>Be guest</span>
+              <strong>Browse without an account</strong>
+              <p>Start with trusted search or preview the community feed.</p>
+              <div className="entry-choice-links">
+                <Link className="button primary" href="/search">
+                  Search guide
+                </Link>
+                <Link className="button secondary" href="/feed">
+                  Preview feed
+                </Link>
+              </div>
+            </div>
+            <Link className="entry-action-card" href="/auth/login?next=/mypage">
+              <span>Sign up</span>
+              <strong>Create your activity hub</strong>
+              <p>Prepare your profile for future records, likes, and follows.</p>
             </Link>
-            <Link className="button secondary" href="/auth/login?next=/mypage">
-              Sign up
-            </Link>
-            <Link className="button secondary" href="/auth/login?next=/feed">
-              Log in
+            <Link className="entry-action-card" href="/auth/login?next=/feed">
+              <span>Log in</span>
+              <strong>Continue with your account</strong>
+              <p>Use admin/editor access or return to your K-food workspace.</p>
             </Link>
           </div>
         </div>

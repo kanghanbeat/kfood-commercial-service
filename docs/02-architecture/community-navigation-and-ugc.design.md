@@ -214,12 +214,15 @@ Existing `profiles` should be extended gradually:
 
 ```text
 username
-avatar_url
 bio
 preferred_language
 home_region_id nullable
 public_profile_enabled
 ```
+
+Do not add `avatar_url` in the Mypage profile stage. Profile images should be
+designed later with user post image upload, storage policy, moderation, and
+deletion rules.
 
 ### User Posts
 

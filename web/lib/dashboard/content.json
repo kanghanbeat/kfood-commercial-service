@@ -1,0 +1,134 @@
+{
+  "meta": {
+    "week": "2026 W21",
+    "updated": "2026-05-22"
+  },
+  "stats": {
+    "total": 5,
+    "done": 1,
+    "in_progress": 2,
+    "todo": 2
+  },
+  "topics": [
+    {
+      "id": 1,
+      "title": "Why Foreigners Can't Stop Eating Tteokbokki",
+      "title_ko": "외국인이 떡볶이에 중독되는 이유",
+      "source_insight": "TikTok 1위 · 이번 주 조회수 12.4M",
+      "source_platform": "tiktok",
+      "category": "음식 문화",
+      "priority": "high",
+      "channels": {
+        "blog":      { "status": "done",        "title": "떡볶이 완벽 가이드 — 외국인을 위한 한국 길거리 음식 No.1", "url": "" },
+        "youtube":   { "status": "in_progress", "title": "I Tried EVERY Type of Tteokbokki in Seoul 🌶️", "url": "" },
+        "instagram": { "status": "todo",        "title": "Tteokbokki 101 — The Korean Street Food Taking Over TikTok", "url": "" },
+        "tiktok":    { "status": "todo",        "title": "POV: You try tteokbokki for the first time 😱🌶️", "url": "" },
+        "twitter":   { "status": "todo",        "title": "Tteokbokki thread: Everything you need to know before visiting Korea 🧵", "url": "" }
+      },
+      "hashtags_en": ["#kfood", "#tteokbokki", "#koreanstreetfood", "#seoul", "#koreanfood"],
+      "hashtags_ko": ["#떡볶이", "#K푸드", "#한국음식", "#서울맛집", "#길거리음식"],
+      "memo": "TikTok 바이럴 영상 레퍼런스 참고. 맵기 단계별로 설명하는 포맷 추천."
+    },
+    {
+      "id": 2,
+      "title": "Korean Fried Chicken vs American Fried Chicken",
+      "title_ko": "한국 치킨 vs 미국 치킨 — 무엇이 다른가",
+      "source_insight": "Reddit r/KoreanFood 댓글 1,200개 돌파",
+      "source_platform": "reddit",
+      "category": "음식 비교",
+      "priority": "high",
+      "channels": {
+        "blog":      { "status": "in_progress", "title": "Korean Fried Chicken — Why It's Different From Everything You've Tried", "url": "" },
+        "youtube":   { "status": "todo",        "title": "Korean Fried Chicken BLIND TASTE TEST with Americans 🍗", "url": "" },
+        "instagram": { "status": "done",        "title": "양념 vs 간장 vs 후라이드 — Which Korean Chicken Are You?", "url": "" },
+        "tiktok":    { "status": "todo",        "title": "Rating Korean fried chicken styles tier list 🍗", "url": "" },
+        "twitter":   { "status": "in_progress", "title": "Hot take: Korean fried chicken is objectively better than American 🧵", "url": "" }
+      },
+      "hashtags_en": ["#koreanfriedchicken", "#kfc", "#koreanfood", "#chickenlover", "#seoul"],
+      "hashtags_ko": ["#한국치킨", "#양념치킨", "#치킨맛집", "#K푸드", "#먹방"],
+      "memo": "Reddit 스레드에서 미국 치킨과 차이점 질문이 폭발적. 더블 프라이 기법, 소스 다양성 위주로 설명."
+    },
+    {
+      "id": 3,
+      "title": "Hotteok — Korea's Winter Street Food Is Going Viral",
+      "title_ko": "호떡 — 겨울 간식의 글로벌 바이럴",
+      "source_insight": "TikTok 이번 주 급상승 +8위 · 겨울 간식 수요",
+      "source_platform": "tiktok",
+      "category": "계절 트렌드",
+      "priority": "medium",
+      "channels": {
+        "blog":      { "status": "todo", "title": "Hotteok Recipe for Beginners — Korea's Sweet Street Pancake", "url": "" },
+        "youtube":   { "status": "todo", "title": "Making Hotteok at Home (Easier Than You Think!) 🥞", "url": "" },
+        "instagram": { "status": "todo", "title": "Hot Hotteok on a Cold Seoul Night 🌙✨", "url": "" },
+        "tiktok":    { "status": "todo", "title": "The sound of hotteok sizzling 🔥 #satisfying", "url": "" },
+        "twitter":   { "status": "todo", "title": "Hotteok is the most underrated Korean street food and I will die on this hill", "url": "" }
+      },
+      "hashtags_en": ["#hotteok", "#koreanstreetfood", "#kfood", "#seoulwinter", "#koreansnack"],
+      "hashtags_ko": ["#호떡", "#겨울간식", "#길거리음식", "#서울", "#K푸드"],
+      "memo": "TikTok 급상승 중. 직접 만드는 ASMR 포맷이 효과적. 촬영 기록 모듈과 연결 필요."
+    },
+    {
+      "id": 4,
+      "title": "Kimbap Is NOT Sushi — A Cultural Guide",
+      "title_ko": "김밥은 초밥이 아니다 — 문화적 차이 설명",
+      "source_insight": "Instagram Save율 41% · 레시피 수요 높음",
+      "source_platform": "instagram",
+      "category": "문화 해설",
+      "priority": "medium",
+      "channels": {
+        "blog":      { "status": "todo", "title": "Kimbap vs Sushi: The Complete Guide to Korea's Favorite Roll", "url": "" },
+        "youtube":   { "status": "todo", "title": "I Asked 100 Foreigners if Kimbap is Sushi... 😅", "url": "" },
+        "instagram": { "status": "todo", "title": "Kimbap ≠ Sushi — Here's Why 🍱", "url": "" },
+        "tiktok":    { "status": "todo", "title": "Stop calling kimbap sushi 😤 #kfood #korea", "url": "" },
+        "twitter":   { "status": "todo", "title": "PSA: Kimbap and Sushi are completely different foods. Here's why 🧵", "url": "" }
+      },
+      "hashtags_en": ["#kimbap", "#koreanfood", "#notSushi", "#kfood", "#koreanculture"],
+      "hashtags_ko": ["#김밥", "#김밥vs초밥", "#K푸드", "#한식문화", "#외국인반응"],
+      "memo": "Instagram에서 저장률이 매우 높음. 인포그래픽 포맷의 카드뉴스로 제작 추천."
+    },
+    {
+      "id": 5,
+      "title": "Buldak Ramen World Challenge — What Countries Survive?",
+      "title_ko": "불닭볶음면 세계 챌린지 — 어느 나라가 버티나",
+      "source_insight": "Twitter 72시간 38.7K 멘션 · 챌린지 포맷",
+      "source_platform": "twitter",
+      "category": "챌린지 콘텐츠",
+      "priority": "high",
+      "channels": {
+        "blog":      { "status": "todo", "title": "Buldak Noodles World Reaction — The Spiciest Food Challenge in 2026", "url": "" },
+        "youtube":   { "status": "in_progress", "title": "FOREIGNERS Try Buldak Ramen FOR THE FIRST TIME 🔥😭 (10 Countries)", "url": "" },
+        "instagram": { "status": "todo", "title": "🔥 Which country handled buldak the best? Ranking time 🌍", "url": "" },
+        "tiktok":    { "status": "todo", "title": "#buldakchallenge Can you handle it? 🔥🍜", "url": "" },
+        "twitter":   { "status": "done",        "title": "We ranked every country's reaction to buldak noodles. Results are hilarious 🧵🔥", "url": "" }
+      },
+      "hashtags_en": ["#buldak", "#buldakchallenge", "#koreanramen", "#spicyfood", "#kfood"],
+      "hashtags_ko": ["#불닭볶음면", "#불닭챌린지", "#매운음식", "#K푸드", "#외국인반응"],
+      "memo": "챌린지 포맷은 UGC(유저 생성 콘텐츠) 유도에 최적. 10개국 반응 비교 유튜브 롱폼과 틱톡 숏폼 동시 제작 검토."
+    }
+  ],
+  "calendar": [
+    { "date": "2026-05-25", "day": "월", "items": [
+      { "topic_id": 1, "channel": "youtube",   "label": "떡볶이 유튜브 촬영" },
+      { "topic_id": 2, "channel": "blog",      "label": "치킨 블로그 초안 완성" }
+    ]},
+    { "date": "2026-05-26", "day": "화", "items": [
+      { "topic_id": 5, "channel": "youtube",   "label": "불닭 유튜브 편집" }
+    ]},
+    { "date": "2026-05-27", "day": "수", "items": [
+      { "topic_id": 1, "channel": "instagram", "label": "떡볶이 인스타 업로드" },
+      { "topic_id": 4, "channel": "blog",      "label": "김밥 블로그 작성" }
+    ]},
+    { "date": "2026-05-28", "day": "목", "items": [
+      { "topic_id": 2, "channel": "youtube",   "label": "치킨 유튜브 촬영" },
+      { "topic_id": 3, "channel": "tiktok",    "label": "호떡 틱톡 업로드" }
+    ]},
+    { "date": "2026-05-29", "day": "금", "items": [
+      { "topic_id": 5, "channel": "youtube",   "label": "불닭 유튜브 업로드" },
+      { "topic_id": 1, "channel": "tiktok",    "label": "떡볶이 틱톡 업로드" }
+    ]},
+    { "date": "2026-05-30", "day": "토", "items": [
+      { "topic_id": 4, "channel": "instagram", "label": "김밥 카드뉴스 업로드" }
+    ]},
+    { "date": "2026-05-31", "day": "일", "items": [] }
+  ]
+}

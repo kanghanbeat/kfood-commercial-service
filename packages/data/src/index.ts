@@ -1,4 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
+import type {
+  SupportedLanguage,
+  UserPost,
+  UserPostComment,
+  UserPostStatus,
+  UserPostVisibility,
+  UserProfile,
+  UserRole
+} from "@kfood/types";
+
+export type {
+  SupportedLanguage,
+  UserPost,
+  UserPostComment,
+  UserProfile
+} from "@kfood/types";
 
 export type PublicRegion = {
   slug: string;
@@ -319,6 +335,8 @@ const reportTypeAllowlist = new Set([
   "other"
 ]);
 
+const supportedLanguages = new Set<SupportedLanguage>(["ko", "en", "ja", "zh"]);
+
 function allowsFallbackData() {
   return (
     process.env.NODE_ENV !== "production" ||
@@ -435,6 +453,53 @@ export type ContentReportInput = {
   userEmail?: string | null;
   honeypot?: string | null;
   reporterFingerprint?: string | null;
+};
+
+type ProfileRow = {
+  id: string;
+  display_name: string | null;
+  bio: string | null;
+  preferred_language: SupportedLanguage | null;
+  role: UserRole;
+  is_active: boolean;
+};
+
+export type UpdateMyProfileInput = {
+  displayName: string;
+  bio: string;
+  preferredLanguage: SupportedLanguage;
+};
+
+export type UserProfileMutationResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+type UserPostRow = {
+  id: string;
+  author_id: string;
+  body: string;
+  language: SupportedLanguage;
+  visibility: UserPostVisibility;
+  status: UserPostStatus;
+  region_id: string | null;
+  food_id: string | null;
+  place_id: string | null;
+  route_guide_id: string | null;
+  created_at: string;
+  updated_at: string;
+  profiles: { display_name: string | null } | { display_name: string | null }[] | null;
+  user_post_comments: { count: number }[] | null;
+};
+
+type UserPostCommentRow = {
+  id: string;
+  post_id: string;
+  author_id: string;
+  body: string;
+  status: "published" | "hidden" | "removed";
+  created_at: string;
+  updated_at: string;
+  profiles: { display_name: string | null } | { display_name: string | null }[] | null;
 };
 
 export type ContentReportResult =
@@ -577,6 +642,63 @@ function firstRelatedSlug(
   }
 
   return related?.slug;
+}
+
+function firstProfileName(
+  related:
+    | { display_name: string | null }
+    | { display_name: string | null }[]
+    | null
+    | undefined
+) {
+  if (Array.isArray(related)) {
+    return related[0]?.display_name ?? null;
+  }
+
+  return related?.display_name ?? null;
+}
+
+function mapProfile(row: ProfileRow): UserProfile {
+  return {
+    bio: row.bio,
+    displayName: row.display_name,
+    id: row.id,
+    isActive: row.is_active,
+    preferredLanguage: row.preferred_language ?? "en",
+    role: row.role
+  };
+}
+
+function mapUserPost(row: UserPostRow): UserPost {
+  return {
+    authorDisplayName: firstProfileName(row.profiles),
+    authorId: row.author_id,
+    body: row.body,
+    commentCount: row.user_post_comments?.[0]?.count ?? 0,
+    createdAt: row.created_at,
+    foodId: row.food_id,
+    id: row.id,
+    language: row.language,
+    placeId: row.place_id,
+    regionId: row.region_id,
+    routeGuideId: row.route_guide_id,
+    status: row.status,
+    updatedAt: row.updated_at,
+    visibility: row.visibility
+  };
+}
+
+function mapUserPostComment(row: UserPostCommentRow): UserPostComment {
+  return {
+    authorDisplayName: firstProfileName(row.profiles),
+    authorId: row.author_id,
+    body: row.body,
+    createdAt: row.created_at,
+    id: row.id,
+    postId: row.post_id,
+    status: row.status,
+    updatedAt: row.updated_at
+  };
 }
 
 function mapAdminReport(row: AdminReportRow): AdminReport {
@@ -1118,6 +1240,137 @@ export async function getPublishedRoutes() {
 export async function getPublishedRoute(slug: string) {
   const routes = await getPublishedRoutes();
   return routes.find((route) => route.slug === slug);
+}
+
+export async function getMyProfile(accessToken: string, userId: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, display_name, bio, preferred_language, role, is_active")
+    .eq("id", userId)
+    .maybeSingle<ProfileRow>();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return mapProfile(data);
+}
+
+export async function updateMyProfile(
+  accessToken: string,
+  input: UpdateMyProfileInput
+): Promise<UserProfileMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase user client is not configured." };
+  }
+
+  const displayName = input.displayName.trim();
+  const bio = input.bio.trim();
+  const preferredLanguage = input.preferredLanguage;
+
+  if (displayName.length > 80) {
+    return { ok: false, message: "Display name must be 80 characters or fewer." };
+  }
+
+  if (bio.length > 240) {
+    return { ok: false, message: "Bio must be 240 characters or fewer." };
+  }
+
+  if (!supportedLanguages.has(preferredLanguage)) {
+    return { ok: false, message: "Choose a supported language." };
+  }
+
+  const { error } = await supabase.rpc("update_my_profile", {
+    p_bio: bio || null,
+    p_display_name: displayName || null,
+    p_preferred_language: preferredLanguage
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: "Profile could not be updated. Please try again later."
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function getPublishedUserPosts(limit = 30) {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("user_posts")
+    .select(
+      "id, author_id, body, language, visibility, status, region_id, food_id, place_id, route_guide_id, created_at, updated_at, profiles(display_name), user_post_comments(count)"
+    )
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapUserPost(row as unknown as UserPostRow));
+}
+
+export async function getPublishedUserPost(postId: string) {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("user_posts")
+    .select(
+      "id, author_id, body, language, visibility, status, region_id, food_id, place_id, route_guide_id, created_at, updated_at, profiles(display_name), user_post_comments(count)"
+    )
+    .eq("id", postId)
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return mapUserPost(data as unknown as UserPostRow);
+}
+
+export async function getPublishedPostComments(postId: string) {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("user_post_comments")
+    .select("id, post_id, author_id, body, status, created_at, updated_at, profiles(display_name)")
+    .eq("post_id", postId)
+    .eq("status", "published")
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapUserPostComment(row as unknown as UserPostCommentRow));
 }
 
 export async function getAdminReports(accessToken: string) {

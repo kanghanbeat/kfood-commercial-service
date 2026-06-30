@@ -1,6 +1,14 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-import { requirePublicSession } from "@/lib/public-auth";
+import {
+  getMyProfile,
+  updateMyProfile,
+  type SupportedLanguage
+} from "@kfood/data";
+
+import { ensurePublicProfile, requirePublicSession } from "@/lib/public-auth";
 
 export const metadata = {
   robots: {
@@ -10,8 +18,60 @@ export const metadata = {
   title: "Mypage"
 };
 
-export default async function MypagePage() {
+const languageOptions: Array<{ label: string; value: SupportedLanguage }> = [
+  { label: "English", value: "en" },
+  { label: "한국어", value: "ko" },
+  { label: "日本語", value: "ja" },
+  { label: "中文", value: "zh" }
+];
+
+const supportedLanguageValues = languageOptions.map((option) => option.value);
+
+function redirectWithError(message: string): never {
+  redirect(`/mypage?error=${encodeURIComponent(message)}`);
+}
+
+async function updateProfile(formData: FormData) {
+  "use server";
+
   const session = await requirePublicSession();
+  const preferredLanguage = String(
+    formData.get("preferred_language") ?? "en"
+  ) as SupportedLanguage;
+
+  if (!supportedLanguageValues.includes(preferredLanguage)) {
+    redirectWithError("Choose a supported language.");
+  }
+
+  const result = await updateMyProfile(session.accessToken, {
+    bio: String(formData.get("bio") ?? ""),
+    displayName: String(formData.get("display_name") ?? ""),
+    preferredLanguage
+  });
+
+  if (!result.ok) {
+    redirectWithError(result.message);
+  }
+
+  revalidatePath("/mypage");
+  redirect("/mypage?updated=1");
+}
+
+export default async function MypagePage({
+  searchParams
+}: {
+  searchParams?: Promise<{ error?: string; updated?: string }>;
+}) {
+  const [session, params] = await Promise.all([
+    requirePublicSession(),
+    searchParams
+  ]);
+
+  await ensurePublicProfile(session);
+  const profile = await getMyProfile(session.accessToken, session.userId);
+  const displayName = profile?.displayName ?? session.name ?? "";
+  const bio = profile?.bio ?? "";
+  const preferredLanguage = profile?.preferredLanguage ?? "en";
 
   return (
     <main className="page-shell">
@@ -24,6 +84,12 @@ export default async function MypagePage() {
           community data model is prepared.
         </p>
       </header>
+      {params?.updated ? (
+        <p className="status-message success">Profile updated.</p>
+      ) : null}
+      {params?.error ? (
+        <p className="status-message error">{params.error}</p>
+      ) : null}
       <section className="form-panel">
         <h2>Account details</h2>
         <dl className="definition-list">
@@ -49,13 +115,50 @@ export default async function MypagePage() {
           </Link>
         </div>
       </section>
+      <section className="form-panel">
+        <h2>Public profile basics</h2>
+        <form action={updateProfile} className="profile-form">
+          <label>
+            Display name
+            <input
+              defaultValue={displayName}
+              maxLength={80}
+              name="display_name"
+              placeholder="K-food member"
+            />
+          </label>
+          <label>
+            Bio
+            <textarea
+              defaultValue={bio}
+              maxLength={240}
+              name="bio"
+              placeholder="Short note for future records and comments."
+            />
+          </label>
+          <label>
+            Preferred language
+            <select defaultValue={preferredLanguage} name="preferred_language">
+              {languageOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="button primary" type="submit">
+            Save profile
+          </button>
+        </form>
+      </section>
       <section className="section-block" aria-labelledby="mypage-next">
         <div className="section-heading">
-          <p className="eyebrow">Next account features</p>
-          <h2 id="mypage-next">Records, likes, follows, and language settings</h2>
+          <p className="eyebrow">UGC foundation</p>
+          <h2 id="mypage-next">Records and comments are being prepared</h2>
           <p>
-            These sections will become active after user posts, likes, follows,
-            and preferred language fields are added to Supabase.
+            Profile fields now support future records and comments. The next
+            implementation slice will connect Feed to published user posts, then
+            add post detail and comment forms.
           </p>
         </div>
       </section>

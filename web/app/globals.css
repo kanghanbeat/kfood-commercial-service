@@ -720,9 +720,25 @@ h3 {
   gap: 8px;
 }
 
+.profile-form {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-form label {
+  color: var(--muted);
+  display: grid;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 8px;
+}
+
 .form-panel input,
 .form-panel select,
-.form-panel textarea {
+.form-panel textarea,
+.profile-form input,
+.profile-form select,
+.profile-form textarea {
   background: #fffaf4;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -732,7 +748,8 @@ h3 {
   padding: 10px 12px;
 }
 
-.form-panel textarea {
+.form-panel textarea,
+.profile-form textarea {
   min-height: 140px;
   resize: vertical;
 }

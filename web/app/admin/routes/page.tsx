@@ -1,37 +1,6 @@
-import { getPublishedRoutes } from "@kfood/data";
+import { redirect } from "next/navigation";
 
-import { AdminNav } from "@/components/admin-nav";
-import { requireAdminSession } from "@/lib/admin-auth";
-
-export const metadata = {
-  title: "Admin Routes"
-};
-
-export default async function AdminRoutesPage() {
-  await requireAdminSession();
-  const routes = await getPublishedRoutes();
-
-  return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Admin</p>
-        <h1>Routes</h1>
-        <p className="detail-intro">
-          Manage route summaries, linked places, duration, and publication state.
-        </p>
-      </header>
-      <AdminNav />
-      <ul className="content-list">
-        {routes.map((route) => (
-          <li key={route.slug}>
-            <div className="list-item-body">
-              <span className="meta-label">{route.estimatedDuration}</span>
-              <strong>{route.title}</strong>
-              <p>{route.summary}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </main>
-  );
+// 통합: 콘텐츠 관리 화면의 "루트" 탭으로 이동 (admin-ui-design.md §6). 라우트는 보존.
+export default function AdminRoutesRedirect() {
+  redirect("/admin/manage?tab=routes");
 }

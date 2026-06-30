@@ -1,37 +1,6 @@
-import { getPublishedFoods } from "@kfood/data";
+import { redirect } from "next/navigation";
 
-import { AdminNav } from "@/components/admin-nav";
-import { requireAdminSession } from "@/lib/admin-auth";
-
-export const metadata = {
-  title: "Admin Foods"
-};
-
-export default async function AdminFoodsPage() {
-  await requireAdminSession();
-  const foods = await getPublishedFoods();
-
-  return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Admin</p>
-        <h1>Foods</h1>
-        <p className="detail-intro">
-          Maintain dish descriptions, spice levels, and traveler notes.
-        </p>
-      </header>
-      <AdminNav />
-      <ul className="content-list">
-        {foods.map((food) => (
-          <li key={food.slug}>
-            <div className="list-item-body">
-              <span className="meta-label">Spicy level {food.spicyLevel}/4</span>
-              <strong>{food.nameEn}</strong>
-              <p>{food.summary}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </main>
-  );
+// 통합: 콘텐츠 관리 화면의 "음식" 탭으로 이동 (admin-ui-design.md §6). 라우트는 보존.
+export default function AdminFoodsRedirect() {
+  redirect("/admin/manage?tab=foods");
 }

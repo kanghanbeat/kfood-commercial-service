@@ -1,37 +1,6 @@
-import { getPublishedRegions } from "@kfood/data";
+import { redirect } from "next/navigation";
 
-import { AdminNav } from "@/components/admin-nav";
-import { requireAdminSession } from "@/lib/admin-auth";
-
-export const metadata = {
-  title: "Admin Regions"
-};
-
-export default async function AdminRegionsPage() {
-  await requireAdminSession();
-  const regions = await getPublishedRegions();
-
-  return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Admin</p>
-        <h1>Regions</h1>
-        <p className="detail-intro">
-          First admin pass: list published region records and define edit states.
-        </p>
-      </header>
-      <AdminNav />
-      <ul className="content-list">
-        {regions.map((region) => (
-          <li key={region.slug}>
-            <div className="list-item-body">
-              <span className="meta-label">Published preview</span>
-              <strong>{region.nameEn}</strong>
-              <p>{region.intro}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </main>
-  );
+// 통합: 콘텐츠 관리 화면의 "지역" 탭으로 이동 (admin-ui-design.md §6). 라우트는 보존.
+export default function AdminRegionsRedirect() {
+  redirect("/admin/manage?tab=regions");
 }

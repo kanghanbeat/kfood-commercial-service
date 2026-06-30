@@ -875,3 +875,422 @@ h3 {
     font-size: 36px;
   }
 }
+
+/* ============================================================
+   Admin v2 — Pencil 시안(admin-*.html) 이식. DESIGN.md v2 토큰.
+   사이드바 4메뉴 + 상단 탭 + 메트릭/테이블 공통 패턴.
+   ============================================================ */
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  background: var(--sidebar-dark);
+  color: var(--sidebar-muted);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  gap: 28px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.admin-sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+}
+
+.admin-sidebar-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--control-radius);
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.admin-sidebar-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-sidebar-brand strong {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.admin-sidebar-brand span {
+  font-size: 12px;
+  color: var(--sidebar-muted);
+}
+
+.admin-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.admin-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: var(--control-radius);
+  color: var(--sidebar-muted);
+}
+
+.admin-menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-menu-item.active {
+  background: var(--brand);
+}
+
+.admin-menu-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.admin-menu-desc {
+  font-size: 12px;
+  color: var(--sidebar-muted);
+}
+
+.admin-menu-item.active .admin-menu-desc {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.admin-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: var(--control-radius);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-sidebar-footer-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--sidebar-muted);
+}
+
+.admin-sidebar-footer-value {
+  font-size: 12px;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.admin-sidebar-signout {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-soft);
+  margin-top: 4px;
+}
+
+.admin-main {
+  background: var(--surface);
+  padding: 32px 40px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.admin-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.admin-topbar-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.admin-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.admin-topbar h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.admin-topbar p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-body);
+}
+
+.admin-topbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.admin-btn {
+  padding: 10px 18px;
+  border-radius: var(--control-radius);
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--border-default);
+  background: var(--card);
+  color: var(--text-heading);
+  cursor: pointer;
+}
+
+.admin-btn.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.admin-btn.primary:hover {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-default);
+  flex-wrap: wrap;
+}
+
+.admin-tab {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-body);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.admin-tab:hover {
+  color: var(--text-heading);
+}
+
+.admin-tab.active {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+
+.admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-metric-card {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-metric-label {
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.admin-metric-value {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.admin-metric-sub {
+  font-size: 12px;
+  color: var(--text-body);
+}
+
+.admin-delta-up {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.admin-delta-down {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.admin-panel {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-panel-head h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.admin-panel-head p {
+  font-size: 14px;
+  color: var(--text-body);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-body);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.admin-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-heading);
+  vertical-align: top;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--pill-radius);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-badge.brand {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.admin-badge.success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.admin-badge.warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.admin-badge.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.admin-flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-flow-step {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-flow-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.admin-flow-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.admin-flow-desc {
+  font-size: 12px;
+  color: var(--text-body);
+}
+
+.admin-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-body);
+  font-size: 14px;
+}
+
+.admin-form-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .admin-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .admin-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

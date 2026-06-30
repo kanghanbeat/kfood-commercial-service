@@ -283,6 +283,28 @@ user_follows
 - primary key (follower_id, following_id)
 ```
 
+### Comments
+
+Comments should be designed as a child capability of `user_posts`, not as a
+standalone social surface.
+
+Related documents:
+
+```text
+docs/01-product/user-posts-comments.capability.md
+docs/02-architecture/user-posts-comments.design.md
+```
+
+First version constraints:
+
+- one-level comments only
+- authenticated users can write
+- guests can read visible comments
+- comments require a published public parent post
+- admins/editors can hide or remove comments
+- nested replies, image comments, comment likes, and realtime comments are
+  deferred
+
 ### Recommendations
 
 ```sql

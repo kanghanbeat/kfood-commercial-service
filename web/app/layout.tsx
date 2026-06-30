@@ -29,23 +29,29 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <AuthHashRedirector />
-        <header className="site-header">
-          <Link className="brand" href="/">
-            K-food Service
-          </Link>
-          <nav aria-label="Primary navigation">
-            <Link href="/regions">Regions</Link>
-            <Link href="/foods">Foods</Link>
-            <Link href="/places">Places</Link>
-            <Link href="/routes">Routes</Link>
-            <Link href="/report">Report</Link>
-            <Link href="/contact">Contact</Link>
-            <HeaderAuthLink />
-          </nav>
+        <header className="nav-v2">
+          <div className="nav-v2-inner">
+            <div className="nav-v2-logo">
+              <Link className="nav-v2-wordmark" href="/">
+                K-Food
+              </Link>
+            </div>
+            <nav className="nav-v2-menu" aria-label="Primary navigation">
+              <Link href="/regions">Regions</Link>
+              <Link href="/foods">Foods</Link>
+              <Link href="/places">Places</Link>
+              <Link href="/routes">Routes</Link>
+            </nav>
+            <div className="nav-v2-action">
+              <HeaderAuthLink />
+            </div>
+          </div>
         </header>
         {children}
-        <footer className="site-footer">
-          <nav aria-label="Trust and policy navigation">
+        <footer className="footer-v2">
+          <nav className="footer-v2-nav" aria-label="Trust and policy navigation">
+            <Link href="/report">Report an issue</Link>
+            <Link href="/contact">Contact</Link>
             <Link href="/editorial-policy">Editorial Policy</Link>
             <Link href="/content-policy">Content Policy</Link>
             <Link href="/disclosures">Disclosures</Link>

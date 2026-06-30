@@ -2,89 +2,148 @@ import Link from "next/link";
 
 import {
   getPublishedFoods,
-  getPublishedPlaces,
   getPublishedRegions,
   getPublishedRoutes
 } from "@kfood/data";
 
+function ArrowRightIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M8 3l5 5-5 5M3 8h10"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default async function HomePage() {
-  const [foods, places, regions, routes] = await Promise.all([
+  const [foods, regions, routes] = await Promise.all([
     getPublishedFoods(),
-    getPublishedPlaces(),
     getPublishedRegions(),
     getPublishedRoutes()
   ]);
 
+  const featuredRegions = regions.slice(0, 3);
+  const trendingFoods = foods.slice(0, 3);
+  const curatedRoutes = routes.slice(0, 3);
+
   return (
-    <main className="page-shell">
-      <section className="hero-grid">
-        <div className="hero-copy">
-          <p className="eyebrow">Seoul alpha directory</p>
-          <h1>Find what to eat, where to try it, and how to route it.</h1>
-          <p>
-            A web-first K-food guide for travelers who need practical food
-            choices, trusted editorial notes, and routes that work on the
-            ground.
-          </p>
-          <div className="action-row">
-            <Link className="button primary" href="/regions">
-              Browse regions
-            </Link>
-            <Link className="button secondary" href="/foods">
-              Explore foods
+    <div className="home-v2">
+      <section className="hero-v2">
+        <span className="hero-v2-badge">For travelers in Korea</span>
+        <h1 className="hero-v2-headline">Discover Korea through its food</h1>
+        <p className="hero-v2-subtitle">
+          Find iconic dishes, the regions they come from, and the best places
+          to taste them.
+        </p>
+        <div className="hero-v2-search">Search foods, regions, or places...</div>
+        <Link className="hero-v2-cta" href="/foods">
+          Start your food journey
+        </Link>
+      </section>
+
+      <section className="section-v2">
+        <div className="section-v2-inner">
+          <div className="section-v2-header">
+            <div className="section-v2-heading">
+              <span className="section-v2-title">Trending K-Food</span>
+              <span className="section-v2-subtitle">
+                The most talked-about dishes travelers are loving right now
+              </span>
+            </div>
+            <Link className="section-v2-link" href="/foods">
+              View all <ArrowRightIcon />
             </Link>
           </div>
-        </div>
-        <div className="route-visual" aria-label="Seoul alpha route preview">
-          {regions.map((region, index) => (
-            <Link
-              className="route-node"
-              href={`/regions/${region.slug}`}
-              key={region.slug}
-              style={{ "--node-index": index } as React.CSSProperties}
-            >
-              <span>{region.nameEn}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="metric-strip" aria-label="Alpha coverage">
-        <div>
-          <strong>{regions.length}</strong>
-          <span>regions</span>
-        </div>
-        <div>
-          <strong>{foods.length}</strong>
-          <span>foods</span>
-        </div>
-        <div>
-          <strong>{places.length}</strong>
-          <span>place directions</span>
-        </div>
-        <div>
-          <strong>{routes.length}</strong>
-          <span>routes</span>
-        </div>
-      </section>
-
-      <section className="section-block" aria-labelledby="alpha-regions">
-        <div className="section-heading">
-          <p className="eyebrow">Start by area</p>
-          <h2 id="alpha-regions">Seoul alpha areas</h2>
-        </div>
-        <ul className="directory-grid">
-          {regions.map((region) => (
-            <li className="directory-card" key={region.slug}>
-              <Link href={`/regions/${region.slug}`}>
-                <span>{region.primaryAudience}</span>
-                <strong>{region.nameEn}</strong>
-                <p>{region.routeTheme}</p>
+          <div className="card-grid-v2">
+            {trendingFoods.map((food) => (
+              <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
+                <div className="card-v2-photo" />
+                <div className="card-v2-body">
+                  <span className="card-v2-title">{food.nameEn}</span>
+                  <span className="card-v2-meta">{food.summary}</span>
+                  <span className="card-v2-link">
+                    Explore <ArrowRightIcon />
+                  </span>
+                </div>
               </Link>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        </div>
       </section>
-    </main>
+
+      <section className="section-v2 alt">
+        <div className="section-v2-inner">
+          <div className="section-v2-heading" style={{ alignItems: "center", textAlign: "center" }}>
+            <span className="section-v2-title">Explore by region</span>
+            <span className="section-v2-subtitle">
+              Every Korean city has its own flavor. Pick a region and discover
+              the dishes worth traveling for.
+            </span>
+          </div>
+          <div className="card-grid-v2">
+            {featuredRegions.map((region) => {
+              const dishCount = foods.filter((food) =>
+                food.regionSlugs.includes(region.slug)
+              ).length;
+              return (
+                <Link
+                  className="card-v2"
+                  href={`/regions/${region.slug}`}
+                  key={region.slug}
+                >
+                  <div className="card-v2-photo tall" />
+                  <div className="card-v2-body">
+                    <span className="card-v2-title">{region.nameEn}</span>
+                    <span className="card-v2-meta">
+                      {dishCount} must-try dishes
+                    </span>
+                    <span className="card-v2-link">
+                      Explore <ArrowRightIcon />
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="section-v2">
+        <div className="section-v2-inner">
+          <div className="section-v2-header">
+            <div className="section-v2-heading">
+              <span className="section-v2-eyebrow">Plan your trip</span>
+              <span className="section-v2-title">Curated routes</span>
+              <span className="section-v2-subtitle">
+                Ready-made food journeys that connect the best dishes,
+                markets, and neighborhoods.
+              </span>
+            </div>
+            <Link className="section-v2-link" href="/routes">
+              View all routes <ArrowRightIcon />
+            </Link>
+          </div>
+          <div className="card-grid-v2">
+            {curatedRoutes.map((route) => (
+              <Link className="card-v2" href={`/routes/${route.slug}`} key={route.slug}>
+                <div className="card-v2-photo" />
+                <div className="card-v2-body">
+                  <span className="card-v2-title">{route.title}</span>
+                  <span className="card-v2-meta">{route.estimatedDuration}</span>
+                  <span className="card-v2-link">
+                    View <ArrowRightIcon />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

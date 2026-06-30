@@ -34,6 +34,16 @@ const adminModules = [
     detail: "Review stale-content reports and mark resolution status."
   },
   {
+    href: "/admin/user-posts",
+    title: "User Posts",
+    detail: "Publish, hide, or remove submitted community records."
+  },
+  {
+    href: "/admin/comments",
+    title: "Comments",
+    detail: "Moderate user discussion attached to published records."
+  },
+  {
     href: "/admin/audit-logs",
     title: "Audit Logs",
     detail: "Track admin content mutations for operational safety."

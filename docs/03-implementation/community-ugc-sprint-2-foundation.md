@@ -106,6 +106,60 @@ Recommended next sequence:
 7. Add admin moderation for posts/comments.
 8. Add image upload only after storage policy review.
 
+## 6. Follow-Up Implementation Update
+
+The next implementation pass expanded beyond foundation and added:
+
+- `/feed` read-only published user post listing
+- `/feed/new` post creation without images
+- `/feed/[postId]` post detail
+- comment list and authenticated comment form
+- own comment removal
+- `/admin/user-posts` moderation page
+- `/admin/comments` moderation page
+- admin navigation links for user posts and comments
+- `supabase/sql/ugc_rls_verification.sql`
+- `docs/04-quality/community-ugc-sprint-2.security-report.md`
+
+Remaining operational gate:
+
+```text
+Apply migration 007 to Supabase and manually verify RLS with real anon,
+authenticated, and admin/editor sessions.
+```
+
+## 7. Migration Application Note
+
+`npx supabase migration list` on 2026-06-30 showed:
+
+```text
+Remote applied: 001, 002
+Local pending: 003, 004, 005, 006, 007
+```
+
+Do not run a blind `npx supabase db push` yet because local migration `003` is
+reserved for a separate crawling service and should not be applied as part of
+K-food Service UGC work.
+
+Before enabling the new UGC UI against staging/production, choose one safe path:
+
+```text
+Option A:
+Apply only service migrations 004, 005, 006, and 007 manually in Supabase SQL
+Editor, excluding 003.
+
+Option B:
+Move the crawling migration out of the service migration chain, then repair or
+push the service migration history intentionally.
+```
+
+User verification required:
+
+- confirm whether migrations 004, 005, and 006 were already applied manually
+  despite not appearing in migration history
+- apply 007 only after profile/report prerequisite schema exists
+- run `supabase/sql/ugc_rls_verification.sql`
+
 ## 5. Verification Targets
 
 Before moving to Feed read/write:
@@ -117,4 +171,3 @@ supabase migration push or db push
 RLS verification SQL for anon/authenticated/admin
 manual Mypage save test
 ```
-

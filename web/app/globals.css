@@ -478,6 +478,10 @@ h3 {
   padding: 18px;
 }
 
+.content-list .compact-list-item {
+  min-height: auto;
+}
+
 .directory-card span,
 .tag,
 .meta-label {

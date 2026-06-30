@@ -7,6 +7,8 @@ const adminLinks = [
   { href: "/admin/places", label: "Places" },
   { href: "/admin/routes", label: "Routes" },
   { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/user-posts", label: "User Posts" },
+  { href: "/admin/comments", label: "Comments" },
   { href: "/admin/audit-logs", label: "Audit Logs" }
 ];
 

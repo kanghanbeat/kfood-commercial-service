@@ -1,12 +1,22 @@
 import Link from "next/link";
 
+import { getPublishedUserPosts } from "@kfood/data";
+
+import { getPublicSession } from "@/lib/public-auth";
+
 export const metadata = {
   title: "Feed"
 };
 
 const feedTabs = ["All", "Following", "Popular"];
 
-export default function FeedPage() {
+export default async function FeedPage() {
+  const [posts, session] = await Promise.all([
+    getPublishedUserPosts(),
+    getPublicSession()
+  ]);
+  const writeHref = session ? "/feed/new" : "/auth/login?next=/feed/new";
+
   return (
     <main className="page-shell">
       <header className="detail-header">
@@ -31,7 +41,7 @@ export default function FeedPage() {
         <div className="search-preview-input" aria-label="Feed search preview">
           Search records by food, area, or user
         </div>
-        <Link className="button primary" href="/auth/login?next=/feed">
+        <Link className="button primary" href={writeHref}>
           Write record
         </Link>
       </section>
@@ -42,44 +52,48 @@ export default function FeedPage() {
           </span>
         ))}
       </section>
-      <section className="feed-preview-card" aria-labelledby="feed-preview-title">
-        <div className="feed-preview-media">
-          <span>Future photo upload</span>
-        </div>
-        <div className="feed-preview-body">
-          <div className="label-row">
-            <span className="label-pill verified">Verified food</span>
-            <span className="label-pill">Area guide</span>
-            <span className="label-pill preview">Preview</span>
-          </div>
-          <p className="meta-label">Example record structure</p>
-          <h2 id="feed-preview-title">A user record linked to trusted K-food data</h2>
-          <p>
-            “Tried kalguksu near Myeongdong after checking the route guide.
-            Easy lunch stop, but confirm the exact shop hours before going.”
-          </p>
-          <dl className="compact-definition-list">
-            <div>
-              <dt>Food</dt>
-              <dd>Myeongdong Kalguksu</dd>
-            </div>
-            <div>
-              <dt>Area</dt>
-              <dd>Myeongdong</dd>
-            </div>
-            <div>
-              <dt>Visibility</dt>
-              <dd>Public after moderation</dd>
-            </div>
-          </dl>
-          <div className="feed-action-row" aria-label="Future feed actions">
-            <span>Like requires login</span>
-            <span>Follow requires login</span>
-            <Link href="/report">Report issue</Link>
-          </div>
-        </div>
-      </section>
       <ul className="content-list">
+        {posts.length === 0 ? (
+          <li>
+            <div className="list-item-body">
+              <span className="meta-label">No public records yet</span>
+              <strong>Be the first K-food record after moderation opens</strong>
+              <p>
+                Published user records will appear here after admin review. The
+                trusted guide remains available through Search and Recommend.
+              </p>
+              <div className="action-row">
+                <Link className="button primary" href={writeHref}>
+                  Write record
+                </Link>
+                <Link className="button secondary" href="/search">
+                  Search guide
+                </Link>
+              </div>
+            </div>
+          </li>
+        ) : null}
+        {posts.map((post) => (
+          <li key={post.id}>
+            <Link className="list-item-body" href={`/feed/${post.id}`}>
+              <span className="meta-label">
+                User record · {post.authorDisplayName ?? "K-food member"} ·{" "}
+                {new Date(post.createdAt).toLocaleDateString("en")}
+              </span>
+              <strong>{post.body.slice(0, 90)}{post.body.length > 90 ? "..." : ""}</strong>
+              <p>
+                {post.commentCount} comments · {post.language.toUpperCase()} ·{" "}
+                linked to trusted data where available
+              </p>
+              <div className="label-row">
+                <span className="label-pill preview">User record</span>
+                {post.foodId ? <span className="label-pill verified">Food linked</span> : null}
+                {post.regionId ? <span className="label-pill">Area linked</span> : null}
+                {post.placeId ? <span className="label-pill">Place linked</span> : null}
+              </div>
+            </Link>
+          </li>
+        ))}
         <li>
           <div className="list-item-body">
             <span className="meta-label">Guest mode</span>

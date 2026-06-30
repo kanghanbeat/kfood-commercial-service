@@ -111,6 +111,7 @@ export type UserPost = {
   foodId: string | null;
   placeId: string | null;
   routeGuideId: string | null;
+  moderationNote: string | null;
   commentCount: number;
   createdAt: string;
   updatedAt: string;
@@ -123,6 +124,7 @@ export type UserPostComment = {
   authorDisplayName: string | null;
   body: string;
   status: UserPostCommentStatus;
+  moderationNote: string | null;
   createdAt: string;
   updatedAt: string;
 };

@@ -233,5 +233,8 @@ export async function ensurePublicProfile(session: PublicSession) {
     role: "user"
   };
 
-  await supabase.from("profiles").insert(row);
+  await supabase.from("profiles").upsert(row, {
+    ignoreDuplicates: true,
+    onConflict: "id"
+  });
 }

@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
 
+function isAdminPath() {
+  return window.location.pathname.startsWith("/admin");
+}
+
 function hasSignedInHint() {
   return document.cookie
     .split(";")
@@ -10,6 +14,14 @@ function hasSignedInHint() {
 }
 
 export function HeaderAuthLink() {
+  const onAdminPath = useSyncExternalStore(
+    (callback) => {
+      window.addEventListener("popstate", callback);
+      return () => window.removeEventListener("popstate", callback);
+    },
+    () => (isAdminPath() ? "1" : "0"),
+    () => "0"
+  ) === "1";
   const signedIn =
     useSyncExternalStore(
       (callback) => {
@@ -19,6 +31,14 @@ export function HeaderAuthLink() {
       () => (hasSignedInHint() ? "1" : "0"),
       () => "0"
     ) === "1";
+
+  if (onAdminPath) {
+    return (
+      <Link className="auth-link" href="/admin">
+        Admin
+      </Link>
+    );
+  }
 
   return signedIn ? (
     <Link className="auth-link" href="/mypage">

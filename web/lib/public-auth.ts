@@ -124,6 +124,20 @@ export function createPublicSupabaseUserClient(accessToken: string) {
   });
 }
 
+function createPublicSupabaseRefreshClient() {
+  const config = getSupabaseConfig();
+
+  if (!config) {
+    return null;
+  }
+
+  return createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: false
+    }
+  });
+}
+
 export async function setPublicAuthCookies(
   accessToken: string,
   refreshToken: string
@@ -172,39 +186,82 @@ export async function clearPublicAuthCookies() {
 export async function getPublicSession(): Promise<PublicSession | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(publicAccessTokenCookie)?.value;
+  const refreshToken = cookieStore.get(publicRefreshTokenCookie)?.value;
 
-  if (!accessToken) {
+  if (!accessToken && !refreshToken) {
     return null;
   }
 
-  const supabase = createPublicSupabaseUserClient(accessToken);
+  const supabase = accessToken
+    ? createPublicSupabaseUserClient(accessToken)
+    : null;
 
-  if (!supabase) {
+  if (supabase && accessToken) {
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser(accessToken);
+
+    if (!error && user) {
+      return {
+        accessToken,
+        email: user.email ?? null,
+        name:
+          typeof user.user_metadata.name === "string"
+            ? user.user_metadata.name
+            : null,
+        provider:
+          typeof user.app_metadata.provider === "string"
+            ? user.app_metadata.provider
+            : null,
+        user,
+        userId: user.id
+      };
+    }
+  }
+
+  if (!refreshToken) {
     return null;
   }
 
-  const {
-    data: { user },
-    error
-  } = await supabase.auth.getUser(accessToken);
+  const refreshClient = createPublicSupabaseRefreshClient();
 
-  if (error || !user) {
+  if (!refreshClient) {
     return null;
+  }
+
+  const { data, error } = await refreshClient.auth.refreshSession({
+    refresh_token: refreshToken
+  });
+
+  if (error || !data.session || !data.user) {
+    await clearPublicAuthCookies();
+    return null;
+  }
+
+  try {
+    await setPublicAuthCookies(
+      data.session.access_token,
+      data.session.refresh_token
+    );
+  } catch {
+    // Server components cannot always mutate cookies, but the refreshed
+    // access token can still be used for the current request.
   }
 
   return {
-    accessToken,
-    email: user.email ?? null,
+    accessToken: data.session.access_token,
+    email: data.user.email ?? null,
     name:
-      typeof user.user_metadata.name === "string"
-        ? user.user_metadata.name
+      typeof data.user.user_metadata.name === "string"
+        ? data.user.user_metadata.name
         : null,
     provider:
-      typeof user.app_metadata.provider === "string"
-        ? user.app_metadata.provider
+      typeof data.user.app_metadata.provider === "string"
+        ? data.user.app_metadata.provider
         : null,
-    user,
-    userId: user.id
+    user: data.user,
+    userId: data.user.id
   };
 }
 

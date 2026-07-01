@@ -86,99 +86,38 @@ async function refreshSession(refreshToken: string | undefined) {
 }
 
 function setSessionCookies(
-  response: NextResponse,
   requestCookies: RequestCookieJar,
   scope: "admin" | "public",
   session: RefreshResult
 ) {
-  const secure = process.env.NODE_ENV === "production";
-
   if (scope === "admin") {
-    const options = {
-      httpOnly: true,
-      maxAge: adminSessionMaxAge,
-      path: "/admin",
-      sameSite: "lax" as const,
-      secure
-    };
-
     requestCookies.set(adminAccessTokenCookie, session.access_token);
     requestCookies.set(adminRefreshTokenCookie, session.refresh_token);
-    response.cookies.set(adminAccessTokenCookie, session.access_token, options);
-    response.cookies.set(adminRefreshTokenCookie, session.refresh_token, options);
     return;
   }
-
-  const publicOptions = {
-    httpOnly: true,
-    maxAge: publicSessionMaxAge,
-    path: "/",
-    sameSite: "lax" as const,
-    secure
-  };
 
   requestCookies.set(publicAccessTokenCookie, session.access_token);
   requestCookies.set(publicRefreshTokenCookie, session.refresh_token);
   requestCookies.set(publicSignedInCookie, "1");
-  response.cookies.set(publicAccessTokenCookie, session.access_token, publicOptions);
-  response.cookies.set(publicRefreshTokenCookie, session.refresh_token, publicOptions);
-  response.cookies.set(publicSignedInCookie, "1", {
-    httpOnly: false,
-    maxAge: publicSessionMaxAge,
-    path: "/",
-    sameSite: "lax",
-    secure
-  });
 }
 
 function clearSessionCookies(
-  response: NextResponse,
   requestCookies: RequestCookieJar,
   scope: "admin" | "public"
 ) {
-  const secure = process.env.NODE_ENV === "production";
-
   if (scope === "admin") {
-    const options = {
-      httpOnly: true,
-      maxAge: 0,
-      path: "/admin",
-      sameSite: "lax" as const,
-      secure
-    };
-
     requestCookies.delete(adminAccessTokenCookie);
     requestCookies.delete(adminRefreshTokenCookie);
-    response.cookies.set(adminAccessTokenCookie, "", options);
-    response.cookies.set(adminRefreshTokenCookie, "", options);
     return;
   }
-
-  const publicOptions = {
-    httpOnly: true,
-    maxAge: 0,
-    path: "/",
-    sameSite: "lax" as const,
-    secure
-  };
 
   requestCookies.delete(publicAccessTokenCookie);
   requestCookies.delete(publicRefreshTokenCookie);
   requestCookies.delete(publicSignedInCookie);
-  response.cookies.set(publicAccessTokenCookie, "", publicOptions);
-  response.cookies.set(publicRefreshTokenCookie, "", publicOptions);
-  response.cookies.set(publicSignedInCookie, "", {
-    httpOnly: false,
-    maxAge: 0,
-    path: "/",
-    sameSite: "lax",
-    secure
-  });
 }
 
 async function refreshScopeIfNeeded(
   request: NextRequest,
-  response: NextResponse,
   requestCookies: RequestCookieJar,
   scope: "admin" | "public"
 ) {
@@ -198,11 +137,11 @@ async function refreshScopeIfNeeded(
   const refreshedSession = await refreshSession(refreshToken);
 
   if (!refreshedSession) {
-    clearSessionCookies(response, requestCookies, scope);
+    clearSessionCookies(requestCookies, scope);
     return;
   }
 
-  setSessionCookies(response, requestCookies, scope, refreshedSession);
+  setSessionCookies(requestCookies, scope, refreshedSession);
 }
 
 function getRequestCookieJar(request: NextRequest): RequestCookieJar {
@@ -217,22 +156,117 @@ function serializeCookieHeader(cookies: RequestCookieJar) {
     .join("; ");
 }
 
+function writeResponseCookies(
+  request: NextRequest,
+  response: NextResponse,
+  requestCookies: RequestCookieJar
+) {
+  const secure = process.env.NODE_ENV === "production";
+
+  const writeHttpOnlyCookie = (
+    name: string,
+    path: string,
+    maxAge: number,
+    fallbackValue?: string
+  ) => {
+    const originalValue = request.cookies.get(name)?.value;
+    const nextValue = requestCookies.get(name);
+
+    if (nextValue && nextValue !== originalValue) {
+      response.cookies.set(name, nextValue, {
+        httpOnly: true,
+        maxAge,
+        path,
+        sameSite: "lax",
+        secure
+      });
+      return;
+    }
+
+    if (!nextValue && originalValue) {
+      response.cookies.set(name, "", {
+        httpOnly: true,
+        maxAge: 0,
+        path,
+        sameSite: "lax",
+        secure
+      });
+      return;
+    }
+
+    if (fallbackValue && !originalValue && nextValue === fallbackValue) {
+      response.cookies.set(name, fallbackValue, {
+        httpOnly: true,
+        maxAge,
+        path,
+        sameSite: "lax",
+        secure
+      });
+    }
+  };
+
+  writeHttpOnlyCookie(
+    publicAccessTokenCookie,
+    "/",
+    publicSessionMaxAge
+  );
+  writeHttpOnlyCookie(
+    publicRefreshTokenCookie,
+    "/",
+    publicSessionMaxAge
+  );
+  writeHttpOnlyCookie(
+    adminAccessTokenCookie,
+    "/admin",
+    adminSessionMaxAge
+  );
+  writeHttpOnlyCookie(
+    adminRefreshTokenCookie,
+    "/admin",
+    adminSessionMaxAge
+  );
+
+  const originalPublicHint = request.cookies.get(publicSignedInCookie)?.value;
+  const nextPublicHint = requestCookies.get(publicSignedInCookie);
+
+  if (nextPublicHint && nextPublicHint !== originalPublicHint) {
+    response.cookies.set(publicSignedInCookie, nextPublicHint, {
+      httpOnly: false,
+      maxAge: publicSessionMaxAge,
+      path: "/",
+      sameSite: "lax",
+      secure
+    });
+  }
+
+  if (!nextPublicHint && originalPublicHint) {
+    response.cookies.set(publicSignedInCookie, "", {
+      httpOnly: false,
+      maxAge: 0,
+      path: "/",
+      sameSite: "lax",
+      secure
+    });
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requestCookies = getRequestCookieJar(request);
   const requestHeaders = new Headers(request.headers);
+
+  await Promise.all([
+    refreshScopeIfNeeded(request, requestCookies, "public"),
+    refreshScopeIfNeeded(request, requestCookies, "admin")
+  ]);
+
+  requestHeaders.set("cookie", serializeCookieHeader(requestCookies));
   const response = NextResponse.next({
     request: {
       headers: requestHeaders
     }
   });
-
-  await Promise.all([
-    refreshScopeIfNeeded(request, response, requestCookies, "public"),
-    refreshScopeIfNeeded(request, response, requestCookies, "admin")
-  ]);
-
-  requestHeaders.set("cookie", serializeCookieHeader(requestCookies));
+  writeResponseCookies(request, response, requestCookies);
 
   if (pathname.startsWith("/admin/login") || pathname.startsWith("/admin/logout")) {
     return response;

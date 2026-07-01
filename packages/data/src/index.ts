@@ -1316,6 +1316,202 @@ export async function updateAdminPlace(
   return { ok: true };
 }
 
+// ── Admin: regions CRUD ─────────────────────────────────────
+// 기존 RLS(regions_editor_manage: editor/admin 쓰기 허용) 위에 얹은 앱 함수.
+// updateAdminPlace 패턴을 그대로 따름(감사 로그 포함).
+
+export type AdminRegion = {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameKo: string;
+  intro: string;
+  bestForTags: string[];
+  displayOrder: number;
+  status: PublicationStatus;
+  editorialNote: string | null;
+  updatedAt: string | null;
+};
+
+type AdminRegionRow = {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_ko: string;
+  intro: string;
+  best_for_tags: string[] | null;
+  display_order: number;
+  status: PublicationStatus;
+  editorial_note: string | null;
+  updated_at: string | null;
+};
+
+function mapAdminRegion(row: AdminRegionRow): AdminRegion {
+  return {
+    id: row.id,
+    slug: row.slug,
+    nameEn: row.name_en,
+    nameKo: row.name_ko,
+    intro: row.intro,
+    bestForTags: row.best_for_tags ?? [],
+    displayOrder: row.display_order,
+    status: row.status,
+    editorialNote: row.editorial_note,
+    updatedAt: row.updated_at
+  };
+}
+
+export type CreateAdminRegionInput = {
+  actorId: string;
+  slug: string;
+  nameEn: string;
+  nameKo: string;
+  intro: string;
+  bestForTags?: string[];
+  editorialNote?: string;
+  status: PublicationStatus;
+};
+
+export type UpdateAdminRegionInput = CreateAdminRegionInput & {
+  regionId: string;
+};
+
+const adminRegionColumns =
+  "id, slug, name_en, name_ko, intro, best_for_tags, display_order, status, editorial_note, updated_at";
+
+export async function getAdminRegions(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("regions")
+    .select(adminRegionColumns)
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminRegion(row as unknown as AdminRegionRow));
+}
+
+function validateRegionInput(input: CreateAdminRegionInput) {
+  if (!input.slug.trim()) return "Slug is required.";
+  if (!input.nameEn.trim()) return "English name is required.";
+  if (!input.nameKo.trim()) return "Korean name is required.";
+  if (!input.intro.trim()) return "Intro is required.";
+  return null;
+}
+
+function regionWritePayload(input: CreateAdminRegionInput) {
+  return {
+    slug: input.slug.trim(),
+    name_en: input.nameEn.trim(),
+    name_ko: input.nameKo.trim(),
+    intro: input.intro.trim(),
+    best_for_tags: input.bestForTags ?? [],
+    editorial_note: input.editorialNote?.trim() || null,
+    status: input.status,
+    updated_at: new Date().toISOString()
+  };
+}
+
+export async function createAdminRegion(
+  accessToken: string,
+  input: CreateAdminRegionInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateRegionInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("regions")
+    .insert(regionWritePayload(input))
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Region could not be created." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "region.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "region"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Region created, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminRegion(
+  accessToken: string,
+  input: UpdateAdminRegionInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateRegionInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("regions")
+    .select("*")
+    .eq("id", input.regionId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Region was not found." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("regions")
+    .update(regionWritePayload(input))
+    .eq("id", input.regionId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Region could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "region.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.regionId,
+    entity_type: "region"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Region updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
 export async function submitContentReport(
   input: ContentReportInput
 ): Promise<ContentReportResult> {

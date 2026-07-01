@@ -1,11 +1,8 @@
-import {
-  getPublishedFoods,
-  getPublishedRegions,
-  getPublishedRoutes
-} from "@kfood/data";
+import { getPublishedFoods, getPublishedRoutes } from "@kfood/data";
 
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
 import { PlacesPanel } from "@/components/admin/places-panel";
+import { RegionsPanel } from "@/components/admin/regions-panel";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -30,7 +27,12 @@ const summaryMetrics = [
 export default async function AdminManagePage({
   searchParams
 }: {
-  searchParams?: Promise<{ tab?: string; error?: string; updated?: string }>;
+  searchParams?: Promise<{
+    tab?: string;
+    error?: string;
+    updated?: string;
+    created?: string;
+  }>;
 }) {
   const [session, params] = await Promise.all([
     requireAdminSession(),
@@ -71,7 +73,16 @@ export default async function AdminManagePage({
 
       <AdminTabs basePath="/admin/manage" current={tab} tabs={manageTabs} />
 
-      {tab === "regions" ? <RegionsPanel /> : null}
+      {tab === "regions" ? (
+        <RegionsPanel
+          accessToken={session.accessToken}
+          message={{
+            error: params?.error,
+            updated: params?.updated,
+            created: params?.created
+          }}
+        />
+      ) : null}
       {tab === "foods" ? <FoodsPanel /> : null}
       {tab === "places" ? (
         <PlacesPanel
@@ -81,40 +92,6 @@ export default async function AdminManagePage({
       ) : null}
       {tab === "routes" ? <RoutesPanel /> : null}
     </AdminShell>
-  );
-}
-
-async function RegionsPanel() {
-  const regions = await getPublishedRegions();
-  return (
-    <div className="admin-panel">
-      <div className="admin-panel-head">
-        <h2>지역 콘텐츠</h2>
-        <p>공개 웹에 노출되는 지역 단위 콘텐츠의 발행 상태와 소개를 확인합니다.</p>
-      </div>
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>지역</th>
-            <th>주요 타깃</th>
-            <th>루트 테마</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          {regions.map((region) => (
-            <tr key={region.slug}>
-              <td>{region.nameEn}</td>
-              <td>{region.primaryAudience}</td>
-              <td>{region.routeTheme}</td>
-              <td>
-                <span className="admin-badge success">공개</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 

@@ -1,70 +1,6 @@
-import { redirect } from "next/navigation";
-
-import {
-  createSupabaseAuthClient,
-  createSupabaseUserClient,
-  setAdminAuthCookies
-} from "@/lib/admin-auth";
-
 export const metadata = {
   title: "Admin Login"
 };
-
-function redirectWithError(message: string): never {
-  redirect(`/admin/login?error=${encodeURIComponent(message)}`);
-}
-
-async function signIn(formData: FormData) {
-  "use server";
-
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  const nextPath = String(formData.get("next") ?? "/admin");
-  const supabase = createSupabaseAuthClient();
-
-  if (!supabase) {
-    redirectWithError("Supabase Auth is not configured.");
-  }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error || !data.session || !data.user) {
-    redirectWithError(
-      "Invalid admin credentials. Newly invited accounts must set a password first."
-    );
-  }
-
-  const userClient = createSupabaseUserClient(data.session.access_token);
-
-  if (!userClient) {
-    redirectWithError("Supabase Auth is not configured.");
-  }
-
-  const { data: profile, error: profileError } = await userClient
-    .from("profiles")
-    .select("role, is_active")
-    .eq("id", data.user.id)
-    .maybeSingle<{ role: "user" | "editor" | "admin"; is_active: boolean }>();
-
-  if (
-    profileError ||
-    !profile ||
-    !profile.is_active ||
-    !["admin", "editor"].includes(profile.role)
-  ) {
-    redirectWithError("This account is not allowed to access admin.");
-  }
-
-  await setAdminAuthCookies(
-    data.session.access_token,
-    data.session.refresh_token
-  );
-
-  redirect(nextPath.startsWith("/admin") ? nextPath : "/admin");
-}
 
 export default async function AdminLoginPage({
   searchParams
@@ -86,7 +22,7 @@ export default async function AdminLoginPage({
         <p className="status-message success">{params.notice}</p>
       ) : null}
       {params?.error ? <p className="status-message error">{params.error}</p> : null}
-      <form action={signIn} className="form-panel">
+      <form action="/admin/login/email" className="form-panel" method="post">
         <input name="next" type="hidden" value={params?.next ?? "/admin"} />
         <label>
           Email

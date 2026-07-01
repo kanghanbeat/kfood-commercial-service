@@ -1,5 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { NextResponse } from "next/server";
 
 import { createClient, type User } from "@supabase/supabase-js";
 
@@ -105,6 +106,20 @@ export async function createPublicSupabaseAuthClient() {
   });
 }
 
+export function createPublicSupabasePasswordClient() {
+  const config = getSupabaseConfig();
+
+  if (!config) {
+    return null;
+  }
+
+  return createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: false
+    }
+  });
+}
+
 export function createPublicSupabaseUserClient(accessToken: string) {
   const config = getSupabaseConfig();
 
@@ -162,6 +177,30 @@ export async function setPublicAuthCookies(
   });
 }
 
+export function setPublicAuthCookiesOnResponse(
+  response: NextResponse,
+  accessToken: string,
+  refreshToken: string
+) {
+  const cookieOptions = {
+    httpOnly: true,
+    maxAge: publicSessionMaxAge,
+    path: "/",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
+  };
+
+  response.cookies.set(publicAccessTokenCookie, accessToken, cookieOptions);
+  response.cookies.set(publicRefreshTokenCookie, refreshToken, cookieOptions);
+  response.cookies.set(publicSignedInCookie, "1", {
+    httpOnly: false,
+    maxAge: publicSessionMaxAge,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production"
+  });
+}
+
 export async function clearPublicAuthCookies() {
   const cookieStore = await cookies();
   const expiredCookieOptions = {
@@ -175,6 +214,26 @@ export async function clearPublicAuthCookies() {
   cookieStore.set(publicAccessTokenCookie, "", expiredCookieOptions);
   cookieStore.set(publicRefreshTokenCookie, "", expiredCookieOptions);
   cookieStore.set(publicSignedInCookie, "", {
+    httpOnly: false,
+    maxAge: 0,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production"
+  });
+}
+
+export function clearPublicAuthCookiesOnResponse(response: NextResponse) {
+  const expiredCookieOptions = {
+    httpOnly: true,
+    maxAge: 0,
+    path: "/",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
+  };
+
+  response.cookies.set(publicAccessTokenCookie, "", expiredCookieOptions);
+  response.cookies.set(publicRefreshTokenCookie, "", expiredCookieOptions);
+  response.cookies.set(publicSignedInCookie, "", {
     httpOnly: false,
     maxAge: 0,
     path: "/",

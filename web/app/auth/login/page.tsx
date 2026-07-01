@@ -1,12 +1,6 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 
-import {
-  createPublicSupabaseAuthClient,
-  ensurePublicProfile,
-  getSafeNextPath,
-  setPublicAuthCookies
-} from "@/lib/public-auth";
+import { getSafeNextPath } from "@/lib/public-auth";
 
 export const metadata = {
   robots: {
@@ -15,66 +9,6 @@ export const metadata = {
   },
   title: "Sign in"
 };
-
-function redirectWithError(message: string, nextPath: string): never {
-  redirect(
-    `/auth/login?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent(message)}`
-  );
-}
-
-async function signInWithEmail(formData: FormData) {
-  "use server";
-
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  const nextPath = getSafeNextPath(String(formData.get("next") ?? "/mypage"));
-
-  if (!email || !password) {
-    redirectWithError("Enter your email and password.", nextPath);
-  }
-
-  const supabase = await createPublicSupabaseAuthClient();
-
-  if (!supabase) {
-    redirectWithError("Supabase Auth is not configured.", nextPath);
-  }
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error || !data.session || !data.user) {
-    redirectWithError(
-      "Could not sign in. Check your email and password.",
-      nextPath
-    );
-  }
-
-  await setPublicAuthCookies(
-    data.session.access_token,
-    data.session.refresh_token
-  );
-
-  await ensurePublicProfile({
-    accessToken: data.session.access_token,
-    email: data.user.email ?? null,
-    name:
-      typeof data.user.user_metadata.display_name === "string"
-        ? data.user.user_metadata.display_name
-        : typeof data.user.user_metadata.name === "string"
-          ? data.user.user_metadata.name
-          : null,
-    provider:
-      typeof data.user.app_metadata.provider === "string"
-        ? data.user.app_metadata.provider
-        : "email",
-    user: data.user,
-    userId: data.user.id
-  });
-
-  redirect(nextPath);
-}
 
 export default async function PublicLoginPage({
   searchParams
@@ -105,7 +39,7 @@ export default async function PublicLoginPage({
           Email login keeps alpha testing free while Google and Kakao provider
           setup remains closed.
         </p>
-        <form action={signInWithEmail} className="profile-form">
+        <form action="/auth/login/email" className="profile-form" method="post">
           <input name="next" type="hidden" value={nextPath} />
           <label>
             Email

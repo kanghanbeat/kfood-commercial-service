@@ -1,8 +1,4 @@
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-
 import {
-  createAdminUserPost,
   getPublishedFoods,
   getPublishedPlaces,
   getPublishedRegions,
@@ -44,62 +40,6 @@ const statusOptions: Array<{
   { label: "Save for review", value: "pending_review" }
 ];
 
-const languageValues = languageOptions.map((option) => option.value);
-const visibilityValues = visibilityOptions.map((option) => option.value);
-const statusValues = statusOptions.map((option) => option.value);
-
-function redirectWithError(message: string): never {
-  redirect(`/admin/user-posts/new?error=${encodeURIComponent(message)}`);
-}
-
-async function submitAdminPost(formData: FormData) {
-  "use server";
-
-  const session = await requireAdminSession();
-  const language = String(formData.get("language") ?? "en") as SupportedLanguage;
-  const visibility = String(
-    formData.get("visibility") ?? "public"
-  ) as UserPostVisibility;
-  const status = String(formData.get("status") ?? "published") as Extract<
-    UserPostStatus,
-    "pending_review" | "published"
-  >;
-
-  if (!languageValues.includes(language)) {
-    redirectWithError("Choose a supported language.");
-  }
-
-  if (!visibilityValues.includes(visibility)) {
-    redirectWithError("Choose a supported visibility.");
-  }
-
-  if (!statusValues.includes(status)) {
-    redirectWithError("Choose a supported post status.");
-  }
-
-  const result = await createAdminUserPost(session.accessToken, {
-    actorId: session.userId,
-    authorId: session.userId,
-    body: String(formData.get("body") ?? ""),
-    foodSlug: String(formData.get("food_slug") ?? "") || null,
-    language,
-    moderationNote: String(formData.get("moderation_note") ?? ""),
-    placeSlug: String(formData.get("place_slug") ?? "") || null,
-    regionSlug: String(formData.get("region_slug") ?? "") || null,
-    routeSlug: String(formData.get("route_slug") ?? "") || null,
-    status,
-    visibility
-  });
-
-  if (!result.ok) {
-    redirectWithError(result.message);
-  }
-
-  revalidatePath("/feed");
-  revalidatePath("/admin/user-posts");
-  redirect("/admin/user-posts?created=1");
-}
-
 export default async function NewAdminUserPostPage({
   searchParams
 }: {
@@ -128,7 +68,7 @@ export default async function NewAdminUserPostPage({
       {params?.error ? (
         <p className="status-message error">{params.error}</p>
       ) : null}
-      <form action={submitAdminPost} className="form-panel">
+      <form action="/admin/user-posts/new/submit" className="form-panel" method="post">
         <input name="author_id" type="hidden" value={session.userId} />
         <label>
           Record text

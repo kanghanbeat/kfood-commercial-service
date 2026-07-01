@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { NextResponse } from "next/server";
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -95,6 +96,23 @@ export async function setAdminAuthCookies(
   cookieStore.set(adminRefreshTokenCookie, refreshToken, cookieOptions);
 }
 
+export function setAdminAuthCookiesOnResponse(
+  response: NextResponse,
+  accessToken: string,
+  refreshToken: string
+) {
+  const cookieOptions = {
+    httpOnly: true,
+    maxAge: adminSessionMaxAge,
+    path: "/admin",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
+  };
+
+  response.cookies.set(adminAccessTokenCookie, accessToken, cookieOptions);
+  response.cookies.set(adminRefreshTokenCookie, refreshToken, cookieOptions);
+}
+
 export async function clearAdminAuthCookies() {
   const cookieStore = await cookies();
   const expiredCookieOptions = {
@@ -107,6 +125,19 @@ export async function clearAdminAuthCookies() {
 
   cookieStore.set(adminAccessTokenCookie, "", expiredCookieOptions);
   cookieStore.set(adminRefreshTokenCookie, "", expiredCookieOptions);
+}
+
+export function clearAdminAuthCookiesOnResponse(response: NextResponse) {
+  const expiredCookieOptions = {
+    httpOnly: true,
+    maxAge: 0,
+    path: "/admin",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
+  };
+
+  response.cookies.set(adminAccessTokenCookie, "", expiredCookieOptions);
+  response.cookies.set(adminRefreshTokenCookie, "", expiredCookieOptions);
 }
 
 export async function getAdminSession(): Promise<AdminSession | null> {

@@ -1,8 +1,9 @@
-import { redirect } from "next/navigation";
+import { NextRequest, NextResponse } from "next/server";
 
-import { clearAdminAuthCookies } from "@/lib/admin-auth";
+import { clearAdminAuthCookiesOnResponse } from "@/lib/admin-auth";
 
-export async function GET() {
-  await clearAdminAuthCookies();
-  redirect("/admin/login");
+export async function GET(request: NextRequest) {
+  const response = NextResponse.redirect(new URL("/admin/login", request.url));
+  clearAdminAuthCookiesOnResponse(response);
+  return response;
 }

@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
-
 import {
-  createUserPost,
   getPublishedFoods,
   getPublishedPlaces,
   getPublishedRegions,
@@ -33,50 +30,6 @@ const visibilityOptions: Array<{ label: string; value: UserPostVisibility }> = [
   { label: "Unlisted", value: "unlisted" }
 ];
 
-const languageValues = languageOptions.map((option) => option.value);
-const visibilityValues = visibilityOptions.map((option) => option.value);
-
-function redirectWithError(message: string): never {
-  redirect(`/feed/new?error=${encodeURIComponent(message)}`);
-}
-
-async function submitPost(formData: FormData) {
-  "use server";
-
-  const session = await requirePublicSession("/feed/new");
-  await ensurePublicProfile(session);
-
-  const language = String(formData.get("language") ?? "en") as SupportedLanguage;
-  const visibility = String(
-    formData.get("visibility") ?? "public"
-  ) as UserPostVisibility;
-
-  if (!languageValues.includes(language)) {
-    redirectWithError("Choose a supported language.");
-  }
-
-  if (!visibilityValues.includes(visibility)) {
-    redirectWithError("Choose a supported visibility.");
-  }
-
-  const result = await createUserPost(session.accessToken, {
-    authorId: session.userId,
-    body: String(formData.get("body") ?? ""),
-    foodSlug: String(formData.get("food_slug") ?? "") || null,
-    language,
-    placeSlug: String(formData.get("place_slug") ?? "") || null,
-    regionSlug: String(formData.get("region_slug") ?? "") || null,
-    routeSlug: String(formData.get("route_slug") ?? "") || null,
-    visibility
-  });
-
-  if (!result.ok) {
-    redirectWithError(result.message);
-  }
-
-  redirect("/mypage?updated=1");
-}
-
 export default async function NewFeedRecordPage({
   searchParams
 }: {
@@ -106,7 +59,7 @@ export default async function NewFeedRecordPage({
       {params?.error ? (
         <p className="status-message error">{params.error}</p>
       ) : null}
-      <form action={submitPost} className="form-panel">
+      <form action="/feed/new/submit" className="form-panel" method="post">
         <label>
           Record text
           <textarea

@@ -1,10 +1,7 @@
 import Link from "next/link";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import {
   getMyProfile,
-  updateMyProfile,
   type SupportedLanguage
 } from "@kfood/data";
 
@@ -24,38 +21,6 @@ const languageOptions: Array<{ label: string; value: SupportedLanguage }> = [
   { label: "日本語", value: "ja" },
   { label: "中文", value: "zh" }
 ];
-
-const supportedLanguageValues = languageOptions.map((option) => option.value);
-
-function redirectWithError(message: string): never {
-  redirect(`/mypage?error=${encodeURIComponent(message)}`);
-}
-
-async function updateProfile(formData: FormData) {
-  "use server";
-
-  const session = await requirePublicSession();
-  const preferredLanguage = String(
-    formData.get("preferred_language") ?? "en"
-  ) as SupportedLanguage;
-
-  if (!supportedLanguageValues.includes(preferredLanguage)) {
-    redirectWithError("Choose a supported language.");
-  }
-
-  const result = await updateMyProfile(session.accessToken, {
-    bio: String(formData.get("bio") ?? ""),
-    displayName: String(formData.get("display_name") ?? ""),
-    preferredLanguage
-  });
-
-  if (!result.ok) {
-    redirectWithError(result.message);
-  }
-
-  revalidatePath("/mypage");
-  redirect("/mypage?updated=1");
-}
 
 export default async function MypagePage({
   searchParams
@@ -117,7 +82,7 @@ export default async function MypagePage({
       </section>
       <section className="form-panel">
         <h2>Public profile basics</h2>
-        <form action={updateProfile} className="profile-form">
+        <form action="/mypage/update" className="profile-form" method="post">
           <label>
             Display name
             <input

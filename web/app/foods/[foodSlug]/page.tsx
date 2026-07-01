@@ -28,6 +28,8 @@ export async function generateMetadata({
   };
 }
 
+const spicyLabels = ["Not spicy", "Mild", "Medium", "Spicy", "Very spicy"];
+
 export default async function FoodDetailPage({
   params
 }: {
@@ -50,90 +52,142 @@ export default async function FoodDetailPage({
     place.foodSlugs.includes(food.slug)
   );
   const photoReview = getFoodPhotoReviewNote(food);
+  const tasteTags = food.tasteProfile
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
 
   return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Spicy level {food.spicyLevel}/4</p>
-        <h1>{food.nameEn}</h1>
-        <p className="detail-intro">{food.summary}</p>
-        <div className="tag-row">
-          <span className="tag">{food.tasteProfile}</span>
-          <span className="tag">{food.beginnerNote}</span>
+    <div className="food-v2">
+      <nav className="food-breadcrumb" aria-label="Breadcrumb">
+        <Link href="/">Home</Link>
+        <span>/</span>
+        <Link href="/foods">Foods</Link>
+        <span>/</span>
+        <span>{food.nameEn}</span>
+      </nav>
+
+      <header className="food-v2-header">
+        <span className="food-v2-eyebrow">Food guide</span>
+        <div className="food-v2-names">
+          <span className="food-v2-name-en">{food.nameEn}</span>
+          {food.nameKo && food.nameKo !== food.nameEn ? (
+            <span className="food-v2-name-ko">{food.nameKo}</span>
+          ) : null}
         </div>
+        <div className="food-v2-tags">
+          <span className="food-chip spicy">
+            Spicy {food.spicyLevel}/4 · {spicyLabels[food.spicyLevel]}
+          </span>
+          {tasteTags.map((tag) => (
+            <span className="food-chip" key={tag}>
+              {tag}
+            </span>
+          ))}
+        </div>
+        <p className="food-v2-summary">{food.summary}</p>
       </header>
 
-      <section className="section-block" aria-labelledby="food-regions">
-        <div className="section-heading">
-          <p className="eyebrow">Where it fits</p>
-          <h2 id="food-regions">Regions</h2>
+      <section aria-labelledby="food-guide">
+        <p className="food-section-title" id="food-guide">
+          What to know before you order
+        </p>
+        <div className="food-info-grid">
+          <div className="food-info-card">
+            <h3>Description</h3>
+            <p>{food.summary}</p>
+          </div>
+          <div className="food-info-card">
+            <h3>Taste</h3>
+            <p>{food.tasteProfile}</p>
+          </div>
+          <div className="food-info-card">
+            <h3>Good to know</h3>
+            <p>{food.beginnerNote}</p>
+          </div>
+          <div className="food-info-card">
+            <h3>Menu tip</h3>
+            <p>
+              On Korean menus, 매운맛 (spicy level) tells you the heat. Ask for
+              less spicy if you want it milder.
+            </p>
+          </div>
         </div>
-        <ul className="content-list">
+      </section>
+
+      <section aria-labelledby="food-regions">
+        <p className="food-section-title" id="food-regions">
+          Where it fits
+        </p>
+        <div className="card-grid-v2">
           {food.regionSlugs.map((regionSlug) => {
             const region = regions.find((item) => item.slug === regionSlug);
             return region ? (
-              <li key={region.slug}>
-                <Link href={`/regions/${region.slug}`}>
-                  <span className="meta-label">{region.primaryAudience}</span>
-                  <strong>{region.nameEn}</strong>
-                  <p>{region.routeTheme}</p>
-                </Link>
-              </li>
+              <Link
+                className="card-v2"
+                href={`/regions/${region.slug}`}
+                key={region.slug}
+              >
+                <div className="card-v2-body">
+                  <span className="card-v2-title">{region.nameEn}</span>
+                  <span className="card-v2-meta">{region.routeTheme}</span>
+                  <span className="card-v2-link">Explore →</span>
+                </div>
+              </Link>
             ) : null;
           })}
-        </ul>
+        </div>
       </section>
 
-      <section className="section-block" aria-labelledby="food-photo-sources">
-        <div className="section-heading">
-          <p className="eyebrow">Photo sourcing</p>
-          <h2 id="food-photo-sources">Copyright-safe image candidates</h2>
-          <p>
-            Use these links to review candidate photos before storing or
-            displaying an image. A photo is not approved until title, author,
-            source, license, and attribution requirements are recorded.
-          </p>
-        </div>
-        <div className="review-note">
-          <span>{photoReview.label}</span>
-          <p>{photoReview.note}</p>
-          <small>{photoReview.nextAction}</small>
-        </div>
-        <ul className="content-list">
-          {getFoodPhotoSourceCandidates(food).map((candidate) => (
-            <li key={candidate.sourceName}>
-              <a
-                className="list-item-body"
-                href={candidate.href}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <span className="meta-label">{candidate.sourceName}</span>
-                <strong>{candidate.licenseFit}</strong>
-                <p>{candidate.reviewNote}</p>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="section-block" aria-labelledby="food-places">
-        <div className="section-heading">
-          <p className="eyebrow">Try it here</p>
-          <h2 id="food-places">Place directions</h2>
-        </div>
-        <ul className="content-list">
-          {places.map((place) => (
-            <li key={place.slug}>
-              <Link href={`/places/${place.slug}`}>
-                <span className="meta-label">{place.lastVerifiedLabel}</span>
-                <strong>{place.nameEn}</strong>
-                <p>{place.editorialNote}</p>
+      <section aria-labelledby="food-places">
+        <p className="food-section-title" id="food-places">
+          Where to try it
+        </p>
+        {places.length === 0 ? (
+          <div className="food-info-card">
+            <p>Verified places for this dish will appear here.</p>
+          </div>
+        ) : (
+          <div className="card-grid-v2">
+            {places.map((place) => (
+              <Link className="card-v2" href={`/places/${place.slug}`} key={place.slug}>
+                <div className="card-v2-body">
+                  <span className="card-v2-meta">{place.lastVerifiedLabel}</span>
+                  <span className="card-v2-title">{place.nameEn}</span>
+                  <span className="card-v2-meta">{place.editorialNote}</span>
+                  <span className="card-v2-link">View →</span>
+                </div>
               </Link>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        )}
       </section>
-    </main>
+
+      <section aria-labelledby="food-photo-sources">
+        <p className="food-section-title" id="food-photo-sources">
+          Photo sourcing
+        </p>
+        <div className="food-info-card" style={{ marginBottom: 16 }}>
+          <h3>{photoReview.label}</h3>
+          <p>{photoReview.note}</p>
+          <p style={{ color: "var(--text-heading)" }}>{photoReview.nextAction}</p>
+        </div>
+        <div className="food-info-grid">
+          {getFoodPhotoSourceCandidates(food).map((candidate) => (
+            <a
+              className="food-info-card"
+              href={candidate.href}
+              key={candidate.sourceName}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <h3>{candidate.sourceName}</h3>
+              <p style={{ color: "var(--brand)" }}>{candidate.licenseFit}</p>
+              <p>{candidate.reviewNote}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

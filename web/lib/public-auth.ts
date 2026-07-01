@@ -208,7 +208,31 @@ export async function getPublicSession(): Promise<PublicSession | null> {
   };
 }
 
+// 개발용 미리보기 세션. 프로덕션에선 절대 동작하지 않음(NODE_ENV 가드).
+// .env.local 에 ADMIN_PREVIEW=true 일 때만 로컬에서 로그인 없이 /profile 열람.
+function publicPreviewSession(): PublicSession | null {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.ADMIN_PREVIEW === "true"
+  ) {
+    return {
+      accessToken: "public-preview",
+      email: "preview@local",
+      name: "Preview User",
+      provider: "preview",
+      user: { id: "public-preview" } as unknown as User,
+      userId: "public-preview"
+    };
+  }
+  return null;
+}
+
 export async function requirePublicSession() {
+  const preview = publicPreviewSession();
+  if (preview) {
+    return preview;
+  }
+
   const session = await getPublicSession();
 
   if (!session) {

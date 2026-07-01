@@ -1294,3 +1294,228 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* ============================================================
+   Food detail v2 — Pencil 시안(food-detail.html) 이식.
+   기존 신뢰 기능(사진 저작권·지역·장소)은 유지, 디자인만 v2.
+   ============================================================ */
+
+.food-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 32px 48px 72px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.food-breadcrumb {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.food-breadcrumb a {
+  color: var(--text-body);
+}
+
+.food-breadcrumb a:hover {
+  color: var(--brand);
+}
+
+.food-v2-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.food-v2-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.food-v2-names {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.food-v2-name-en {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.food-v2-name-ko {
+  font-size: 20px;
+  color: var(--text-body);
+}
+
+.food-v2-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.food-chip {
+  padding: 6px 12px;
+  border-radius: var(--pill-radius);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.food-chip.spicy {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.food-v2-summary {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--text-body);
+  max-width: 720px;
+}
+
+.food-v2-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.food-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.food-info-card {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.food-info-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.food-info-card p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-body);
+}
+
+.food-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .food-v2 {
+    padding: 24px;
+  }
+
+  .food-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .food-v2-name-en {
+    font-size: 30px;
+  }
+}
+
+/* ============================================================
+   My Journey v2 — Pencil 시안(mypage.html) 이식.
+   도감(50종) 트래커. tried 상태는 사용자 데이터 연동 전까지 기본값.
+   ============================================================ */
+
+.mypage-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 32px 48px 72px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.mypage-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mypage-header .food-v2-eyebrow {
+  text-transform: uppercase;
+}
+
+.mypage-header h1 {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.mypage-header p {
+  font-size: 16px;
+  color: var(--text-body);
+  max-width: 640px;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.collection-item {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.collection-item.tried {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.collection-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-body);
+}
+
+.collection-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.collection-state {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-body);
+}
+
+.collection-state.tried {
+  color: var(--brand-strong);
+}

@@ -10,31 +10,34 @@ export default async function FoodsPage() {
   const foods = await getPublishedFoods();
 
   return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Foods</p>
-        <h1>Beginner-friendly K-food choices</h1>
-        <p className="detail-intro">
+    <div className="food-v2">
+      <header className="food-v2-header">
+        <span className="food-v2-eyebrow">Foods</span>
+        <div className="food-v2-names">
+          <span className="food-v2-name-en">Beginner-friendly K-food</span>
+        </div>
+        <p className="food-v2-summary">
           Food pages explain taste, spice level, and where each dish fits in a
           Seoul trip.
         </p>
-        <div className="action-row">
+        <div className="food-v2-actions">
           <Link className="button secondary" href="/photo-sources">
             Review photo sources
           </Link>
         </div>
       </header>
-      <ul className="directory-grid">
+      <div className="card-grid-v2">
         {foods.map((food) => (
-          <li className="directory-card" key={food.slug}>
-            <Link href={`/foods/${food.slug}`}>
-              <span>Spicy level {food.spicyLevel}/4</span>
-              <strong>{food.nameEn}</strong>
-              <p>{food.summary}</p>
-            </Link>
-          </li>
+          <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
+            <div className="card-v2-body">
+              <span className="food-chip spicy">Spicy {food.spicyLevel}/4</span>
+              <span className="card-v2-title">{food.nameEn}</span>
+              <span className="card-v2-meta">{food.summary}</span>
+              <span className="card-v2-link">Explore →</span>
+            </div>
+          </Link>
         ))}
-      </ul>
-    </main>
+      </div>
+    </div>
   );
 }

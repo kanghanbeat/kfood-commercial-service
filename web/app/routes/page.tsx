@@ -13,31 +13,34 @@ export default async function RoutesPage() {
   ]);
 
   return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Routes</p>
-        <h1>Simple K-food route ideas</h1>
-        <p className="detail-intro">
+    <div className="food-v2">
+      <header className="food-v2-header">
+        <span className="food-v2-eyebrow">Routes</span>
+        <div className="food-v2-names">
+          <span className="food-v2-name-en">K-food route ideas</span>
+        </div>
+        <p className="food-v2-summary">
           Routes package region, food, and place directions into traveler-sized
           plans.
         </p>
       </header>
-      <ul className="content-list">
+      <div className="card-grid-v2">
         {routes.map((route) => {
           const region = regions.find((item) => item.slug === route.regionSlug);
           return (
-            <li key={route.slug}>
-              <Link href={`/routes/${route.slug}`}>
-                <span className="meta-label">{route.estimatedDuration}</span>
-                <strong>{route.title}</strong>
-                <p>
+            <Link className="card-v2" href={`/routes/${route.slug}`} key={route.slug}>
+              <div className="card-v2-body">
+                <span className="food-chip">{route.estimatedDuration}</span>
+                <span className="card-v2-title">{route.title}</span>
+                <span className="card-v2-meta">
                   {route.summary} {region ? `Start with ${region.nameEn}.` : ""}
-                </p>
-              </Link>
-            </li>
+                </span>
+                <span className="card-v2-link">View →</span>
+              </div>
+            </Link>
           );
         })}
-      </ul>
-    </main>
+      </div>
+    </div>
   );
 }

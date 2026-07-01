@@ -13,29 +13,32 @@ export default async function PlacesPage() {
   ]);
 
   return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Places</p>
-        <h1>Editorial place directions</h1>
-        <p className="detail-intro">
-          MVP place pages start as curated directions and trust notes before
-          adding live map data or reservations.
+    <div className="food-v2">
+      <header className="food-v2-header">
+        <span className="food-v2-eyebrow">Places</span>
+        <div className="food-v2-names">
+          <span className="food-v2-name-en">Editorial place directions</span>
+        </div>
+        <p className="food-v2-summary">
+          Place pages start as curated directions and trust notes before adding
+          live map data or reservations.
         </p>
       </header>
-      <ul className="content-list">
+      <div className="card-grid-v2">
         {places.map((place) => {
           const region = regions.find((item) => item.slug === place.regionSlug);
           return (
-            <li key={place.slug}>
-              <Link href={`/places/${place.slug}`}>
-                <span className="meta-label">{region?.nameEn ?? "Seoul"}</span>
-                <strong>{place.nameEn}</strong>
-                <p>{place.editorialNote}</p>
-              </Link>
-            </li>
+            <Link className="card-v2" href={`/places/${place.slug}`} key={place.slug}>
+              <div className="card-v2-body">
+                <span className="food-chip">{region?.nameEn ?? "Seoul"}</span>
+                <span className="card-v2-title">{place.nameEn}</span>
+                <span className="card-v2-meta">{place.editorialNote}</span>
+                <span className="card-v2-link">View →</span>
+              </div>
+            </Link>
           );
         })}
-      </ul>
-    </main>
+      </div>
+    </div>
   );
 }

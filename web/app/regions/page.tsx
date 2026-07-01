@@ -10,26 +10,29 @@ export default async function RegionsPage() {
   const regions = await getPublishedRegions();
 
   return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Regions</p>
-        <h1>Seoul areas by food intent</h1>
-        <p className="detail-intro">
+    <div className="food-v2">
+      <header className="food-v2-header">
+        <span className="food-v2-eyebrow">Regions</span>
+        <div className="food-v2-names">
+          <span className="food-v2-name-en">Seoul areas by food intent</span>
+        </div>
+        <p className="food-v2-summary">
           Start with the neighborhood that matches the traveler, then move into
           foods, places, and route ideas.
         </p>
       </header>
-      <ul className="directory-grid">
+      <div className="card-grid-v2">
         {regions.map((region) => (
-          <li className="directory-card" key={region.slug}>
-            <Link href={`/regions/${region.slug}`}>
-              <span>{region.primaryAudience}</span>
-              <strong>{region.nameEn}</strong>
-              <p>{region.intro}</p>
-            </Link>
-          </li>
+          <Link className="card-v2" href={`/regions/${region.slug}`} key={region.slug}>
+            <div className="card-v2-body">
+              <span className="food-chip">{region.primaryAudience}</span>
+              <span className="card-v2-title">{region.nameEn}</span>
+              <span className="card-v2-meta">{region.intro}</span>
+              <span className="card-v2-link">Explore →</span>
+            </div>
+          </Link>
         ))}
-      </ul>
-    </main>
+      </div>
+    </div>
   );
 }

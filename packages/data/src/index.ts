@@ -519,6 +519,12 @@ export type CreateUserPostInput = {
   routeSlug?: string | null;
 };
 
+export type CreateAdminUserPostInput = CreateUserPostInput & {
+  actorId: string;
+  status: Extract<UserPostStatus, "pending_review" | "published">;
+  moderationNote?: string | null;
+};
+
 export type CreatePostCommentInput = {
   authorId: string;
   postId: string;
@@ -1502,6 +1508,88 @@ export async function createUserPost(
       ok: false,
       message: "Record could not be submitted. Please try again later."
     };
+  }
+
+  return { ok: true, postId: data.id };
+}
+
+export async function createAdminUserPost(
+  accessToken: string,
+  input: CreateAdminUserPostInput
+): Promise<UserPostMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const body = input.body.trim();
+
+  if (body.length < 10) {
+    return { ok: false, message: "Record text must be at least 10 characters." };
+  }
+
+  if (body.length > 2000) {
+    return { ok: false, message: "Record text must be 2,000 characters or fewer." };
+  }
+
+  if (!supportedLanguages.has(input.language)) {
+    return { ok: false, message: "Choose a supported language." };
+  }
+
+  if (!["public", "private", "unlisted"].includes(input.visibility)) {
+    return { ok: false, message: "Choose a supported visibility." };
+  }
+
+  if (!["pending_review", "published"].includes(input.status)) {
+    return { ok: false, message: "Choose a supported post status." };
+  }
+
+  const [regionId, foodId, placeId, routeGuideId] = await Promise.all([
+    resolveEntityIdBySlug(supabase, "regions", input.regionSlug),
+    resolveEntityIdBySlug(supabase, "foods", input.foodSlug),
+    resolveEntityIdBySlug(supabase, "places", input.placeSlug),
+    resolveEntityIdBySlug(supabase, "route_guides", input.routeSlug)
+  ]);
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("user_posts")
+    .insert({
+      author_id: input.authorId,
+      body,
+      food_id: foodId,
+      language: input.language,
+      moderated_by: input.actorId,
+      moderation_note: input.moderationNote?.trim() || null,
+      place_id: placeId,
+      region_id: regionId,
+      route_guide_id: routeGuideId,
+      status: input.status,
+      updated_at: now,
+      visibility: input.visibility
+    })
+    .select("*")
+    .maybeSingle();
+
+  if (error || !data) {
+    return {
+      ok: false,
+      message: "Admin record could not be created. Please check database policies."
+    };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "user_post.create",
+    actor_id: input.actorId,
+    after_data: data,
+    before_data: null,
+    entity_id: data.id,
+    entity_type: "user_post"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Admin record created, but audit log failed." };
   }
 
   return { ok: true, postId: data.id };

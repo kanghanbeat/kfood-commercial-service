@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import {
@@ -56,7 +57,7 @@ async function updatePost(formData: FormData) {
 export default async function AdminUserPostsPage({
   searchParams
 }: {
-  searchParams?: Promise<{ error?: string; updated?: string }>;
+  searchParams?: Promise<{ created?: string; error?: string; updated?: string }>;
 }) {
   const [session, params] = await Promise.all([
     requireAdminSession(),
@@ -75,6 +76,14 @@ export default async function AdminUserPostsPage({
         </p>
       </header>
       <AdminNav />
+      <div className="action-row">
+        <Link className="button primary" href="/admin/user-posts/new">
+          Create admin record
+        </Link>
+      </div>
+      {params?.created ? (
+        <p className="status-message success">Admin record created.</p>
+      ) : null}
       {params?.updated ? (
         <p className="status-message success">User post updated.</p>
       ) : null}

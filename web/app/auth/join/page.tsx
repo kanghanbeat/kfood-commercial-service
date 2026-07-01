@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import {
   createPublicSupabaseAuthClient,
@@ -13,24 +13,33 @@ export const metadata = {
     follow: false,
     index: false
   },
-  title: "Sign in"
+  title: "Join"
 };
 
 function redirectWithError(message: string, nextPath: string): never {
   redirect(
-    `/auth/login?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent(message)}`
+    `/auth/join?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent(message)}`
   );
 }
 
-async function signInWithEmail(formData: FormData) {
+async function signUpWithEmail(formData: FormData) {
   "use server";
 
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const displayName = String(formData.get("display_name") ?? "").trim();
   const nextPath = getSafeNextPath(String(formData.get("next") ?? "/mypage"));
 
   if (!email || !password) {
     redirectWithError("Enter your email and password.", nextPath);
+  }
+
+  if (password.length < 8) {
+    redirectWithError("Password must be at least 8 characters.", nextPath);
+  }
+
+  if (displayName.length > 80) {
+    redirectWithError("Display name must be 80 characters or fewer.", nextPath);
   }
 
   const supabase = await createPublicSupabaseAuthClient();
@@ -39,15 +48,29 @@ async function signInWithEmail(formData: FormData) {
     redirectWithError("Supabase Auth is not configured.", nextPath);
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signUp({
     email,
+    options: {
+      data: {
+        display_name: displayName || null,
+        name: displayName || null
+      }
+    },
     password
   });
 
-  if (error || !data.session || !data.user) {
+  if (error || !data.user) {
     redirectWithError(
-      "Could not sign in. Check your email and password.",
+      "Could not create the account. The email may already be registered.",
       nextPath
+    );
+  }
+
+  if (!data.session) {
+    redirect(
+      `/auth/login?next=${encodeURIComponent(nextPath)}&notice=${encodeURIComponent(
+        "Account created. Check your email before signing in."
+      )}`
     );
   }
 
@@ -59,12 +82,7 @@ async function signInWithEmail(formData: FormData) {
   await ensurePublicProfile({
     accessToken: data.session.access_token,
     email: data.user.email ?? null,
-    name:
-      typeof data.user.user_metadata.display_name === "string"
-        ? data.user.user_metadata.display_name
-        : typeof data.user.user_metadata.name === "string"
-          ? data.user.user_metadata.name
-          : null,
+    name: displayName || (data.user.email ?? null),
     provider:
       typeof data.user.app_metadata.provider === "string"
         ? data.user.app_metadata.provider
@@ -76,10 +94,10 @@ async function signInWithEmail(formData: FormData) {
   redirect(nextPath);
 }
 
-export default async function PublicLoginPage({
+export default async function JoinPage({
   searchParams
 }: {
-  searchParams?: Promise<{ error?: string; next?: string; notice?: string }>;
+  searchParams?: Promise<{ error?: string; next?: string }>;
 }) {
   const params = await searchParams;
   const nextPath = getSafeNextPath(params?.next ?? "/mypage");
@@ -87,26 +105,27 @@ export default async function PublicLoginPage({
   return (
     <main className="page-shell">
       <header className="detail-header">
-        <p className="eyebrow">Member sign in</p>
-        <h1>Sign in to keep your K-food plans connected.</h1>
+        <p className="eyebrow">Join</p>
+        <h1>Create your K-food account.</h1>
         <p className="detail-intro">
-          Public browsing stays open without an account. Sign in adds a safe
-          foundation for future saved places, report history, and personalized
-          planning.
+          Start with a free email account for profile settings, records, and
+          comments. Social login can be connected later.
         </p>
       </header>
-      {params?.notice ? (
-        <p className="status-message success">{params.notice}</p>
-      ) : null}
       {params?.error ? <p className="status-message error">{params.error}</p> : null}
-      <section className="form-panel" aria-labelledby="email-login">
-        <h2 id="email-login">Sign in with email</h2>
-        <p className="muted-copy">
-          Email login keeps alpha testing free while Google and Kakao provider
-          setup remains closed.
-        </p>
-        <form action={signInWithEmail} className="profile-form">
+      <section className="form-panel" aria-labelledby="email-join">
+        <h2 id="email-join">Join with email</h2>
+        <form action={signUpWithEmail} className="profile-form">
           <input name="next" type="hidden" value={nextPath} />
+          <label>
+            Display name
+            <input
+              autoComplete="nickname"
+              maxLength={80}
+              name="display_name"
+              placeholder="K-food member"
+            />
+          </label>
           <label>
             Email
             <input
@@ -120,32 +139,23 @@ export default async function PublicLoginPage({
           <label>
             Password
             <input
-              autoComplete="current-password"
+              autoComplete="new-password"
+              minLength={8}
               name="password"
-              placeholder="Your password"
+              placeholder="At least 8 characters"
               required
               type="password"
             />
           </label>
           <button className="button primary" type="submit">
-            Log in
+            Create account
           </button>
         </form>
         <div className="action-row">
-          <Link
-            className="button secondary"
-            href={`/auth/join?next=${encodeURIComponent(nextPath)}`}
-          >
-            Create account
+          <Link className="button secondary" href={`/auth/login?next=${encodeURIComponent(nextPath)}`}>
+            I already have an account
           </Link>
         </div>
-      </section>
-      <section className="form-panel" aria-labelledby="social-login-later">
-        <h2 id="social-login-later">Social login</h2>
-        <p className="muted-copy">
-          Google and Kakao login will reopen after the free email flow is stable
-          and each OAuth provider is enabled in Supabase.
-        </p>
       </section>
     </main>
   );

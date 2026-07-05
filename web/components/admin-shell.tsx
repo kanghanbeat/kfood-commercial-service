@@ -1,9 +1,19 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import type { PublicationStatus } from "@kfood/data";
+
 import type { AdminSession } from "@/lib/admin-auth";
 
 export type AdminMenuKey = "insight" | "content" | "manage" | "operations";
+
+// 발행 상태 한글 라벨. DB에는 영문 값(draft 등)이 그대로 저장됨 — 화면 표시만 한글.
+export const publicationStatusLabels: Record<PublicationStatus, string> = {
+  draft: "초안",
+  published: "공개",
+  hidden: "숨김",
+  archived: "보관"
+};
 
 const menuItems: {
   key: AdminMenuKey;

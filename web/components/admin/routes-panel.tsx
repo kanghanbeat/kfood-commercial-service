@@ -9,6 +9,7 @@ import {
 } from "@kfood/data";
 import type { AdminRegion, AdminRoute, PublicationStatus } from "@kfood/data";
 
+import { publicationStatusLabels } from "@/components/admin-shell";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const publicationStatuses: PublicationStatus[] = [
@@ -158,7 +159,7 @@ function RouteFields({
         <select defaultValue={route?.status ?? "draft"} name="status">
           {publicationStatuses.map((status) => (
             <option key={status} value={status}>
-              {status}
+              {publicationStatusLabels[status]}
             </option>
           ))}
         </select>
@@ -225,7 +226,7 @@ export async function RoutesPanel({
               <strong>{route.title}</strong>
               <p>
                 <span className={`admin-badge ${statusBadge[route.status]}`}>
-                  {route.status}
+                  {publicationStatusLabels[route.status]}
                 </span>{" "}
                 {route.estimatedDuration ?? "—"} · /{route.slug}
               </p>

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getAdminPlaces, updateAdminPlace } from "@kfood/data";
 import type { PublicationStatus } from "@kfood/data";
 
+import { publicationStatusLabels } from "@/components/admin-shell";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const publicationStatuses: PublicationStatus[] = [
@@ -85,7 +86,7 @@ export async function PlacesPanel({
             <div className="admin-panel-head">
               <strong>{place.nameEn}</strong>
               <p>
-                <span className="admin-badge brand">{place.status}</span>{" "}
+                <span className="admin-badge brand">{publicationStatusLabels[place.status]}</span>{" "}
                 {place.regionSlug} · verified {place.lastVerifiedAt ?? "pending"}
               </p>
             </div>
@@ -94,7 +95,7 @@ export async function PlacesPanel({
               <select defaultValue={place.status} name="status">
                 {publicationStatuses.map((status) => (
                   <option key={status} value={status}>
-                    {status}
+                    {publicationStatusLabels[status]}
                   </option>
                 ))}
               </select>

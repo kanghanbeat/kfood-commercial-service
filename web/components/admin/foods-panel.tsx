@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createAdminFood, getAdminFoods, updateAdminFood } from "@kfood/data";
 import type { PublicationStatus } from "@kfood/data";
 
+import { publicationStatusLabels } from "@/components/admin-shell";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const publicationStatuses: PublicationStatus[] = [
@@ -179,7 +180,7 @@ function FoodFields({
         <select defaultValue={defaults?.status ?? "draft"} name="status">
           {publicationStatuses.map((status) => (
             <option key={status} value={status}>
-              {status}
+              {publicationStatusLabels[status]}
             </option>
           ))}
         </select>
@@ -237,7 +238,7 @@ export async function FoodsPanel({
               <strong>{food.nameEn}</strong>
               <p>
                 <span className={`admin-badge ${statusBadge[food.status]}`}>
-                  {food.status}
+                  {publicationStatusLabels[food.status]}
                 </span>{" "}
                 매운맛 {food.spicyLevel}/4 · /{food.slug}
               </p>

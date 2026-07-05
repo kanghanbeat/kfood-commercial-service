@@ -17,6 +17,7 @@ import type {
   PublicationStatus
 } from "@kfood/data";
 
+import { publicationStatusLabels } from "@/components/admin-shell";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const publicationStatuses: PublicationStatus[] = [
@@ -221,7 +222,7 @@ function ProductionFields({
         <select defaultValue={production?.status ?? "draft"} name="status">
           {publicationStatuses.map((status) => (
             <option key={status} value={status}>
-              {status}
+              {publicationStatusLabels[status]}
             </option>
           ))}
         </select>
@@ -290,7 +291,7 @@ export async function ProductionsPanel({
               <strong>{production.title}</strong>
               <p>
                 <span className={`admin-badge ${statusBadge[production.status]}`}>
-                  {production.status}
+                  {publicationStatusLabels[production.status]}
                 </span>{" "}
                 {production.type} · {production.channel ?? "—"} · 태그 {production.tags.length}
               </p>

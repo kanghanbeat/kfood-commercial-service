@@ -1,9 +1,10 @@
-import { getPublishedRoutes } from "@kfood/data";
+import Link from "next/link";
 
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
 import { FoodsPanel } from "@/components/admin/foods-panel";
 import { PlacesPanel } from "@/components/admin/places-panel";
 import { RegionsPanel } from "@/components/admin/regions-panel";
+import { RoutesPanel } from "@/components/admin/routes-panel";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -17,7 +18,15 @@ const manageTabs = [
   { key: "routes", label: "루트" }
 ];
 
-// 상단 요약 카드: 발행 상태별 집계. 현재 공개 데이터 기준 placeholder 값.
+// 통합 "콘텐츠 추가" 입구: 유형을 고르면 해당 탭의 추가 폼이 열린 채로 이동.
+// 참조 콘텐츠(A)는 유형별 구조를 유지하되 입구만 하나로 통합한다.
+const addTypes = [
+  { key: "regions", label: "지역", desc: "타깃·소개" },
+  { key: "foods", label: "음식", desc: "매운맛·맛" },
+  { key: "places", label: "장소", desc: "지도·신뢰" },
+  { key: "routes", label: "루트", desc: "경유지·시간" }
+];
+
 const summaryMetrics = [
   { label: "공개 중", value: "184", sub: "검색 노출 가능" },
   { label: "검수 대기", value: "26", sub: "번역·이미지 확인" },
@@ -30,6 +39,7 @@ export default async function AdminManagePage({
 }: {
   searchParams?: Promise<{
     tab?: string;
+    add?: string;
     error?: string;
     updated?: string;
     created?: string;
@@ -40,6 +50,12 @@ export default async function AdminManagePage({
     searchParams
   ]);
   const tab = params?.tab ?? "regions";
+  const add = params?.add === "1";
+  const message = {
+    error: params?.error,
+    updated: params?.updated,
+    created: params?.created
+  };
 
   return (
     <AdminShell active="manage" session={session}>
@@ -56,9 +72,22 @@ export default async function AdminManagePage({
           <a className="admin-btn" href="/" target="_blank" rel="noreferrer">
             공개 미리보기
           </a>
-          <button className="admin-btn primary" type="button">
-            콘텐츠 추가
-          </button>
+          <details className="admin-add-menu">
+            <summary className="admin-btn primary">콘텐츠 추가</summary>
+            <div className="admin-add-menu-list">
+              <span className="admin-add-menu-title">어떤 콘텐츠를 추가할까요?</span>
+              {addTypes.map((type) => (
+                <Link
+                  className="admin-add-menu-item"
+                  href={`/admin/manage?tab=${type.key}&add=1`}
+                  key={type.key}
+                >
+                  <span className="admin-add-menu-label">{type.label}</span>
+                  <span className="admin-add-menu-desc">{type.desc}</span>
+                </Link>
+              ))}
+            </div>
+          </details>
         </div>
       </div>
 
@@ -75,66 +104,17 @@ export default async function AdminManagePage({
       <AdminTabs basePath="/admin/manage" current={tab} tabs={manageTabs} />
 
       {tab === "regions" ? (
-        <RegionsPanel
-          accessToken={session.accessToken}
-          message={{
-            error: params?.error,
-            updated: params?.updated,
-            created: params?.created
-          }}
-        />
+        <RegionsPanel accessToken={session.accessToken} add={add} message={message} />
       ) : null}
       {tab === "foods" ? (
-        <FoodsPanel
-          accessToken={session.accessToken}
-          message={{
-            error: params?.error,
-            updated: params?.updated,
-            created: params?.created
-          }}
-        />
+        <FoodsPanel accessToken={session.accessToken} add={add} message={message} />
       ) : null}
       {tab === "places" ? (
-        <PlacesPanel
-          accessToken={session.accessToken}
-          message={{ error: params?.error, updated: params?.updated }}
-        />
+        <PlacesPanel accessToken={session.accessToken} message={message} />
       ) : null}
-      {tab === "routes" ? <RoutesPanel /> : null}
+      {tab === "routes" ? (
+        <RoutesPanel accessToken={session.accessToken} add={add} message={message} />
+      ) : null}
     </AdminShell>
-  );
-}
-
-async function RoutesPanel() {
-  const routes = await getPublishedRoutes();
-  return (
-    <div className="admin-panel">
-      <div className="admin-panel-head">
-        <h2>루트 콘텐츠</h2>
-        <p>루트 요약·연결 장소·소요 시간·발행 상태를 관리합니다.</p>
-      </div>
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>루트</th>
-            <th>요약</th>
-            <th>소요 시간</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          {routes.map((route) => (
-            <tr key={route.slug}>
-              <td>{route.title}</td>
-              <td>{route.summary}</td>
-              <td>{route.estimatedDuration}</td>
-              <td>
-                <span className="admin-badge success">공개</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }

@@ -1519,3 +1519,61 @@ h3 {
 .collection-state.tried {
   color: var(--brand-strong);
 }
+
+/* ── 콘텐츠 추가 통합 입구 (유형 선택 드롭다운) ── */
+.admin-add-menu {
+  position: relative;
+}
+
+.admin-add-menu > summary {
+  list-style: none;
+}
+
+.admin-add-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-add-menu-list {
+  position: absolute;
+  right: 0;
+  margin-top: 6px;
+  min-width: 220px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(28, 0, 51, 0.12);
+}
+
+.admin-add-menu-title {
+  font-size: 12px;
+  color: var(--text-body);
+  padding: 6px 10px;
+}
+
+.admin-add-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px;
+  border-radius: var(--control-radius);
+}
+
+.admin-add-menu-item:hover {
+  background: var(--brand-soft);
+}
+
+.admin-add-menu-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.admin-add-menu-desc {
+  font-size: 12px;
+  color: var(--text-body);
+}

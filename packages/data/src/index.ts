@@ -1729,6 +1729,206 @@ export async function updateAdminFood(
   return { ok: true };
 }
 
+// ── Admin: routes CRUD ──────────────────────────────────────
+// 기존 RLS(route_guides_editor_manage) 위에 얹은 앱 함수. region_id 필수(FK).
+
+export type AdminRoute = {
+  id: string;
+  slug: string;
+  regionId: string;
+  title: string;
+  summary: string;
+  estimatedDuration: string | null;
+  transportMode: string | null;
+  recommendedForTags: string[];
+  editorialNote: string | null;
+  status: PublicationStatus;
+  updatedAt: string | null;
+};
+
+type AdminRouteRow = {
+  id: string;
+  slug: string;
+  region_id: string;
+  title: string;
+  summary: string;
+  estimated_duration: string | null;
+  transport_mode: string | null;
+  recommended_for_tags: string[] | null;
+  editorial_note: string | null;
+  status: PublicationStatus;
+  updated_at: string | null;
+};
+
+function mapAdminRoute(row: AdminRouteRow): AdminRoute {
+  return {
+    id: row.id,
+    slug: row.slug,
+    regionId: row.region_id,
+    title: row.title,
+    summary: row.summary,
+    estimatedDuration: row.estimated_duration,
+    transportMode: row.transport_mode,
+    recommendedForTags: row.recommended_for_tags ?? [],
+    editorialNote: row.editorial_note,
+    status: row.status,
+    updatedAt: row.updated_at
+  };
+}
+
+export type CreateAdminRouteInput = {
+  actorId: string;
+  slug: string;
+  regionId: string;
+  title: string;
+  summary: string;
+  estimatedDuration?: string;
+  transportMode?: string;
+  recommendedForTags?: string[];
+  editorialNote?: string;
+  status: PublicationStatus;
+};
+
+export type UpdateAdminRouteInput = CreateAdminRouteInput & { routeId: string };
+
+const adminRouteColumns =
+  "id, slug, region_id, title, summary, estimated_duration, transport_mode, recommended_for_tags, editorial_note, status, updated_at";
+
+export async function getAdminRoutes(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("route_guides")
+    .select(adminRouteColumns)
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminRoute(row as unknown as AdminRouteRow));
+}
+
+function validateRouteInput(input: CreateAdminRouteInput) {
+  if (!input.slug.trim()) return "Slug is required.";
+  if (!input.regionId.trim()) return "Region is required.";
+  if (!input.title.trim()) return "Title is required.";
+  if (!input.summary.trim()) return "Summary is required.";
+  return null;
+}
+
+function routeWritePayload(input: CreateAdminRouteInput) {
+  return {
+    slug: input.slug.trim(),
+    region_id: input.regionId,
+    title: input.title.trim(),
+    summary: input.summary.trim(),
+    estimated_duration: input.estimatedDuration?.trim() || null,
+    transport_mode: input.transportMode?.trim() || null,
+    recommended_for_tags: input.recommendedForTags ?? [],
+    editorial_note: input.editorialNote?.trim() || null,
+    status: input.status,
+    updated_at: new Date().toISOString()
+  };
+}
+
+export async function createAdminRoute(
+  accessToken: string,
+  input: CreateAdminRouteInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateRouteInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("route_guides")
+    .insert(routeWritePayload(input))
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Route could not be created." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "route.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "route"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Route created, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminRoute(
+  accessToken: string,
+  input: UpdateAdminRouteInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateRouteInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("route_guides")
+    .select("*")
+    .eq("id", input.routeId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Route was not found." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("route_guides")
+    .update(routeWritePayload(input))
+    .eq("id", input.routeId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Route could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "route.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.routeId,
+    entity_type: "route"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Route updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
 export async function submitContentReport(
   input: ContentReportInput
 ): Promise<ContentReportResult> {

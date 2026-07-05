@@ -86,9 +86,11 @@ const statusBadge: Record<PublicationStatus, string> = {
 
 export async function RegionsPanel({
   accessToken,
+  add,
   message
 }: {
   accessToken: string;
+  add?: boolean;
   message?: { error?: string; updated?: string; created?: string };
 }) {
   const regions = await getAdminRegions(accessToken);
@@ -109,7 +111,7 @@ export async function RegionsPanel({
         <p className="status-message error">{message.error}</p>
       ) : null}
 
-      <details className="form-panel">
+      <details className="form-panel" open={add}>
         <summary style={{ fontWeight: 600, cursor: "pointer" }}>+ 새 지역 추가</summary>
         <form action={createRegion} className="admin-form-list" style={{ marginTop: 12 }}>
           <label>

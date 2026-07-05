@@ -190,9 +190,11 @@ function FoodFields({
 
 export async function FoodsPanel({
   accessToken,
+  add,
   message
 }: {
   accessToken: string;
+  add?: boolean;
   message?: { error?: string; updated?: string; created?: string };
 }) {
   const foods = await getAdminFoods(accessToken);
@@ -213,7 +215,7 @@ export async function FoodsPanel({
         <p className="status-message error">{message.error}</p>
       ) : null}
 
-      <details className="form-panel">
+      <details className="form-panel" open={add}>
         <summary style={{ fontWeight: 600, cursor: "pointer" }}>+ 새 음식 추가</summary>
         <form action={createFood} className="admin-form-list" style={{ marginTop: 12 }}>
           <FoodFields />

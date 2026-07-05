@@ -1,6 +1,7 @@
-import { getPublishedFoods, getPublishedRoutes } from "@kfood/data";
+import { getPublishedRoutes } from "@kfood/data";
 
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
+import { FoodsPanel } from "@/components/admin/foods-panel";
 import { PlacesPanel } from "@/components/admin/places-panel";
 import { RegionsPanel } from "@/components/admin/regions-panel";
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -83,7 +84,16 @@ export default async function AdminManagePage({
           }}
         />
       ) : null}
-      {tab === "foods" ? <FoodsPanel /> : null}
+      {tab === "foods" ? (
+        <FoodsPanel
+          accessToken={session.accessToken}
+          message={{
+            error: params?.error,
+            updated: params?.updated,
+            created: params?.created
+          }}
+        />
+      ) : null}
       {tab === "places" ? (
         <PlacesPanel
           accessToken={session.accessToken}
@@ -92,40 +102,6 @@ export default async function AdminManagePage({
       ) : null}
       {tab === "routes" ? <RoutesPanel /> : null}
     </AdminShell>
-  );
-}
-
-async function FoodsPanel() {
-  const foods = await getPublishedFoods();
-  return (
-    <div className="admin-panel">
-      <div className="admin-panel-head">
-        <h2>음식 콘텐츠</h2>
-        <p>음식별 설명·매운맛 단계·초보자 노트를 확인합니다.</p>
-      </div>
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th>음식</th>
-            <th>요약</th>
-            <th>매운맛</th>
-            <th>상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          {foods.map((food) => (
-            <tr key={food.slug}>
-              <td>{food.nameEn}</td>
-              <td>{food.summary}</td>
-              <td>{food.spicyLevel}/4</td>
-              <td>
-                <span className="admin-badge success">공개</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 

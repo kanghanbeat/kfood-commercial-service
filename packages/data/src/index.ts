@@ -1512,6 +1512,223 @@ export async function updateAdminRegion(
   return { ok: true };
 }
 
+// ── Admin: foods CRUD ───────────────────────────────────────
+// 기존 RLS(foods_editor_manage) 위에 얹은 앱 함수. 지역 CRUD와 동일 패턴.
+
+export type AdminFood = {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameKo: string;
+  romanizedName: string | null;
+  description: string;
+  tasteProfile: string | null;
+  spicyLevel: number;
+  beginnerNote: string | null;
+  eatingGuide: string | null;
+  cautionNote: string | null;
+  status: PublicationStatus;
+  editorialNote: string | null;
+  updatedAt: string | null;
+};
+
+type AdminFoodRow = {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_ko: string;
+  romanized_name: string | null;
+  description: string;
+  taste_profile: string | null;
+  spicy_level: number;
+  beginner_note: string | null;
+  eating_guide: string | null;
+  caution_note: string | null;
+  status: PublicationStatus;
+  editorial_note: string | null;
+  updated_at: string | null;
+};
+
+function mapAdminFood(row: AdminFoodRow): AdminFood {
+  return {
+    id: row.id,
+    slug: row.slug,
+    nameEn: row.name_en,
+    nameKo: row.name_ko,
+    romanizedName: row.romanized_name,
+    description: row.description,
+    tasteProfile: row.taste_profile,
+    spicyLevel: row.spicy_level,
+    beginnerNote: row.beginner_note,
+    eatingGuide: row.eating_guide,
+    cautionNote: row.caution_note,
+    status: row.status,
+    editorialNote: row.editorial_note,
+    updatedAt: row.updated_at
+  };
+}
+
+export type CreateAdminFoodInput = {
+  actorId: string;
+  slug: string;
+  nameEn: string;
+  nameKo: string;
+  romanizedName?: string;
+  description: string;
+  tasteProfile?: string;
+  spicyLevel: number;
+  beginnerNote?: string;
+  eatingGuide?: string;
+  cautionNote?: string;
+  editorialNote?: string;
+  status: PublicationStatus;
+};
+
+export type UpdateAdminFoodInput = CreateAdminFoodInput & { foodId: string };
+
+const adminFoodColumns =
+  "id, slug, name_en, name_ko, romanized_name, description, taste_profile, spicy_level, beginner_note, eating_guide, caution_note, status, editorial_note, updated_at";
+
+export async function getAdminFoods(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("foods")
+    .select(adminFoodColumns)
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminFood(row as unknown as AdminFoodRow));
+}
+
+function validateFoodInput(input: CreateAdminFoodInput) {
+  if (!input.slug.trim()) return "Slug is required.";
+  if (!input.nameEn.trim()) return "English name is required.";
+  if (!input.nameKo.trim()) return "Korean name is required.";
+  if (!input.description.trim()) return "Description is required.";
+  if (input.spicyLevel < 0 || input.spicyLevel > 4)
+    return "Spicy level must be between 0 and 4.";
+  return null;
+}
+
+function foodWritePayload(input: CreateAdminFoodInput) {
+  return {
+    slug: input.slug.trim(),
+    name_en: input.nameEn.trim(),
+    name_ko: input.nameKo.trim(),
+    romanized_name: input.romanizedName?.trim() || null,
+    description: input.description.trim(),
+    taste_profile: input.tasteProfile?.trim() || null,
+    spicy_level: input.spicyLevel,
+    beginner_note: input.beginnerNote?.trim() || null,
+    eating_guide: input.eatingGuide?.trim() || null,
+    caution_note: input.cautionNote?.trim() || null,
+    editorial_note: input.editorialNote?.trim() || null,
+    status: input.status,
+    updated_at: new Date().toISOString()
+  };
+}
+
+export async function createAdminFood(
+  accessToken: string,
+  input: CreateAdminFoodInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateFoodInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("foods")
+    .insert(foodWritePayload(input))
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Food could not be created." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "food.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "food"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Food created, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminFood(
+  accessToken: string,
+  input: UpdateAdminFoodInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateFoodInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("foods")
+    .select("*")
+    .eq("id", input.foodId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Food was not found." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("foods")
+    .update(foodWritePayload(input))
+    .eq("id", input.foodId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Food could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "food.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.foodId,
+    entity_type: "food"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Food updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
 export async function submitContentReport(
   input: ContentReportInput
 ): Promise<ContentReportResult> {

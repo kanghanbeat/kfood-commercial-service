@@ -1929,6 +1929,252 @@ export async function updateAdminRoute(
   return { ok: true };
 }
 
+// ── Admin: productions (촬영·제작 콘텐츠, B) CRUD + 태그 ──────
+// 신규 테이블(007_productions.sql). 참조 콘텐츠를 태그로 연결.
+
+export type ProductionType = "video" | "blog" | "reels" | "shorts" | "photo";
+export type ProductionEntityType = "region" | "food" | "place" | "route";
+
+export type ProductionTag = {
+  entityType: ProductionEntityType;
+  entityId: string;
+};
+
+export type AdminProduction = {
+  id: string;
+  slug: string;
+  title: string;
+  titleKo: string | null;
+  type: ProductionType;
+  channel: string | null;
+  summary: string | null;
+  externalUrl: string | null;
+  status: PublicationStatus;
+  editorialNote: string | null;
+  tags: ProductionTag[];
+  updatedAt: string | null;
+};
+
+type ProductionTagRow = { entity_type: ProductionEntityType; entity_id: string };
+
+type AdminProductionRow = {
+  id: string;
+  slug: string;
+  title: string;
+  title_ko: string | null;
+  type: ProductionType;
+  channel: string | null;
+  summary: string | null;
+  external_url: string | null;
+  status: PublicationStatus;
+  editorial_note: string | null;
+  updated_at: string | null;
+  production_tags?: ProductionTagRow[] | null;
+};
+
+function mapAdminProduction(row: AdminProductionRow): AdminProduction {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    titleKo: row.title_ko,
+    type: row.type,
+    channel: row.channel,
+    summary: row.summary,
+    externalUrl: row.external_url,
+    status: row.status,
+    editorialNote: row.editorial_note,
+    tags: (row.production_tags ?? []).map((tag) => ({
+      entityType: tag.entity_type,
+      entityId: tag.entity_id
+    })),
+    updatedAt: row.updated_at
+  };
+}
+
+export type CreateAdminProductionInput = {
+  actorId: string;
+  slug: string;
+  title: string;
+  titleKo?: string;
+  type: ProductionType;
+  channel?: string;
+  summary?: string;
+  externalUrl?: string;
+  editorialNote?: string;
+  status: PublicationStatus;
+  tags: ProductionTag[];
+};
+
+export type UpdateAdminProductionInput = CreateAdminProductionInput & {
+  productionId: string;
+};
+
+const adminProductionColumns =
+  "id, slug, title, title_ko, type, channel, summary, external_url, status, editorial_note, updated_at, production_tags(entity_type, entity_id)";
+
+export async function getAdminProductions(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("productions")
+    .select(adminProductionColumns)
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminProduction(row as unknown as AdminProductionRow));
+}
+
+function validateProductionInput(input: CreateAdminProductionInput) {
+  if (!input.slug.trim()) return "Slug is required.";
+  if (!input.title.trim()) return "Title is required.";
+  return null;
+}
+
+function productionWritePayload(input: CreateAdminProductionInput) {
+  return {
+    slug: input.slug.trim(),
+    title: input.title.trim(),
+    title_ko: input.titleKo?.trim() || null,
+    type: input.type,
+    channel: input.channel?.trim() || null,
+    summary: input.summary?.trim() || null,
+    external_url: input.externalUrl?.trim() || null,
+    editorial_note: input.editorialNote?.trim() || null,
+    status: input.status,
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function replaceProductionTags(
+  supabase: NonNullable<ReturnType<typeof createAuthenticatedClient>>,
+  productionId: string,
+  tags: ProductionTag[]
+) {
+  await supabase.from("production_tags").delete().eq("production_id", productionId);
+
+  if (tags.length === 0) {
+    return null;
+  }
+
+  const { error } = await supabase.from("production_tags").insert(
+    tags.map((tag) => ({
+      production_id: productionId,
+      entity_type: tag.entityType,
+      entity_id: tag.entityId
+    }))
+  );
+
+  return error ? "Content saved, but tags failed." : null;
+}
+
+export async function createAdminProduction(
+  accessToken: string,
+  input: CreateAdminProductionInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateProductionInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("productions")
+    .insert(productionWritePayload(input))
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Content could not be created." };
+  }
+
+  const productionId = (afterData as { id: string }).id;
+  const tagError = await replaceProductionTags(supabase, productionId, input.tags);
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "production.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: productionId,
+    entity_type: "production"
+  });
+
+  if (tagError) return { ok: false, message: tagError };
+  if (auditError) return { ok: false, message: "Content created, but audit log failed." };
+
+  return { ok: true };
+}
+
+export async function updateAdminProduction(
+  accessToken: string,
+  input: UpdateAdminProductionInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateProductionInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("productions")
+    .select("*")
+    .eq("id", input.productionId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Content was not found." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("productions")
+    .update(productionWritePayload(input))
+    .eq("id", input.productionId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Content could not be updated." };
+  }
+
+  const tagError = await replaceProductionTags(
+    supabase,
+    input.productionId,
+    input.tags
+  );
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "production.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.productionId,
+    entity_type: "production"
+  });
+
+  if (tagError) return { ok: false, message: tagError };
+  if (auditError) return { ok: false, message: "Content updated, but audit log failed." };
+
+  return { ok: true };
+}
+
 export async function submitContentReport(
   input: ContentReportInput
 ): Promise<ContentReportResult> {

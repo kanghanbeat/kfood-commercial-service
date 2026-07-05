@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
 import { FoodsPanel } from "@/components/admin/foods-panel";
 import { PlacesPanel } from "@/components/admin/places-panel";
+import { ProductionsPanel } from "@/components/admin/productions-panel";
 import { RegionsPanel } from "@/components/admin/regions-panel";
 import { RoutesPanel } from "@/components/admin/routes-panel";
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -15,7 +16,8 @@ const manageTabs = [
   { key: "regions", label: "지역" },
   { key: "foods", label: "음식" },
   { key: "places", label: "장소" },
-  { key: "routes", label: "루트" }
+  { key: "routes", label: "루트" },
+  { key: "productions", label: "촬영" }
 ];
 
 // 통합 "콘텐츠 추가" 입구: 유형을 고르면 해당 탭의 추가 폼이 열린 채로 이동.
@@ -24,7 +26,8 @@ const addTypes = [
   { key: "regions", label: "지역", desc: "타깃·소개" },
   { key: "foods", label: "음식", desc: "매운맛·맛" },
   { key: "places", label: "장소", desc: "지도·신뢰" },
-  { key: "routes", label: "루트", desc: "경유지·시간" }
+  { key: "routes", label: "루트", desc: "경유지·시간" },
+  { key: "productions", label: "촬영 콘텐츠", desc: "영상·블로그 + 태그" }
 ];
 
 const summaryMetrics = [
@@ -114,6 +117,9 @@ export default async function AdminManagePage({
       ) : null}
       {tab === "routes" ? (
         <RoutesPanel accessToken={session.accessToken} add={add} message={message} />
+      ) : null}
+      {tab === "productions" ? (
+        <ProductionsPanel accessToken={session.accessToken} add={add} message={message} />
       ) : null}
     </AdminShell>
   );

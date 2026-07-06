@@ -4,6 +4,7 @@ import {
   getMyFoodLog,
   getMyProfile,
   getPublishedFoods,
+  isCommunityEnabled,
   type SupportedLanguage
 } from "@kfood/data";
 
@@ -37,10 +38,11 @@ export default async function MypagePage({
   ]);
 
   await ensurePublicProfile(session);
-  const [profile, foods, triedSlugs] = await Promise.all([
+  const [profile, foods, triedSlugs, communityEnabled] = await Promise.all([
     getMyProfile(session.accessToken, session.userId),
     getPublishedFoods(),
-    getMyFoodLog(session.accessToken, session.userId)
+    getMyFoodLog(session.accessToken, session.userId),
+    isCommunityEnabled()
   ]);
   const displayName = profile?.displayName ?? session.name ?? "";
   const bio = profile?.bio ?? "";
@@ -80,9 +82,11 @@ export default async function MypagePage({
           </div>
         </dl>
         <div className="action-row">
-          <Link className="button secondary" href="/feed">
-            Open feed
-          </Link>
+          {communityEnabled ? (
+            <Link className="button secondary" href="/feed">
+              Open feed
+            </Link>
+          ) : null}
           <Link className="button secondary" href="/auth/logout">
             Sign out
           </Link>

@@ -2027,6 +2027,70 @@ export async function getAdminAuditLogs(accessToken: string) {
   return data.map((row) => mapAdminAuditLog(row as AdminAuditLogRow));
 }
 
+// 현재는 "community" 하나뿐이지만 다른 카테고리 on/off 토글이 늘어날 수 있어 문자열 키로 둔다.
+export type PlatformSettingKey = "community";
+
+export async function getPlatformSettings(): Promise<Record<string, boolean>> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return { community: true };
+  }
+
+  const { data, error } = await supabase
+    .from("platform_settings")
+    .select("key, enabled");
+
+  if (error || !data) {
+    return { community: true };
+  }
+
+  return Object.fromEntries(data.map((row) => [row.key, row.enabled]));
+}
+
+export async function isCommunityEnabled(): Promise<boolean> {
+  const settings = await getPlatformSettings();
+  return settings.community ?? true;
+}
+
+export async function updatePlatformSetting(
+  accessToken: string,
+  key: PlatformSettingKey,
+  enabled: boolean,
+  actorId: string
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("platform_settings")
+    .upsert({ enabled, key, updated_at: new Date().toISOString(), updated_by: actorId })
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Setting could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "platform_setting.update",
+    actor_id: actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: key,
+    entity_type: "platform_setting"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Setting updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
 export async function updateAdminReportStatus(
   accessToken: string,
   input: UpdateAdminReportInput

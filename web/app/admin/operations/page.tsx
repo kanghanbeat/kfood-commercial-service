@@ -4,6 +4,7 @@ import { AdminShell, AdminTabs } from "@/components/admin-shell";
 import { CommentsPanel } from "@/components/admin/comments-panel";
 import { PostsPanel } from "@/components/admin/posts-panel";
 import { ReportsPanel } from "@/components/admin/reports-panel";
+import { SettingsPanel } from "@/components/admin/settings-panel";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -15,7 +16,8 @@ const operationTabs = [
   { key: "audit", label: "감사 로그" },
   { key: "members", label: "회원 관리" },
   { key: "posts", label: "게시물 관리" },
-  { key: "comments", label: "댓글 관리" }
+  { key: "comments", label: "댓글 관리" },
+  { key: "settings", label: "사이트 설정" }
 ];
 
 // 상단 요약 카드: 운영 현황. 신고/감사 외 일부는 placeholder.
@@ -104,6 +106,9 @@ export default async function AdminOperationsPage({
           accessToken={session.accessToken}
           message={{ error: params?.error, updated: params?.updated }}
         />
+      ) : null}
+      {tab === "settings" ? (
+        <SettingsPanel message={{ error: params?.error, updated: params?.updated }} />
       ) : null}
     </AdminShell>
   );

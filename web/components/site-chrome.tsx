@@ -10,7 +10,7 @@ function isAdmin(pathname: string | null) {
   return pathname?.startsWith("/admin") ?? false;
 }
 
-export function SiteHeader() {
+export function SiteHeader({ communityEnabled = true }: { communityEnabled?: boolean }) {
   const pathname = usePathname();
   if (isAdmin(pathname)) return null;
 
@@ -27,7 +27,7 @@ export function SiteHeader() {
           <Link href="/foods">Foods</Link>
           <Link href="/places">Places</Link>
           <Link href="/routes">Routes</Link>
-          <Link href="/feed">Feed</Link>
+          {communityEnabled ? <Link href="/feed">Feed</Link> : null}
           <Link href="/search">Search</Link>
         </nav>
         <div className="nav-v2-action">

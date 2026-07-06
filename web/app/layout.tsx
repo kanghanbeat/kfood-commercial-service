@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { isCommunityEnabled } from "@kfood/data";
 import { siteConfig } from "@kfood/config";
 
 import { AuthHashRedirector } from "@/components/auth-hash-redirector";
@@ -23,12 +24,14 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const communityEnabled = await isCommunityEnabled();
+
   return (
     <html lang="en">
       <body>
         <AuthHashRedirector />
-        <SiteHeader />
+        <SiteHeader communityEnabled={communityEnabled} />
         {children}
         <SiteFooter />
       </body>

@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
-import { getPublishedUserPosts } from "@kfood/data";
+import { getPublishedUserPosts, isCommunityEnabled } from "@kfood/data";
 
 import { getPublicSession } from "@/lib/public-auth";
 
@@ -11,6 +12,10 @@ export const metadata = {
 const feedTabs = ["All", "Following", "Popular"];
 
 export default async function FeedPage() {
+  if (!(await isCommunityEnabled())) {
+    notFound();
+  }
+
   const [posts, session] = await Promise.all([
     getPublishedUserPosts(),
     getPublicSession()

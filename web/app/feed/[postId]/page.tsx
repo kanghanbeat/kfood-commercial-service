@@ -6,6 +6,7 @@ import {
   createPostComment,
   getPublishedPostComments,
   getPublishedUserPost,
+  isCommunityEnabled,
   removeOwnComment
 } from "@kfood/data";
 
@@ -87,14 +88,15 @@ export default async function FeedPostDetailPage({
   }>;
 }) {
   const { postId } = await params;
-  const [post, comments, session, query] = await Promise.all([
+  const [communityEnabled, post, comments, session, query] = await Promise.all([
+    isCommunityEnabled(),
     getPublishedUserPost(postId),
     getPublishedPostComments(postId),
     getPublicSession(),
     searchParams
   ]);
 
-  if (!post) {
+  if (!communityEnabled || !post) {
     notFound();
   }
 

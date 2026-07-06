@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   createUserPost,
+  isCommunityEnabled,
   type SupportedLanguage,
   type UserPostVisibility
 } from "@kfood/data";
@@ -18,6 +19,10 @@ function redirectWithError(request: NextRequest, message: string) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await isCommunityEnabled())) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   const session = await getPublicSession();
 
   if (!session) {

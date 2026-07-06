@@ -27,13 +27,13 @@ const menuItems: {
     key: "manage",
     href: "/admin/manage",
     label: "콘텐츠 관리",
-    desc: "지역 · 음식 · 장소 · 루트"
+    desc: "지역 · 음식 · 장소 · 루트 · 촬영"
   },
   {
     key: "operations",
     href: "/admin/operations",
     label: "운영",
-    desc: "신고 · 감사 · 회원"
+    desc: "신고 · 감사 · 회원 · 게시물 · 댓글 · 설정"
   }
 ];
 

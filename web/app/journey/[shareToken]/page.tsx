@@ -1,60 +1,55 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
-import {
-  getMyFoodLog,
-  getMyJourneyShareToken,
-  getPublishedFoods,
-  getPublishedRegions
-} from "@kfood/data";
-
-import {
-  ensurePublicProfile,
-  getRequestOrigin,
-  requirePublicSession
-} from "@/lib/public-auth";
+import { getPublicJourney, getPublishedFoods, getPublishedRegions } from "@kfood/data";
 
 const COLLECTION_GOAL = 50;
 const spicyLabels = ["Not spicy", "Mild", "Medium", "Spicy", "Very spicy"];
 
-export const metadata = {
-  robots: {
-    follow: false,
-    index: false
-  },
-  title: "Your K-Food Journey Recap"
-};
-
-export default async function JourneyRecapPage({
-  searchParams
+export async function generateMetadata({
+  params
 }: {
-  searchParams?: Promise<{ error?: string }>;
+  params: Promise<{ shareToken: string }>;
 }) {
-  const [session, params] = await Promise.all([
-    requirePublicSession("/mypage/journey"),
-    searchParams
-  ]);
-  await ensurePublicProfile(session);
+  const { shareToken } = await params;
+  const journey = await getPublicJourney(shareToken);
 
-  const [foods, regions, triedAt, shareToken, origin] = await Promise.all([
+  return {
+    robots: {
+      follow: false,
+      index: false
+    },
+    title: journey?.displayName
+      ? `${journey.displayName}'s K-Food Journey`
+      : "K-Food Journey Recap"
+  };
+}
+
+export default async function PublicJourneyPage({
+  params
+}: {
+  params: Promise<{ shareToken: string }>;
+}) {
+  const { shareToken } = await params;
+  const journey = await getPublicJourney(shareToken);
+
+  if (!journey) {
+    notFound();
+  }
+
+  const [foods, regions] = await Promise.all([
     getPublishedFoods(),
-    getPublishedRegions(),
-    getMyFoodLog(session.accessToken, session.userId),
-    getMyJourneyShareToken(session.accessToken, session.userId),
-    getRequestOrigin()
+    getPublishedRegions()
   ]);
-  const shareUrl = shareToken ? `${origin}/journey/${shareToken}` : null;
 
+  const triedAt = new Map(journey.entries.map((entry) => [entry.foodSlug, entry.triedAt]));
   const triedFoods = foods.filter((food) => triedAt.has(food.slug));
   const triedCount = triedFoods.length;
   const collectionPercent =
     foods.length > 0 ? Math.round((triedCount / foods.length) * 100) : 0;
 
-  const regionSlugsCovered = new Set(
-    triedFoods.flatMap((food) => food.regionSlugs)
-  );
-  const regionsCovered = regions.filter((region) =>
-    regionSlugsCovered.has(region.slug)
-  );
+  const regionSlugsCovered = new Set(triedFoods.flatMap((food) => food.regionSlugs));
+  const regionsCovered = regions.filter((region) => regionSlugsCovered.has(region.slug));
 
   const flavorsCovered = Array.from(
     new Set(
@@ -73,36 +68,23 @@ export default async function JourneyRecapPage({
     null
   );
 
-  const firstTriedAt = triedFoods.reduce<string | null>((earliest, food) => {
-    const value = triedAt.get(food.slug) ?? null;
-    if (!value) {
-      return earliest;
-    }
-    return !earliest || value < earliest ? value : earliest;
-  }, null);
+  const displayName = journey.displayName ?? "A K-food traveler";
 
   return (
     <main className="page-shell">
       <header className="detail-header">
         <p className="eyebrow">K-Food Journey Recap</p>
-        <h1>Your trip in numbers.</h1>
+        <h1>{displayName}&apos;s trip in numbers.</h1>
         <p className="detail-intro">
-          A snapshot of the K-food collection you have tried so far. Photos
-          are coming in a later update.
+          A shared, read-only snapshot of the K-food dishes this traveler has
+          tried.
         </p>
       </header>
 
       {triedCount === 0 ? (
         <section className="form-panel">
           <h2>No dishes tried yet</h2>
-          <p>
-            Mark dishes as tried from your collection to build your recap.
-          </p>
-          <div className="action-row">
-            <Link className="button primary" href="/mypage">
-              Go to your collection
-            </Link>
-          </div>
+          <p>This traveler has not logged any dishes yet.</p>
         </section>
       ) : (
         <>
@@ -145,7 +127,7 @@ export default async function JourneyRecapPage({
           {regionsCovered.length > 0 ? (
             <section className="section-block" aria-labelledby="journey-regions">
               <div className="section-heading">
-                <h2 id="journey-regions">Regions you explored</h2>
+                <h2 id="journey-regions">Regions explored</h2>
               </div>
               <div className="tag-row">
                 {regionsCovered.map((region) => (
@@ -160,7 +142,7 @@ export default async function JourneyRecapPage({
           {flavorsCovered.length > 0 ? (
             <section className="section-block" aria-labelledby="journey-flavors">
               <div className="section-heading">
-                <h2 id="journey-flavors">Flavors you tried</h2>
+                <h2 id="journey-flavors">Flavors tried</h2>
               </div>
               <div className="tag-row">
                 {flavorsCovered.map((flavor) => (
@@ -171,51 +153,12 @@ export default async function JourneyRecapPage({
               </div>
             </section>
           ) : null}
-
-          <section className="section-block" aria-labelledby="journey-timeline">
-            <div className="section-heading">
-              <h2 id="journey-timeline">Your first record</h2>
-              <p>
-                {firstTriedAt
-                  ? `You started your K-food journey on ${new Date(firstTriedAt).toLocaleDateString(
-                      "en-US",
-                      { day: "numeric", month: "long", year: "numeric" }
-                    )}.`
-                  : "Timeline data is not available yet."}
-              </p>
-            </div>
-          </section>
-
-          <section className="form-panel" aria-labelledby="journey-share">
-            <h2 id="journey-share">Share your journey</h2>
-            <p>
-              Anyone with this link can view a read-only recap. Your email and
-              account details are never shown.
-            </p>
-            {params?.error ? (
-              <p className="status-message error">{params.error}</p>
-            ) : null}
-            {shareUrl ? (
-              <div className="action-row">
-                <input readOnly value={shareUrl} />
-                <Link className="button secondary" href={`/journey/${shareToken}`}>
-                  Open link
-                </Link>
-              </div>
-            ) : (
-              <form action="/mypage/journey/share" method="post">
-                <button className="button primary" type="submit">
-                  Create shareable link
-                </button>
-              </form>
-            )}
-          </section>
         </>
       )}
 
       <div className="action-row">
-        <Link className="button secondary" href="/mypage">
-          Back to mypage
+        <Link className="button primary" href="/">
+          Explore K-food dishes
         </Link>
       </div>
     </main>

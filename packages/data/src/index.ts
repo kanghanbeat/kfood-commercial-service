@@ -1454,6 +1454,81 @@ export async function setFoodTried(
   return { ok: true };
 }
 
+export type JourneyShareMutationResult =
+  | { ok: true; token: string }
+  | { ok: false; message: string };
+
+export type PublicJourney = {
+  displayName: string | null;
+  entries: Array<{ foodSlug: string; triedAt: string }>;
+};
+
+export async function getMyJourneyShareToken(accessToken: string, userId: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("journey_share_token")
+    .eq("id", userId)
+    .maybeSingle<{ journey_share_token: string | null }>();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data.journey_share_token;
+}
+
+export async function enableMyJourneyShare(
+  accessToken: string
+): Promise<JourneyShareMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase user client is not configured." };
+  }
+
+  const { data, error } = await supabase.rpc("enable_my_journey_share");
+
+  if (error || !data) {
+    return { ok: false, message: "Could not create a share link. Please try again later." };
+  }
+
+  return { ok: true, token: data as string };
+}
+
+export async function getPublicJourney(shareToken: string): Promise<PublicJourney | null> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const [{ data: profileRows, error: profileError }, { data: entryRows, error: entryError }] =
+    await Promise.all([
+      supabase.rpc("get_public_journey_profile", { p_share_token: shareToken }),
+      supabase.rpc("get_public_journey", { p_share_token: shareToken })
+    ]);
+
+  if (profileError || !profileRows || profileRows.length === 0) {
+    return null;
+  }
+
+  const profile = profileRows as unknown as Array<{ display_name: string | null }>;
+  const entries = entryError
+    ? []
+    : (entryRows as unknown as Array<{ food_slug: string; tried_at: string }>).map((row) => ({
+        foodSlug: row.food_slug,
+        triedAt: row.tried_at
+      }));
+
+  return { displayName: profile[0]?.display_name ?? null, entries };
+}
+
 export async function getPublishedUserPosts(limit = 30) {
   const supabase = createPublicClient();
 

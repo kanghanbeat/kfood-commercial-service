@@ -2,10 +2,13 @@ import Link from "next/link";
 
 import {
   getMyProfile,
+  getPublishedFoods,
   type SupportedLanguage
 } from "@kfood/data";
 
 import { ensurePublicProfile, requirePublicSession } from "@/lib/public-auth";
+
+const COLLECTION_GOAL = 50;
 
 export const metadata = {
   robots: {
@@ -33,10 +36,16 @@ export default async function MypagePage({
   ]);
 
   await ensurePublicProfile(session);
-  const profile = await getMyProfile(session.accessToken, session.userId);
+  const [profile, foods] = await Promise.all([
+    getMyProfile(session.accessToken, session.userId),
+    getPublishedFoods()
+  ]);
   const displayName = profile?.displayName ?? session.name ?? "";
   const bio = profile?.bio ?? "";
   const preferredLanguage = profile?.preferredLanguage ?? "en";
+
+  // 사용자별 도감 진행 데이터(먹은 음식)는 아직 DB 미연동 → 전부 "Not yet".
+  const triedSlugs = new Set<string>();
 
   return (
     <main className="page-shell">
@@ -116,6 +125,63 @@ export default async function MypagePage({
           </button>
         </form>
       </section>
+      <section className="section-block" aria-labelledby="mypage-journey">
+        <div className="section-heading">
+          <p className="eyebrow">My K-Food Journey</p>
+          <h2 id="mypage-journey">Your K-food collection</h2>
+          <p>
+            Track what you have tried across your Korean food trip. Personal
+            records connect once the collection data model is live.
+          </p>
+        </div>
+        <div className="admin-metric-grid">
+          <div className="admin-metric-card">
+            <span className="admin-metric-label">Dishes tried</span>
+            <span className="admin-metric-value">
+              {triedSlugs.size}/{COLLECTION_GOAL}
+            </span>
+            <span className="admin-metric-sub">First tasting goal</span>
+          </div>
+          <div className="admin-metric-card">
+            <span className="admin-metric-label">Verified</span>
+            <span className="admin-metric-value">0</span>
+            <span className="admin-metric-sub">Visits confirmed</span>
+          </div>
+          <div className="admin-metric-card">
+            <span className="admin-metric-label">Challenges</span>
+            <span className="admin-metric-value">0</span>
+            <span className="admin-metric-sub">Missions completed</span>
+          </div>
+          <div className="admin-metric-card">
+            <span className="admin-metric-label">Collection</span>
+            <span className="admin-metric-value">
+              {triedSlugs.size}/{foods.length}
+            </span>
+            <span className="admin-metric-sub">Published dishes</span>
+          </div>
+        </div>
+        <div className="collection-grid">
+          {foods.map((food, index) => {
+            const tried = triedSlugs.has(food.slug);
+            return (
+              <Link
+                className={tried ? "collection-item tried" : "collection-item"}
+                href={`/foods/${food.slug}`}
+                key={food.slug}
+              >
+                <span className="collection-num">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="collection-name">{food.nameEn}</span>
+                <span className={tried ? "collection-state tried" : "collection-state"}>
+                  {tried ? "TRIED" : "Not yet"}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="section-block" aria-labelledby="mypage-next">
         <div className="section-heading">
           <p className="eyebrow">UGC foundation</p>

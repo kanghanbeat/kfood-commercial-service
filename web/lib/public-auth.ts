@@ -19,6 +19,18 @@ export type PublicSession = {
   userId: string;
 };
 
+export type PublicSessionDiagnostic = {
+  accessTokenCookiePresent: boolean;
+  configurationPresent: boolean;
+  host: string | null;
+  maskedEmail: string | null;
+  provider: string | null;
+  refreshTokenCookiePresent: boolean;
+  serverSessionValid: boolean;
+  signedInHintCookiePresent: boolean;
+  userIdSuffix: string | null;
+};
+
 type PublicProfileInsert = {
   id: string;
   display_name: string | null;
@@ -39,6 +51,20 @@ function getSupabaseConfig() {
 
 function oauthCookieName(key: string) {
   return `kfood_public_oauth_${key.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+}
+
+function maskEmail(email: string | null | undefined) {
+  if (!email || !email.includes("@")) {
+    return null;
+  }
+
+  const [name, domain] = email.split("@");
+  const visibleName = name.slice(0, 2);
+  const domainParts = domain.split(".");
+  const visibleDomain = domainParts[0]?.slice(0, 2) ?? "";
+  const suffix = domainParts.slice(1).join(".");
+
+  return `${visibleName}${"*".repeat(Math.max(name.length - 2, 2))}@${visibleDomain}***${suffix ? `.${suffix}` : ""}`;
 }
 
 export function getSafeNextPath(value: string | null | undefined) {
@@ -321,6 +347,56 @@ export async function getPublicSession(): Promise<PublicSession | null> {
         : null,
     user: data.user,
     userId: data.user.id
+  };
+}
+
+export async function getPublicSessionDiagnostic(): Promise<PublicSessionDiagnostic> {
+  const cookieStore = await cookies();
+  const headerStore = await headers();
+  const accessToken = cookieStore.get(publicAccessTokenCookie)?.value;
+  const refreshToken = cookieStore.get(publicRefreshTokenCookie)?.value;
+  const signedInHint = cookieStore.get(publicSignedInCookie)?.value;
+  const config = getSupabaseConfig();
+  const baseDiagnostic = {
+    accessTokenCookiePresent: Boolean(accessToken),
+    configurationPresent: Boolean(config),
+    host: headerStore.get("host"),
+    maskedEmail: null,
+    provider: null,
+    refreshTokenCookiePresent: Boolean(refreshToken),
+    serverSessionValid: false,
+    signedInHintCookiePresent: signedInHint === "1",
+    userIdSuffix: null
+  } satisfies PublicSessionDiagnostic;
+
+  if (!config || !accessToken) {
+    return baseDiagnostic;
+  }
+
+  const supabase = createPublicSupabaseUserClient(accessToken);
+
+  if (!supabase) {
+    return baseDiagnostic;
+  }
+
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser(accessToken);
+
+  if (error || !user) {
+    return baseDiagnostic;
+  }
+
+  return {
+    ...baseDiagnostic,
+    maskedEmail: maskEmail(user.email),
+    provider:
+      typeof user.app_metadata.provider === "string"
+        ? user.app_metadata.provider
+        : null,
+    serverSessionValid: true,
+    userIdSuffix: user.id.slice(-8)
   };
 }
 

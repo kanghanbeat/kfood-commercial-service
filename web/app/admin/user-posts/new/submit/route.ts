@@ -74,8 +74,9 @@ export async function POST(request: NextRequest) {
   }
 
   revalidatePath("/feed");
-  revalidatePath("/admin/user-posts");
-  const url = new URL("/admin/user-posts", request.url);
+  revalidatePath("/admin/operations");
+  const url = new URL("/admin/operations", request.url);
+  url.searchParams.set("tab", "posts");
   url.searchParams.set("created", "1");
   return NextResponse.redirect(url);
 }

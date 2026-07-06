@@ -1,6 +1,8 @@
 import { getAdminAuditLogs } from "@kfood/data";
 
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
+import { CommentsPanel } from "@/components/admin/comments-panel";
+import { PostsPanel } from "@/components/admin/posts-panel";
 import { ReportsPanel } from "@/components/admin/reports-panel";
 import { requireAdminSession } from "@/lib/admin-auth";
 
@@ -11,7 +13,9 @@ export const metadata = {
 const operationTabs = [
   { key: "reports", label: "신고 관리" },
   { key: "audit", label: "감사 로그" },
-  { key: "members", label: "회원 관리" }
+  { key: "members", label: "회원 관리" },
+  { key: "posts", label: "게시물 관리" },
+  { key: "comments", label: "댓글 관리" }
 ];
 
 // 상단 요약 카드: 운영 현황. 신고/감사 외 일부는 placeholder.
@@ -25,7 +29,12 @@ const operationMetrics = [
 export default async function AdminOperationsPage({
   searchParams
 }: {
-  searchParams?: Promise<{ tab?: string; error?: string; updated?: string }>;
+  searchParams?: Promise<{
+    tab?: string;
+    error?: string;
+    updated?: string;
+    created?: string;
+  }>;
 }) {
   const [session, params] = await Promise.all([
     requireAdminSession(),
@@ -79,6 +88,22 @@ export default async function AdminOperationsPage({
             계정·권한 관리 예정)
           </div>
         </div>
+      ) : null}
+      {tab === "posts" ? (
+        <PostsPanel
+          accessToken={session.accessToken}
+          message={{
+            created: params?.created,
+            error: params?.error,
+            updated: params?.updated
+          }}
+        />
+      ) : null}
+      {tab === "comments" ? (
+        <CommentsPanel
+          accessToken={session.accessToken}
+          message={{ error: params?.error, updated: params?.updated }}
+        />
       ) : null}
     </AdminShell>
   );

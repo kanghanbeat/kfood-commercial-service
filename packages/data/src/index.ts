@@ -1381,6 +1381,81 @@ export async function updateMyProfile(
   return { ok: true };
 }
 
+export async function getMyFoodLog(accessToken: string, userId: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return new Set<string>();
+  }
+
+  const { data, error } = await supabase
+    .from("user_food_log")
+    .select("foods(slug)")
+    .eq("user_id", userId);
+
+  if (error || !data) {
+    return new Set<string>();
+  }
+
+  const slugs = data
+    .map((row) => {
+      const food = row.foods as { slug: string } | { slug: string }[] | null;
+      if (!food) {
+        return null;
+      }
+      return Array.isArray(food) ? food[0]?.slug ?? null : food.slug;
+    })
+    .filter((slug): slug is string => Boolean(slug));
+
+  return new Set(slugs);
+}
+
+export async function setFoodTried(
+  accessToken: string,
+  userId: string,
+  foodSlug: string,
+  tried: boolean
+): Promise<UserPostMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase user client is not configured." };
+  }
+
+  const foodId = await resolveEntityIdBySlug(supabase, "foods", foodSlug);
+
+  if (!foodId) {
+    return { ok: false, message: "Dish not found." };
+  }
+
+  if (tried) {
+    const { error } = await supabase
+      .from("user_food_log")
+      .upsert(
+        { food_id: foodId, user_id: userId },
+        { onConflict: "user_id,food_id", ignoreDuplicates: true }
+      );
+
+    if (error) {
+      return { ok: false, message: "Could not save this record. Please try again later." };
+    }
+
+    return { ok: true };
+  }
+
+  const { error } = await supabase
+    .from("user_food_log")
+    .delete()
+    .eq("user_id", userId)
+    .eq("food_id", foodId);
+
+  if (error) {
+    return { ok: false, message: "Could not update this record. Please try again later." };
+  }
+
+  return { ok: true };
+}
+
 export async function getPublishedUserPosts(limit = 30) {
   const supabase = createPublicClient();
 

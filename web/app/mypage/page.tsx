@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import {
+  getMyFoodLog,
   getMyProfile,
   getPublishedFoods,
   type SupportedLanguage
@@ -36,16 +37,14 @@ export default async function MypagePage({
   ]);
 
   await ensurePublicProfile(session);
-  const [profile, foods] = await Promise.all([
+  const [profile, foods, triedSlugs] = await Promise.all([
     getMyProfile(session.accessToken, session.userId),
-    getPublishedFoods()
+    getPublishedFoods(),
+    getMyFoodLog(session.accessToken, session.userId)
   ]);
   const displayName = profile?.displayName ?? session.name ?? "";
   const bio = profile?.bio ?? "";
   const preferredLanguage = profile?.preferredLanguage ?? "en";
-
-  // 사용자별 도감 진행 데이터(먹은 음식)는 아직 DB 미연동 → 전부 "Not yet".
-  const triedSlugs = new Set<string>();
 
   return (
     <main className="page-shell">
@@ -164,19 +163,29 @@ export default async function MypagePage({
           {foods.map((food, index) => {
             const tried = triedSlugs.has(food.slug);
             return (
-              <Link
+              <div
                 className={tried ? "collection-item tried" : "collection-item"}
-                href={`/foods/${food.slug}`}
                 key={food.slug}
               >
                 <span className="collection-num">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <span className="collection-name">{food.nameEn}</span>
-                <span className={tried ? "collection-state tried" : "collection-state"}>
-                  {tried ? "TRIED" : "Not yet"}
-                </span>
-              </Link>
+                <Link className="collection-name" href={`/foods/${food.slug}`}>
+                  {food.nameEn}
+                </Link>
+                <form action="/mypage/food-log" method="post">
+                  <input name="food_slug" type="hidden" value={food.slug} />
+                  <input name="tried" type="hidden" value={tried ? "0" : "1"} />
+                  <button
+                    className={
+                      tried ? "collection-state-toggle tried" : "collection-state-toggle"
+                    }
+                    type="submit"
+                  >
+                    {tried ? "TRIED" : "Not yet"}
+                  </button>
+                </form>
+              </div>
             );
           })}
         </div>

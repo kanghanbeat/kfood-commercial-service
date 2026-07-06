@@ -1832,6 +1832,22 @@ h3 {
   color: var(--brand-strong);
 }
 
+.collection-state-toggle {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-body);
+}
+
+.collection-state-toggle:hover {
+  text-decoration: underline;
+}
+
+.collection-state-toggle.tried {
+  color: var(--brand-strong);
+}
+
 /* ── 콘텐츠 추가 통합 입구 (유형 선택 드롭다운) ── */
 .admin-add-menu {
   position: relative;

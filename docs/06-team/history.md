@@ -424,3 +424,454 @@ Hanbit check items:
 Next action:
 
 - If approved, start the auth reset design before coding.
+
+## 2026-07-06 Codex App Thread Review Addendum
+
+Source:
+
+```text
+Codex app thread: 작업 방식 개선
+Workspace: /Users/beat/Projects
+Project: /Users/beat/Projects/kfood-commercial
+```
+
+Hanbit clarified that "작업 방식 개선" means the Codex app conversation inside
+the Projects workspace, not a local folder or document title. This addendum
+records the broader thread flow from that app conversation.
+
+### Earlier Flow Read From The Thread
+
+1. Community acquisition:
+   - A Reddit-specific acquisition document was kept, renamed, and generalized.
+   - Direction changed from Reddit-only to broader community acquisition.
+   - Resulting file: `docs/01-product/community-acquisition.capability.md`.
+   - Commit referenced: `1b1aab9 docs: generalize community acquisition plan`.
+
+2. User-requested operating rule:
+   - Codex should first design, explain, and present direction.
+   - Hanbit reviews and chooses.
+   - Codex implements only after that.
+   - This rule was later not followed consistently enough.
+
+3. Mypage profile planning:
+   - Selected direction: phased expansion.
+   - First phase: `display_name`, `bio`, `preferred_language`.
+   - Deferred: `username`, `public_profile_enabled`.
+   - Explicitly excluded: `avatar_url`.
+   - Reason: avatar/image work brings storage, RLS, deletion, file limits, and
+     rights policy into scope too early.
+
+4. Design/UX gap:
+   - Hanbit asked why design had not been handled earlier.
+   - Codex acknowledged over-weighting backend stability and waiting too much
+     for explicit design direction.
+   - New rule: user-facing pages need UX/design review as part of feature work,
+     not as later decoration.
+
+5. Community shell UX:
+   - Target surfaces: Home, Feed, Search, Recommend, Mypage, Header/Footer.
+   - Document created: `docs/02-architecture/community-shell-ux-design.md`.
+   - Commit referenced: `d2ff46e feat: refine community shell experience`.
+
+6. UGC Sprint 2 foundation:
+   - Added DB-backed Feed, post creation, post detail, comments, admin post
+     moderation, admin comment moderation, RLS verification SQL, and quality
+     docs.
+   - Commit referenced: `e71ebff feat: add user posts and comments flow`.
+   - Important: remote Supabase migrations were not auto-applied because local
+     `003_crawling_service_schema.sql` was intentionally excluded.
+
+7. Supabase migration handling:
+   - Safe plan was SQL Editor manual application.
+   - Apply service migrations only: `004`, `005`, `006`, `007`.
+   - Exclude `003_crawling_service_schema.sql`.
+   - Screenshot checks showed UGC/profile DB objects were missing at that time.
+
+8. OAuth provider issue:
+   - Google/Kakao buttons existed, but Supabase providers were off.
+   - Error observed: `Unsupported provider: provider is not enabled`.
+   - Decision: use free Email/password auth first, defer Google/Kakao.
+   - Commit referenced: `bf0b062 feat: add free email auth and admin post creation`.
+
+9. Media upload scope:
+   - Current scope was text posts/comments only.
+   - Photo/video upload was deferred.
+   - Supabase Storage can support photo upload without a separate external API,
+     but needs media table, bucket policy, size/type limits, ownership/delete
+     rules, and moderation policy.
+
+10. Auth refresh hotfix:
+    - Commit referenced: `b45e5a2 fix: refresh auth sessions across navigation`.
+    - Added token refresh behavior and admin/public session distinction.
+    - Later production browser checks still showed no public auth cookies, so
+      this was not a complete fix.
+
+### Current Problems Found
+
+Workflow problems:
+
+- The thread mixed too many separate tracks: production auth, PR #1, SQL
+  migration, design, UGC, media upload, and dashboard tasks.
+- The explicit "design first, Hanbit reviews, then implement" rule was not
+  consistently enforced.
+- `history.md` did not exist until this review, so mistakes and decisions were
+  scattered across chat, docs, and commits.
+- Hanbit check items were sometimes provided after implementation, not before
+  the decision point.
+- Production URL, PR preview URL, local branch, and Supabase Dashboard state were
+  repeatedly at risk of being conflated.
+
+Technical problems:
+
+- Public auth uses custom cookies and custom refresh logic:
+  `kfood_public_access_token`, `kfood_public_refresh_token`,
+  `kfood_public_signed_in`.
+- The latest user-facing diagnostic showed no public auth cookies in production
+  after login.
+- DB/RLS gaps are real for profile/UGC, but they are not the first explanation
+  for "login disappears after navigation."
+- Header auth state can be misleading because it depends on a hint cookie rather
+  than a verified server session.
+- PR #1 has useful work but broad scope and auth-sensitive changes, so it should
+  wait until production auth is stable.
+
+### Recommended Solution
+
+Operating solution:
+
+```text
+1. Confirm the exact target: production, PR preview, local branch, or Supabase Dashboard.
+2. Restate the user goal and split unrelated requests.
+3. Read the relevant code/docs/thread context.
+4. Update history.md before and after major decisions.
+5. Present design/options and Hanbit check items before implementation.
+6. Implement only after approval unless immediate execution is explicitly requested.
+7. Verify with check/build/manual browser checks.
+8. Report changed files, verification, remaining risks, and Hanbit next checks.
+```
+
+Technical solution:
+
+```text
+Public Auth Reset
+```
+
+Recommended direction:
+
+- replace custom public auth cookies with official Supabase SSR auth;
+- make login, callback, logout, protected pages, mutations, and middleware use
+  the same session source;
+- keep admin auth separate unless intentionally migrated;
+- keep `/auth/session-check` until production browser behavior is proven stable;
+- verify real browser flow before returning to PR #1 or DB/RLS debugging.
+
+Minimum verification sequence:
+
+```text
+login
+-> /auth/session-check
+-> /mypage
+-> Save profile
+-> /auth/session-check
+-> /feed
+-> /feed/new
+-> comment
+-> admin moderation
+```
+
+## 2026-06-24 to 2026-06-29 Thread Review Addendum
+
+### Collaboration And Admin Access
+
+The thread also covered adding a collaborator and clarifying access boundaries.
+
+Important distinction:
+
+```text
+GitHub collaborator
+-> code, PRs, docs, local development
+
+K-food app admin/editor
+-> service admin UI, content checks, reports, audit workflow
+
+Supabase Dashboard member
+-> Auth users, SQL Editor, DB/RLS, API keys, provider settings
+```
+
+Decision:
+
+```text
+GitHub collaborator: allowed
+K-food /admin editor: allowed
+Supabase Dashboard member: usually hold back unless infrastructure work requires it
+```
+
+Reason:
+
+Supabase Dashboard access is powerful and risky. A collaborator does not need it
+just to work on code or use the service admin UI.
+
+### Collaborator Invite Problem
+
+Problem:
+
+The collaborator clicked a Supabase invitation/recovery email and got a
+localhost connection error.
+
+Cause:
+
+Supabase Auth URL Configuration was still pointing invite redirects toward
+localhost. A collaborator's machine does not have the local dev server running,
+so the browser showed connection refused.
+
+Required Supabase configuration:
+
+```text
+Site URL:
+https://kfood-commercial-service-web.vercel.app
+
+Redirect URLs:
+https://kfood-commercial-service-web.vercel.app/**
+https://kfood-commercial-service-web.vercel.app/admin/login
+https://kfood-commercial-service-web.vercel.app/auth/callback
+http://localhost:3000/**
+http://localhost:3000/auth/callback
+```
+
+Later finding:
+
+`/admin/login` used email/password login, but the app did not yet have a
+password setup flow for invitation/recovery links.
+
+Fix implemented:
+
+- `/auth/update-password`
+- hash redirect handling for Supabase invite/recovery tokens
+- updated admin login copy
+- updated onboarding docs
+
+Commit referenced:
+
+```text
+1c4d995 fix: add invite password setup flow
+```
+
+### Admin Navigation Problem
+
+Problem:
+
+After admin login, clicking top-level `Regions`, `Foods`, `Places`, or `Routes`
+could feel like it required login again.
+
+Cause:
+
+The public site header linked to public paths:
+
+```text
+/regions
+/foods
+/places
+/routes
+```
+
+Admin work needed admin paths:
+
+```text
+/admin/regions
+/admin/foods
+/admin/places
+/admin/routes
+```
+
+Admin cookies are scoped to `/admin` for security, so public/admin navigation
+needed to be visually separated.
+
+Fix implemented:
+
+- added `web/components/admin-nav.tsx`
+- added admin navigation to admin pages
+- kept public header separate from admin workflow
+
+Commit referenced:
+
+```text
+c0a8648 fix: add admin navigation bar
+```
+
+### Community Direction Foundation
+
+Hanbit proposed a larger product shift:
+
+- translation: Korean, Chinese, English, Japanese;
+- user daily records with photos and places;
+- UI centered on `/feed`, `/search`, `/recommend`, `/mypage`;
+- Feed with translation, search, write record, likes, and follow;
+- Search for food-to-region, region-to-food, users, and related content;
+- Recommend via admin curation and later interest-based recommendation;
+- Mypage for personal info, posts, liked posts.
+
+Initial product decision:
+
+```text
+Do not become a generic SNS.
+Keep verified K-food directory as the core.
+Add community/user records as a layer.
+```
+
+Final framing:
+
+```text
+Directory core + Community layer
+```
+
+Existing verified data remains important:
+
+- regions;
+- foods;
+- places;
+- routes;
+- admin trust workflow;
+- reports/audit;
+- SEO-friendly public pages.
+
+New top-level navigation direction:
+
+```text
+Feed / Search / Recommend / Mypage
+```
+
+Existing directory pages should not be discarded. They should be absorbed into:
+
+- Search as trusted reference data;
+- Recommend as curation material;
+- Feed as tag/link targets;
+- Mypage as saved/liked references.
+
+### Community Navigation Documents And First Slice
+
+Documents created:
+
+- `docs/01-product/community-navigation.capability.md`
+- `docs/02-architecture/community-navigation-and-ugc.design.md`
+
+First implementation slice:
+
+- Home entry: `Be guest / Sign up / Log in`
+- Header: `Feed / Search / Recommend / Mypage`
+- `/feed` shell
+- `/search` shell
+- `/recommend` shell
+- `/mypage`
+- `/profile` redirected toward `/mypage`
+- `Report / Contact` moved to footer
+- `/mypage` excluded from robots/sitemap
+
+Commit referenced:
+
+```text
+9f14611 feat: add community navigation shell
+```
+
+### Additional Problem Found
+
+The thread shows a repeated pattern:
+
+1. user asks for design/planning first;
+2. Codex agrees;
+3. implementation then proceeds fairly quickly;
+4. later user has to re-separate concerns or ask why design/UX was not handled
+   earlier.
+
+Decision rule:
+
+For major product shifts, the "design first" rule must mean a real stop point:
+
+```text
+design/options
+-> Hanbit approval
+-> implementation
+```
+
+not:
+
+```text
+quick design statement
+-> immediate implementation
+```
+
+## 2026-07-06 Public Auth Reset
+
+Date:
+
+2026-07-06
+
+Request:
+
+Production public member login did not persist on
+`https://kfood-commercial-service-web.vercel.app`. After login,
+`/auth/session-check` showed no public signed-in hint, access token, refresh
+token, or valid server session.
+
+Action:
+
+- Chose Option C: reset public auth to `@supabase/ssr` while leaving admin auth,
+  DB migrations, crawler work, and PR `#1` / `feature/design-tokens-v2` out of
+  scope.
+- Added `@supabase/ssr` to the web workspace.
+- Rebuilt `web/lib/public-auth.ts` around Supabase SSR cookies.
+- Removed custom public access/refresh-token cookie management from public
+  login, join, callback, logout, and proxy refresh flow.
+- Kept legacy public cookies only for cleanup and diagnostic visibility.
+- Changed the header auth link from `kfood_public_signed_in` hint-cookie logic
+  to verified server session logic.
+- Kept `/auth/session-check` and updated it to report Supabase SSR auth-cookie
+  presence plus legacy cookie presence.
+
+Verification:
+
+```text
+npm run check
+npm run web:build
+```
+
+Both passed locally.
+
+Issue or misjudgment:
+
+Earlier custom public auth cookie handling made the production browser session
+state fragile and hard to observe. The header also depended on a readable hint
+cookie rather than a verified server session.
+
+Decision rule for next time:
+
+When auth persistence is the active production issue, do not mix in visual
+design, admin restructuring, DB migrations, or unrelated feature work in the
+same deployment. First stabilize and verify the session boundary, then apply
+design-only changes as a separate batch.
+
+Hanbit check items:
+
+Use the production domain after deployment:
+
+```text
+https://kfood-commercial-service-web.vercel.app
+```
+
+1. Open `/auth/session-check` before login.
+2. Log in or create an account.
+3. Open `/auth/session-check` immediately after login.
+4. Confirm `Supabase SSR auth cookie present: Yes`.
+5. Confirm `Server session valid: Yes`.
+6. Open `/mypage`.
+7. Save display name, bio, and preferred language.
+8. Open `/auth/session-check` again.
+9. Open `/feed`.
+10. Open `/feed/new`.
+11. Create a short feed record if the form is available.
+12. Open `/auth/session-check` again.
+
+Next action:
+
+After Hanbit confirms production public auth persistence, discuss and apply the
+design-only subset from PR `#1` separately. Do not merge PR `#1` wholesale before
+auth is stable.

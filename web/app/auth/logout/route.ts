@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { clearPublicAuthCookiesOnResponse } from "@/lib/public-auth";
+import {
+  clearLegacyPublicAuthCookiesOnResponse,
+  createPublicSupabaseServerClient
+} from "@/lib/public-auth";
 
 export async function GET(request: NextRequest) {
+  const supabase = await createPublicSupabaseServerClient();
+
+  if (supabase) {
+    await supabase.auth.signOut();
+  }
+
   const response = NextResponse.redirect(new URL("/", request.url));
-  clearPublicAuthCookiesOnResponse(response);
+  clearLegacyPublicAuthCookiesOnResponse(response);
   return response;
 }

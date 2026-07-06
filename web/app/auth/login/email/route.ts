@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
-  createPublicSupabasePasswordClient,
+  clearLegacyPublicAuthCookiesOnResponse,
+  createPublicSupabaseServerClient,
   ensurePublicProfile,
-  getSafeNextPath,
-  setPublicAuthCookiesOnResponse
+  getSafeNextPath
 } from "@/lib/public-auth";
 
 function redirectWithError(request: NextRequest, message: string, nextPath: string) {
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     return redirectWithError(request, "Enter your email and password.", nextPath);
   }
 
-  const supabase = createPublicSupabasePasswordClient();
+  const supabase = await createPublicSupabaseServerClient();
 
   if (!supabase) {
     return redirectWithError(request, "Supabase Auth is not configured.", nextPath);
@@ -61,10 +61,6 @@ export async function POST(request: NextRequest) {
   });
 
   const response = NextResponse.redirect(new URL(nextPath, request.url));
-  setPublicAuthCookiesOnResponse(
-    response,
-    data.session.access_token,
-    data.session.refresh_token
-  );
+  clearLegacyPublicAuthCookiesOnResponse(response);
   return response;
 }

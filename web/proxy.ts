@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+
 const adminAccessTokenCookie = "kfood_admin_access_token";
 const adminRefreshTokenCookie = "kfood_admin_refresh_token";
-const publicAccessTokenCookie = "kfood_public_access_token";
-const publicRefreshTokenCookie = "kfood_public_refresh_token";
-const publicSignedInCookie = "kfood_public_signed_in";
 
 const adminSessionMaxAge = 60 * 60;
-const publicSessionMaxAge = 60 * 60 * 24 * 7;
 const refreshSkewSeconds = 60 * 5;
 
 type RefreshResult = {
@@ -17,6 +15,11 @@ type RefreshResult = {
 };
 
 type RequestCookieJar = Map<string, string>;
+type ResponseCookie = {
+  name: string;
+  options: CookieOptions;
+  value: string;
+};
 
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -90,48 +93,23 @@ async function refreshSession(refreshToken: string | undefined) {
 
 function setSessionCookies(
   requestCookies: RequestCookieJar,
-  scope: "admin" | "public",
   session: RefreshResult
 ) {
-  if (scope === "admin") {
-    requestCookies.set(adminAccessTokenCookie, session.access_token);
-    requestCookies.set(adminRefreshTokenCookie, session.refresh_token);
-    return;
-  }
-
-  requestCookies.set(publicAccessTokenCookie, session.access_token);
-  requestCookies.set(publicRefreshTokenCookie, session.refresh_token);
-  requestCookies.set(publicSignedInCookie, "1");
+  requestCookies.set(adminAccessTokenCookie, session.access_token);
+  requestCookies.set(adminRefreshTokenCookie, session.refresh_token);
 }
 
-function clearSessionCookies(
-  requestCookies: RequestCookieJar,
-  scope: "admin" | "public"
-) {
-  if (scope === "admin") {
-    requestCookies.delete(adminAccessTokenCookie);
-    requestCookies.delete(adminRefreshTokenCookie);
-    return;
-  }
-
-  requestCookies.delete(publicAccessTokenCookie);
-  requestCookies.delete(publicRefreshTokenCookie);
-  requestCookies.delete(publicSignedInCookie);
+function clearSessionCookies(requestCookies: RequestCookieJar) {
+  requestCookies.delete(adminAccessTokenCookie);
+  requestCookies.delete(adminRefreshTokenCookie);
 }
 
-async function refreshScopeIfNeeded(
+async function refreshAdminScopeIfNeeded(
   request: NextRequest,
-  requestCookies: RequestCookieJar,
-  scope: "admin" | "public"
+  requestCookies: RequestCookieJar
 ) {
-  const accessToken =
-    scope === "admin"
-      ? request.cookies.get(adminAccessTokenCookie)?.value
-      : request.cookies.get(publicAccessTokenCookie)?.value;
-  const refreshToken =
-    scope === "admin"
-      ? request.cookies.get(adminRefreshTokenCookie)?.value
-      : request.cookies.get(publicRefreshTokenCookie)?.value;
+  const accessToken = request.cookies.get(adminAccessTokenCookie)?.value;
+  const refreshToken = request.cookies.get(adminRefreshTokenCookie)?.value;
 
   if (!shouldRefresh(accessToken)) {
     return;
@@ -140,11 +118,55 @@ async function refreshScopeIfNeeded(
   const refreshedSession = await refreshSession(refreshToken);
 
   if (!refreshedSession) {
-    clearSessionCookies(requestCookies, scope);
+    clearSessionCookies(requestCookies);
     return;
   }
 
-  setSessionCookies(requestCookies, scope, refreshedSession);
+  setSessionCookies(requestCookies, refreshedSession);
+}
+
+function updateRequestCookieJar(
+  requestCookies: RequestCookieJar,
+  cookie: ResponseCookie
+) {
+  if (cookie.options.maxAge === 0 || cookie.value === "") {
+    requestCookies.delete(cookie.name);
+    return;
+  }
+
+  requestCookies.set(cookie.name, cookie.value);
+}
+
+async function syncPublicSupabaseSession(requestCookies: RequestCookieJar) {
+  const config = getSupabaseConfig();
+  const cookiesToSet: ResponseCookie[] = [];
+  const headersToSet: Record<string, string> = {};
+
+  if (!config) {
+    return { cookiesToSet, headersToSet };
+  }
+
+  const supabase = createServerClient(config.url, config.anonKey, {
+    cookies: {
+      getAll() {
+        return Array.from(requestCookies.entries()).map(([name, value]) => ({
+          name,
+          value
+        }));
+      },
+      setAll(nextCookies, nextHeaders) {
+        nextCookies.forEach((cookie) => {
+          updateRequestCookieJar(requestCookies, cookie);
+          cookiesToSet.push(cookie);
+        });
+        Object.assign(headersToSet, nextHeaders);
+      }
+    }
+  });
+
+  await supabase.auth.getUser();
+
+  return { cookiesToSet, headersToSet };
 }
 
 function getRequestCookieJar(request: NextRequest): RequestCookieJar {
@@ -209,16 +231,6 @@ function writeResponseCookies(
   };
 
   writeHttpOnlyCookie(
-    publicAccessTokenCookie,
-    "/",
-    publicSessionMaxAge
-  );
-  writeHttpOnlyCookie(
-    publicRefreshTokenCookie,
-    "/",
-    publicSessionMaxAge
-  );
-  writeHttpOnlyCookie(
     adminAccessTokenCookie,
     "/admin",
     adminSessionMaxAge
@@ -228,29 +240,23 @@ function writeResponseCookies(
     "/admin",
     adminSessionMaxAge
   );
+}
 
-  const originalPublicHint = request.cookies.get(publicSignedInCookie)?.value;
-  const nextPublicHint = requestCookies.get(publicSignedInCookie);
-
-  if (nextPublicHint && nextPublicHint !== originalPublicHint) {
-    response.cookies.set(publicSignedInCookie, nextPublicHint, {
-      httpOnly: false,
-      maxAge: publicSessionMaxAge,
-      path: "/",
-      sameSite: "lax",
-      secure
+function writeSupabaseResponseCookies(
+  response: NextResponse,
+  cookiesToSet: ResponseCookie[],
+  headersToSet: Record<string, string>
+) {
+  cookiesToSet.forEach(({ name, options, value }) => {
+    response.cookies.set(name, value, {
+      ...options,
+      secure: process.env.NODE_ENV === "production"
     });
-  }
+  });
 
-  if (!nextPublicHint && originalPublicHint) {
-    response.cookies.set(publicSignedInCookie, "", {
-      httpOnly: false,
-      maxAge: 0,
-      path: "/",
-      sameSite: "lax",
-      secure
-    });
-  }
+  Object.entries(headersToSet).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
 }
 
 export async function proxy(request: NextRequest) {
@@ -258,10 +264,8 @@ export async function proxy(request: NextRequest) {
   const requestCookies = getRequestCookieJar(request);
   const requestHeaders = new Headers(request.headers);
 
-  await Promise.all([
-    refreshScopeIfNeeded(request, requestCookies, "public"),
-    refreshScopeIfNeeded(request, requestCookies, "admin")
-  ]);
+  const publicSessionSync = await syncPublicSupabaseSession(requestCookies);
+  await refreshAdminScopeIfNeeded(request, requestCookies);
 
   requestHeaders.set("cookie", serializeCookieHeader(requestCookies));
   const response = NextResponse.next({
@@ -270,6 +274,11 @@ export async function proxy(request: NextRequest) {
     }
   });
   writeResponseCookies(request, response, requestCookies);
+  writeSupabaseResponseCookies(
+    response,
+    publicSessionSync.cookiesToSet,
+    publicSessionSync.headersToSet
+  );
 
   if (pathname.startsWith("/admin/login") || pathname.startsWith("/admin/logout")) {
     return response;

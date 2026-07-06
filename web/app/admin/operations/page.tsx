@@ -51,7 +51,8 @@ export default async function AdminOperationsPage({
           <span className="admin-eyebrow">운영</span>
           <h1>운영</h1>
           <p>
-            신고 처리 큐를 우선으로 두고, 감사 로그와 활성 계정을 함께 확인합니다.
+            신고 처리 · 변경 이력 감사 · 회원 관리 · 고객 게시물·댓글 모더레이션 ·
+            사이트 공개 설정, 사이트 운영에 필요한 6가지를 탭으로 모아둔 화면입니다.
           </p>
         </div>
         <div className="admin-topbar-actions">
@@ -120,7 +121,10 @@ async function AuditPanel({ accessToken }: { accessToken: string }) {
     <div className="admin-panel">
       <div className="admin-panel-head">
         <h2>최근 감사 로그</h2>
-        <p>관리자 신고·장소 변경 이력을 신뢰·디버깅·롤백 기준으로 추적합니다.</p>
+        <p>
+          어드민에서 무엇을 언제 누가 바꿨는지 자동 기록되는 읽기 전용 이력입니다.
+          문제 생겼을 때 원인 추적·롤백 근거로 씁니다.
+        </p>
       </div>
       {logs.length === 0 ? (
         <div className="admin-empty">

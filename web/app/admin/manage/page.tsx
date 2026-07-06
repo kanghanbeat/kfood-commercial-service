@@ -67,8 +67,9 @@ export default async function AdminManagePage({
           <span className="admin-eyebrow">콘텐츠 관리</span>
           <h1>공개 콘텐츠 데이터 관리</h1>
           <p>
-            지역·음식·장소·루트 콘텐츠의 검수 상태와 공개 여부를 한 화면에서
-            조정합니다.
+            관리자·에디터가 직접 작성하는 공식 여행 가이드 콘텐츠입니다. 지역·음식·
+            장소·루트·촬영 콘텐츠의 검수 상태와 공개 여부를 한 화면에서 조정합니다.
+            (고객이 쓰는 글은 운영 &gt; 게시물 관리에서 별도로 검수합니다.)
           </p>
         </div>
         <div className="admin-topbar-actions">

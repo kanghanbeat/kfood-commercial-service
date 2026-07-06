@@ -50,7 +50,10 @@ export async function CommentsPanel({
     <div className="admin-panel">
       <div className="admin-panel-head">
         <h2>댓글 관리</h2>
-        <p>게시물에 달린 댓글을 검토합니다. 도움이 되는 댓글은 유지하고, 문제 있는 댓글은 숨기거나 삭제하세요.</p>
+        <p>
+          위 게시물 관리(고객 후기)에 달린 고객 댓글을 검수합니다. 도움이 되는
+          댓글은 유지하고, 문제 있는 댓글은 숨기거나 삭제하세요.
+        </p>
       </div>
       {message?.updated ? (
         <p className="status-message success">댓글이 업데이트되었습니다.</p>

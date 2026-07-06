@@ -57,7 +57,10 @@ export async function ReportsPanel({
     <div className="admin-panel">
       <div className="admin-panel-head">
         <h2>신고 처리 큐</h2>
-        <p>콘텐츠 신뢰에 영향을 주는 항목부터 우선 처리합니다.</p>
+        <p>
+          방문객이 공개 페이지의 &ldquo;신고하기&rdquo;로 접수한 오류·문제 제보입니다.
+          콘텐츠 신뢰에 영향을 주는 항목부터 우선 처리합니다.
+        </p>
       </div>
       {message?.updated ? (
         <p className="status-message success">신고 상태가 업데이트되었습니다.</p>

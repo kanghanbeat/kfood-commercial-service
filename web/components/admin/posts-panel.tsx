@@ -58,7 +58,11 @@ export async function PostsPanel({
     <div className="admin-panel">
       <div className="admin-panel-head">
         <h2>게시물 관리</h2>
-        <p>공개 피드에 노출되기 전 커뮤니티 게시물을 검토합니다.</p>
+        <p>
+          고객이 로그인 후 직접 쓰는 후기·기록(커뮤니티 피드)을 검수하는 곳입니다.
+          관리자가 만드는 콘텐츠 관리와는 다릅니다. 지금은 공개 로그인 기능이 없어
+          비어있고, 아래 &ldquo;관리자 게시물 작성&rdquo;으로 알파 시드 데이터만 넣을 수 있습니다.
+        </p>
       </div>
       <div className="action-row">
         <Link className="button primary" href="/admin/user-posts/new">

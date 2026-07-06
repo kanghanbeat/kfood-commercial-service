@@ -41,7 +41,10 @@ function getJwtExpiresAt(token: string | undefined) {
   }
 
   try {
-    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const normalizedPayload = payload
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(payload.length / 4) * 4, "=");
     const decoded = JSON.parse(atob(normalizedPayload)) as { exp?: unknown };
     return typeof decoded.exp === "number" ? decoded.exp : 0;
   } catch {
@@ -53,7 +56,7 @@ function shouldRefresh(accessToken: string | undefined) {
   const expiresAt = getJwtExpiresAt(accessToken);
 
   if (!expiresAt) {
-    return Boolean(accessToken);
+    return false;
   }
 
   return expiresAt - Math.floor(Date.now() / 1000) <= refreshSkewSeconds;

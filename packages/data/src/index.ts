@@ -1385,29 +1385,27 @@ export async function getMyFoodLog(accessToken: string, userId: string) {
   const supabase = createAuthenticatedClient(accessToken);
 
   if (!supabase) {
-    return new Set<string>();
+    return new Map<string, string>();
   }
 
   const { data, error } = await supabase
     .from("user_food_log")
-    .select("foods(slug)")
+    .select("tried_at, foods(slug)")
     .eq("user_id", userId);
 
   if (error || !data) {
-    return new Set<string>();
+    return new Map<string, string>();
   }
 
-  const slugs = data
+  const entries = data
     .map((row) => {
       const food = row.foods as { slug: string } | { slug: string }[] | null;
-      if (!food) {
-        return null;
-      }
-      return Array.isArray(food) ? food[0]?.slug ?? null : food.slug;
+      const slug = food ? (Array.isArray(food) ? food[0]?.slug : food.slug) : null;
+      return slug ? ([slug, row.tried_at] as const) : null;
     })
-    .filter((slug): slug is string => Boolean(slug));
+    .filter((entry): entry is readonly [string, string] => entry !== null);
 
-  return new Set(slugs);
+  return new Map(entries);
 }
 
 export async function setFoodTried(

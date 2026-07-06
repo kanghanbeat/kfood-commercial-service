@@ -128,10 +128,12 @@ export default async function MypagePage({
         <div className="section-heading">
           <p className="eyebrow">My K-Food Journey</p>
           <h2 id="mypage-journey">Your K-food collection</h2>
-          <p>
-            Track what you have tried across your Korean food trip. Personal
-            records connect once the collection data model is live.
-          </p>
+          <p>Track what you have tried across your Korean food trip.</p>
+        </div>
+        <div className="action-row">
+          <Link className="button secondary" href="/mypage/journey">
+            View your journey recap
+          </Link>
         </div>
         <div className="admin-metric-grid">
           <div className="admin-metric-card">

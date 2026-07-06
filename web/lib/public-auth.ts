@@ -1,5 +1,6 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { NextResponse } from "next/server";
 
 import { createClient, type User } from "@supabase/supabase-js";
 
@@ -105,6 +106,20 @@ export async function createPublicSupabaseAuthClient() {
   });
 }
 
+export function createPublicSupabasePasswordClient() {
+  const config = getSupabaseConfig();
+
+  if (!config) {
+    return null;
+  }
+
+  return createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: false
+    }
+  });
+}
+
 export function createPublicSupabaseUserClient(accessToken: string) {
   const config = getSupabaseConfig();
 
@@ -120,6 +135,20 @@ export function createPublicSupabaseUserClient(accessToken: string) {
       headers: {
         Authorization: `Bearer ${accessToken}`
       }
+    }
+  });
+}
+
+function createPublicSupabaseRefreshClient() {
+  const config = getSupabaseConfig();
+
+  if (!config) {
+    return null;
+  }
+
+  return createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: false
     }
   });
 }
@@ -140,6 +169,30 @@ export async function setPublicAuthCookies(
   cookieStore.set(publicAccessTokenCookie, accessToken, cookieOptions);
   cookieStore.set(publicRefreshTokenCookie, refreshToken, cookieOptions);
   cookieStore.set(publicSignedInCookie, "1", {
+    httpOnly: false,
+    maxAge: publicSessionMaxAge,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production"
+  });
+}
+
+export function setPublicAuthCookiesOnResponse(
+  response: NextResponse,
+  accessToken: string,
+  refreshToken: string
+) {
+  const cookieOptions = {
+    httpOnly: true,
+    maxAge: publicSessionMaxAge,
+    path: "/",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
+  };
+
+  response.cookies.set(publicAccessTokenCookie, accessToken, cookieOptions);
+  response.cookies.set(publicRefreshTokenCookie, refreshToken, cookieOptions);
+  response.cookies.set(publicSignedInCookie, "1", {
     httpOnly: false,
     maxAge: publicSessionMaxAge,
     path: "/",
@@ -169,47 +222,110 @@ export async function clearPublicAuthCookies() {
   });
 }
 
+export function clearPublicAuthCookiesOnResponse(response: NextResponse) {
+  const expiredCookieOptions = {
+    httpOnly: true,
+    maxAge: 0,
+    path: "/",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
+  };
+
+  response.cookies.set(publicAccessTokenCookie, "", expiredCookieOptions);
+  response.cookies.set(publicRefreshTokenCookie, "", expiredCookieOptions);
+  response.cookies.set(publicSignedInCookie, "", {
+    httpOnly: false,
+    maxAge: 0,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production"
+  });
+}
+
 export async function getPublicSession(): Promise<PublicSession | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(publicAccessTokenCookie)?.value;
+  const refreshToken = cookieStore.get(publicRefreshTokenCookie)?.value;
 
-  if (!accessToken) {
+  if (!accessToken && !refreshToken) {
     return null;
   }
 
-  const supabase = createPublicSupabaseUserClient(accessToken);
+  const supabase = accessToken
+    ? createPublicSupabaseUserClient(accessToken)
+    : null;
 
-  if (!supabase) {
+  if (supabase && accessToken) {
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser(accessToken);
+
+    if (!error && user) {
+      return {
+        accessToken,
+        email: user.email ?? null,
+        name:
+          typeof user.user_metadata.name === "string"
+            ? user.user_metadata.name
+            : null,
+        provider:
+          typeof user.app_metadata.provider === "string"
+            ? user.app_metadata.provider
+            : null,
+        user,
+        userId: user.id
+      };
+    }
+  }
+
+  if (!refreshToken) {
     return null;
   }
 
-  const {
-    data: { user },
-    error
-  } = await supabase.auth.getUser(accessToken);
+  const refreshClient = createPublicSupabaseRefreshClient();
 
-  if (error || !user) {
+  if (!refreshClient) {
     return null;
+  }
+
+  const { data, error } = await refreshClient.auth.refreshSession({
+    refresh_token: refreshToken
+  });
+
+  if (error || !data.session || !data.user) {
+    await clearPublicAuthCookies();
+    return null;
+  }
+
+  try {
+    await setPublicAuthCookies(
+      data.session.access_token,
+      data.session.refresh_token
+    );
+  } catch {
+    // Server components cannot always mutate cookies, but the refreshed
+    // access token can still be used for the current request.
   }
 
   return {
-    accessToken,
-    email: user.email ?? null,
+    accessToken: data.session.access_token,
+    email: data.user.email ?? null,
     name:
-      typeof user.user_metadata.name === "string"
-        ? user.user_metadata.name
+      typeof data.user.user_metadata.name === "string"
+        ? data.user.user_metadata.name
         : null,
     provider:
-      typeof user.app_metadata.provider === "string"
-        ? user.app_metadata.provider
+      typeof data.user.app_metadata.provider === "string"
+        ? data.user.app_metadata.provider
         : null,
-    user,
-    userId: user.id
+    user: data.user,
+    userId: data.user.id
   };
 }
 
 // 개발용 미리보기 세션. 프로덕션에선 절대 동작하지 않음(NODE_ENV 가드).
-// .env.local 에 ADMIN_PREVIEW=true 일 때만 로컬에서 로그인 없이 /profile 열람.
+// .env.local 에 ADMIN_PREVIEW=true 일 때만 로컬에서 로그인 없이 /mypage·/profile 열람.
 function publicPreviewSession(): PublicSession | null {
   if (
     process.env.NODE_ENV !== "production" &&
@@ -227,7 +343,7 @@ function publicPreviewSession(): PublicSession | null {
   return null;
 }
 
-export async function requirePublicSession() {
+export async function requirePublicSession(nextPath = "/mypage") {
   const preview = publicPreviewSession();
   if (preview) {
     return preview;
@@ -236,7 +352,7 @@ export async function requirePublicSession() {
   const session = await getPublicSession();
 
   if (!session) {
-    redirect("/auth/login?next=/profile");
+    redirect(`/auth/login?next=${encodeURIComponent(nextPath)}`);
   }
 
   return session;
@@ -257,5 +373,8 @@ export async function ensurePublicProfile(session: PublicSession) {
     role: "user"
   };
 
-  await supabase.from("profiles").insert(row);
+  await supabase.from("profiles").upsert(row, {
+    ignoreDuplicates: true,
+    onConflict: "id"
+  });
 }

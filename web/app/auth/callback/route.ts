@@ -4,7 +4,7 @@ import {
   createPublicSupabaseAuthClient,
   ensurePublicProfile,
   getSafeNextPath,
-  setPublicAuthCookies
+  setPublicAuthCookiesOnResponse
 } from "@/lib/public-auth";
 
 export async function GET(request: NextRequest) {
@@ -49,11 +49,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  await setPublicAuthCookies(
-    data.session.access_token,
-    data.session.refresh_token
-  );
-
   await ensurePublicProfile({
     accessToken: data.session.access_token,
     email: data.user.email ?? null,
@@ -69,5 +64,11 @@ export async function GET(request: NextRequest) {
     userId: data.user.id
   });
 
-  return NextResponse.redirect(new URL(nextPath, request.url));
+  const response = NextResponse.redirect(new URL(nextPath, request.url));
+  setPublicAuthCookiesOnResponse(
+    response,
+    data.session.access_token,
+    data.session.refresh_token
+  );
+  return response;
 }

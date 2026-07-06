@@ -1,6 +1,24 @@
 export type PublicationStatus = "draft" | "published" | "hidden" | "archived";
 export type ReportStatus = "pending" | "in_review" | "resolved" | "ignored";
 export type UserRole = "user" | "editor" | "admin";
+export type SupportedLanguage = "ko" | "en" | "ja" | "zh";
+export type UserPostStatus =
+  | "draft"
+  | "pending_review"
+  | "published"
+  | "hidden"
+  | "removed";
+export type UserPostVisibility = "public" | "private" | "unlisted";
+export type UserPostCommentStatus = "published" | "hidden" | "removed";
+
+export type UserProfile = {
+  id: string;
+  displayName: string | null;
+  bio: string | null;
+  preferredLanguage: SupportedLanguage;
+  role: UserRole;
+  isActive: boolean;
+};
 
 export type Region = {
   id: string;
@@ -79,4 +97,34 @@ export type ContentReport = {
   adminNote?: string | null;
   resolvedAt?: string | null;
   createdAt: string;
+};
+
+export type UserPost = {
+  id: string;
+  authorId: string;
+  authorDisplayName: string | null;
+  body: string;
+  language: SupportedLanguage;
+  visibility: UserPostVisibility;
+  status: UserPostStatus;
+  regionId: string | null;
+  foodId: string | null;
+  placeId: string | null;
+  routeGuideId: string | null;
+  moderationNote: string | null;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UserPostComment = {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorDisplayName: string | null;
+  body: string;
+  status: UserPostCommentStatus;
+  moderationNote: string | null;
+  createdAt: string;
+  updatedAt: string;
 };

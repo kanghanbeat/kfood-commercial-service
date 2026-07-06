@@ -1,4 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
+import type {
+  SupportedLanguage,
+  UserPost,
+  UserPostComment,
+  UserPostCommentStatus,
+  UserPostStatus,
+  UserPostVisibility,
+  UserProfile,
+  UserRole
+} from "@kfood/types";
+
+export type {
+  SupportedLanguage,
+  UserPost,
+  UserPostComment,
+  UserPostCommentStatus,
+  UserPostStatus,
+  UserPostVisibility,
+  UserProfile
+} from "@kfood/types";
 
 export type PublicRegion = {
   slug: string;
@@ -319,6 +339,8 @@ const reportTypeAllowlist = new Set([
   "other"
 ]);
 
+const supportedLanguages = new Set<SupportedLanguage>(["ko", "en", "ja", "zh"]);
+
 function allowsFallbackData() {
   return (
     process.env.NODE_ENV !== "production" ||
@@ -435,6 +457,100 @@ export type ContentReportInput = {
   userEmail?: string | null;
   honeypot?: string | null;
   reporterFingerprint?: string | null;
+};
+
+type ProfileRow = {
+  id: string;
+  display_name: string | null;
+  bio: string | null;
+  preferred_language: SupportedLanguage | null;
+  role: UserRole;
+  is_active: boolean;
+};
+
+export type UpdateMyProfileInput = {
+  displayName: string;
+  bio: string;
+  preferredLanguage: SupportedLanguage;
+};
+
+export type UserProfileMutationResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+type UserPostRow = {
+  id: string;
+  author_id: string;
+  body: string;
+  language: SupportedLanguage;
+  visibility: UserPostVisibility;
+  status: UserPostStatus;
+  region_id: string | null;
+  food_id: string | null;
+  place_id: string | null;
+  route_guide_id: string | null;
+  moderation_note: string | null;
+  created_at: string;
+  updated_at: string;
+  profiles: { display_name: string | null } | { display_name: string | null }[] | null;
+  user_post_comments: { count: number }[] | null;
+};
+
+type UserPostCommentRow = {
+  id: string;
+  post_id: string;
+  author_id: string;
+  body: string;
+  status: UserPostCommentStatus;
+  moderation_note: string | null;
+  created_at: string;
+  updated_at: string;
+  profiles: { display_name: string | null } | { display_name: string | null }[] | null;
+};
+
+export type CreateUserPostInput = {
+  authorId: string;
+  body: string;
+  language: SupportedLanguage;
+  visibility: UserPostVisibility;
+  regionSlug?: string | null;
+  foodSlug?: string | null;
+  placeSlug?: string | null;
+  routeSlug?: string | null;
+};
+
+export type CreateAdminUserPostInput = CreateUserPostInput & {
+  actorId: string;
+  status: Extract<UserPostStatus, "pending_review" | "published">;
+  moderationNote?: string | null;
+};
+
+export type CreatePostCommentInput = {
+  authorId: string;
+  postId: string;
+  body: string;
+};
+
+export type UserPostMutationResult =
+  | { ok: true; postId?: string }
+  | { ok: false; message: string };
+
+export type UserCommentMutationResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export type UpdateAdminUserPostInput = {
+  actorId: string;
+  postId: string;
+  status: Extract<UserPostStatus, "published" | "hidden" | "removed">;
+  moderationNote?: string | null;
+};
+
+export type UpdateAdminCommentInput = {
+  actorId: string;
+  commentId: string;
+  status: UserPostCommentStatus;
+  moderationNote?: string | null;
 };
 
 export type ContentReportResult =
@@ -577,6 +693,89 @@ function firstRelatedSlug(
   }
 
   return related?.slug;
+}
+
+function firstProfileName(
+  related:
+    | { display_name: string | null }
+    | { display_name: string | null }[]
+    | null
+    | undefined
+) {
+  if (Array.isArray(related)) {
+    return related[0]?.display_name ?? null;
+  }
+
+  return related?.display_name ?? null;
+}
+
+function mapProfile(row: ProfileRow): UserProfile {
+  return {
+    bio: row.bio,
+    displayName: row.display_name,
+    id: row.id,
+    isActive: row.is_active,
+    preferredLanguage: row.preferred_language ?? "en",
+    role: row.role
+  };
+}
+
+function mapUserPost(row: UserPostRow): UserPost {
+  return {
+    authorDisplayName: firstProfileName(row.profiles),
+    authorId: row.author_id,
+    body: row.body,
+    commentCount: row.user_post_comments?.[0]?.count ?? 0,
+    createdAt: row.created_at,
+    foodId: row.food_id,
+    id: row.id,
+    language: row.language,
+    moderationNote: row.moderation_note,
+    placeId: row.place_id,
+    regionId: row.region_id,
+    routeGuideId: row.route_guide_id,
+    status: row.status,
+    updatedAt: row.updated_at,
+    visibility: row.visibility
+  };
+}
+
+function mapUserPostComment(row: UserPostCommentRow): UserPostComment {
+  return {
+    authorDisplayName: firstProfileName(row.profiles),
+    authorId: row.author_id,
+    body: row.body,
+    createdAt: row.created_at,
+    id: row.id,
+    moderationNote: row.moderation_note,
+    postId: row.post_id,
+    status: row.status,
+    updatedAt: row.updated_at
+  };
+}
+
+async function resolveEntityIdBySlug(
+  supabase: ReturnType<typeof createAuthenticatedClient>,
+  table: "regions" | "foods" | "places" | "route_guides",
+  slug?: string | null
+) {
+  const normalized = slug?.trim();
+
+  if (!supabase || !normalized) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from(table)
+    .select("id")
+    .eq("slug", normalized)
+    .maybeSingle<{ id: string }>();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data.id;
 }
 
 function mapAdminReport(row: AdminReportRow): AdminReport {
@@ -1118,6 +1317,503 @@ export async function getPublishedRoutes() {
 export async function getPublishedRoute(slug: string) {
   const routes = await getPublishedRoutes();
   return routes.find((route) => route.slug === slug);
+}
+
+export async function getMyProfile(accessToken: string, userId: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, display_name, bio, preferred_language, role, is_active")
+    .eq("id", userId)
+    .maybeSingle<ProfileRow>();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return mapProfile(data);
+}
+
+export async function updateMyProfile(
+  accessToken: string,
+  input: UpdateMyProfileInput
+): Promise<UserProfileMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase user client is not configured." };
+  }
+
+  const displayName = input.displayName.trim();
+  const bio = input.bio.trim();
+  const preferredLanguage = input.preferredLanguage;
+
+  if (displayName.length > 80) {
+    return { ok: false, message: "Display name must be 80 characters or fewer." };
+  }
+
+  if (bio.length > 240) {
+    return { ok: false, message: "Bio must be 240 characters or fewer." };
+  }
+
+  if (!supportedLanguages.has(preferredLanguage)) {
+    return { ok: false, message: "Choose a supported language." };
+  }
+
+  const { error } = await supabase.rpc("update_my_profile", {
+    p_bio: bio || null,
+    p_display_name: displayName || null,
+    p_preferred_language: preferredLanguage
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: "Profile could not be updated. Please try again later."
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function getPublishedUserPosts(limit = 30) {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("user_posts")
+    .select(
+      "id, author_id, body, language, visibility, status, region_id, food_id, place_id, route_guide_id, moderation_note, created_at, updated_at, profiles!user_posts_author_id_fkey(display_name), user_post_comments(count)"
+    )
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapUserPost(row as unknown as UserPostRow));
+}
+
+export async function getPublishedUserPost(postId: string) {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("user_posts")
+    .select(
+      "id, author_id, body, language, visibility, status, region_id, food_id, place_id, route_guide_id, moderation_note, created_at, updated_at, profiles!user_posts_author_id_fkey(display_name), user_post_comments(count)"
+    )
+    .eq("id", postId)
+    .eq("status", "published")
+    .eq("visibility", "public")
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return mapUserPost(data as unknown as UserPostRow);
+}
+
+export async function getPublishedPostComments(postId: string) {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("user_post_comments")
+    .select(
+      "id, post_id, author_id, body, status, moderation_note, created_at, updated_at, profiles!user_post_comments_author_id_fkey(display_name)"
+    )
+    .eq("post_id", postId)
+    .eq("status", "published")
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapUserPostComment(row as unknown as UserPostCommentRow));
+}
+
+export async function createUserPost(
+  accessToken: string,
+  input: CreateUserPostInput
+): Promise<UserPostMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase user client is not configured." };
+  }
+
+  const body = input.body.trim();
+
+  if (body.length < 10) {
+    return { ok: false, message: "Record text must be at least 10 characters." };
+  }
+
+  if (body.length > 2000) {
+    return { ok: false, message: "Record text must be 2,000 characters or fewer." };
+  }
+
+  if (!supportedLanguages.has(input.language)) {
+    return { ok: false, message: "Choose a supported language." };
+  }
+
+  if (!["public", "private", "unlisted"].includes(input.visibility)) {
+    return { ok: false, message: "Choose a supported visibility." };
+  }
+
+  const [regionId, foodId, placeId, routeGuideId] = await Promise.all([
+    resolveEntityIdBySlug(supabase, "regions", input.regionSlug),
+    resolveEntityIdBySlug(supabase, "foods", input.foodSlug),
+    resolveEntityIdBySlug(supabase, "places", input.placeSlug),
+    resolveEntityIdBySlug(supabase, "route_guides", input.routeSlug)
+  ]);
+
+  const { data, error } = await supabase
+    .from("user_posts")
+    .insert({
+      author_id: input.authorId,
+      body,
+      food_id: foodId,
+      language: input.language,
+      place_id: placeId,
+      region_id: regionId,
+      route_guide_id: routeGuideId,
+      status: "pending_review",
+      visibility: input.visibility
+    })
+    .select("id")
+    .maybeSingle<{ id: string }>();
+
+  if (error || !data) {
+    return {
+      ok: false,
+      message: "Record could not be submitted. Please try again later."
+    };
+  }
+
+  return { ok: true, postId: data.id };
+}
+
+export async function createAdminUserPost(
+  accessToken: string,
+  input: CreateAdminUserPostInput
+): Promise<UserPostMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const body = input.body.trim();
+
+  if (body.length < 10) {
+    return { ok: false, message: "Record text must be at least 10 characters." };
+  }
+
+  if (body.length > 2000) {
+    return { ok: false, message: "Record text must be 2,000 characters or fewer." };
+  }
+
+  if (!supportedLanguages.has(input.language)) {
+    return { ok: false, message: "Choose a supported language." };
+  }
+
+  if (!["public", "private", "unlisted"].includes(input.visibility)) {
+    return { ok: false, message: "Choose a supported visibility." };
+  }
+
+  if (!["pending_review", "published"].includes(input.status)) {
+    return { ok: false, message: "Choose a supported post status." };
+  }
+
+  const [regionId, foodId, placeId, routeGuideId] = await Promise.all([
+    resolveEntityIdBySlug(supabase, "regions", input.regionSlug),
+    resolveEntityIdBySlug(supabase, "foods", input.foodSlug),
+    resolveEntityIdBySlug(supabase, "places", input.placeSlug),
+    resolveEntityIdBySlug(supabase, "route_guides", input.routeSlug)
+  ]);
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("user_posts")
+    .insert({
+      author_id: input.authorId,
+      body,
+      food_id: foodId,
+      language: input.language,
+      moderated_by: input.actorId,
+      moderation_note: input.moderationNote?.trim() || null,
+      place_id: placeId,
+      region_id: regionId,
+      route_guide_id: routeGuideId,
+      status: input.status,
+      updated_at: now,
+      visibility: input.visibility
+    })
+    .select("*")
+    .maybeSingle();
+
+  if (error || !data) {
+    return {
+      ok: false,
+      message: "Admin record could not be created. Please check database policies."
+    };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "user_post.create",
+    actor_id: input.actorId,
+    after_data: data,
+    before_data: null,
+    entity_id: data.id,
+    entity_type: "user_post"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Admin record created, but audit log failed." };
+  }
+
+  return { ok: true, postId: data.id };
+}
+
+export async function createPostComment(
+  accessToken: string,
+  input: CreatePostCommentInput
+): Promise<UserCommentMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase user client is not configured." };
+  }
+
+  const body = input.body.trim();
+
+  if (body.length < 2) {
+    return { ok: false, message: "Comment must be at least 2 characters." };
+  }
+
+  if (body.length > 800) {
+    return { ok: false, message: "Comment must be 800 characters or fewer." };
+  }
+
+  const { error } = await supabase.from("user_post_comments").insert({
+    author_id: input.authorId,
+    body,
+    post_id: input.postId,
+    status: "published"
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      message: "Comment could not be submitted. Please try again later."
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function removeOwnComment(
+  accessToken: string,
+  commentId: string
+): Promise<UserCommentMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase user client is not configured." };
+  }
+
+  const { error } = await supabase
+    .from("user_post_comments")
+    .update({
+      removed_at: new Date().toISOString(),
+      status: "removed",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", commentId);
+
+  if (error) {
+    return { ok: false, message: "Comment could not be removed." };
+  }
+
+  return { ok: true };
+}
+
+export async function getAdminUserPosts(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("user_posts")
+    .select(
+      "id, author_id, body, language, visibility, status, region_id, food_id, place_id, route_guide_id, moderation_note, created_at, updated_at, profiles!user_posts_author_id_fkey(display_name), user_post_comments(count)"
+    )
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapUserPost(row as unknown as UserPostRow));
+}
+
+export async function getAdminComments(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("user_post_comments")
+    .select(
+      "id, post_id, author_id, body, status, moderation_note, created_at, updated_at, profiles!user_post_comments_author_id_fkey(display_name)"
+    )
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapUserPostComment(row as unknown as UserPostCommentRow));
+}
+
+export async function updateAdminUserPostStatus(
+  accessToken: string,
+  input: UpdateAdminUserPostInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("user_posts")
+    .select("*")
+    .eq("id", input.postId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "User post was not found." };
+  }
+
+  const now = new Date().toISOString();
+  const updatePayload = {
+    hidden_at: input.status === "hidden" ? now : null,
+    moderated_by: input.actorId,
+    moderation_note: input.moderationNote?.trim() || null,
+    removed_at: input.status === "removed" ? now : null,
+    status: input.status,
+    updated_at: now
+  };
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("user_posts")
+    .update(updatePayload)
+    .eq("id", input.postId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "User post could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "user_post.update_status",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.postId,
+    entity_type: "user_post"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "User post updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminCommentStatus(
+  accessToken: string,
+  input: UpdateAdminCommentInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("user_post_comments")
+    .select("*")
+    .eq("id", input.commentId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Comment was not found." };
+  }
+
+  const now = new Date().toISOString();
+  const updatePayload = {
+    hidden_at: input.status === "hidden" ? now : null,
+    moderated_by: input.actorId,
+    moderation_note: input.moderationNote?.trim() || null,
+    removed_at: input.status === "removed" ? now : null,
+    status: input.status,
+    updated_at: now
+  };
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("user_post_comments")
+    .update(updatePayload)
+    .eq("id", input.commentId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Comment could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "user_post_comment.update_status",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.commentId,
+    entity_type: "user_post_comment"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Comment updated, but audit log failed." };
+  }
+
+  return { ok: true };
 }
 
 export async function getAdminReports(accessToken: string) {

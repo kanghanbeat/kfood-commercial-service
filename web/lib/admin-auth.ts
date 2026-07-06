@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { NextResponse } from "next/server";
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -64,6 +65,20 @@ export function createSupabaseUserClient(accessToken: string) {
   });
 }
 
+function createSupabaseRefreshClient() {
+  const config = getSupabaseConfig();
+
+  if (!config) {
+    return null;
+  }
+
+  return createClient(config.url, config.anonKey, {
+    auth: {
+      persistSession: false
+    }
+  });
+}
+
 export async function setAdminAuthCookies(
   accessToken: string,
   refreshToken: string
@@ -81,6 +96,23 @@ export async function setAdminAuthCookies(
   cookieStore.set(adminRefreshTokenCookie, refreshToken, cookieOptions);
 }
 
+export function setAdminAuthCookiesOnResponse(
+  response: NextResponse,
+  accessToken: string,
+  refreshToken: string
+) {
+  const cookieOptions = {
+    httpOnly: true,
+    maxAge: adminSessionMaxAge,
+    path: "/admin",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
+  };
+
+  response.cookies.set(adminAccessTokenCookie, accessToken, cookieOptions);
+  response.cookies.set(adminRefreshTokenCookie, refreshToken, cookieOptions);
+}
+
 export async function clearAdminAuthCookies() {
   const cookieStore = await cookies();
   const expiredCookieOptions = {
@@ -95,33 +127,77 @@ export async function clearAdminAuthCookies() {
   cookieStore.set(adminRefreshTokenCookie, "", expiredCookieOptions);
 }
 
+export function clearAdminAuthCookiesOnResponse(response: NextResponse) {
+  const expiredCookieOptions = {
+    httpOnly: true,
+    maxAge: 0,
+    path: "/admin",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
+  };
+
+  response.cookies.set(adminAccessTokenCookie, "", expiredCookieOptions);
+  response.cookies.set(adminRefreshTokenCookie, "", expiredCookieOptions);
+}
+
 export async function getAdminSession(): Promise<AdminSession | null> {
   const cookieStore = await cookies();
-  const accessToken = cookieStore.get(adminAccessTokenCookie)?.value;
+  let accessToken = cookieStore.get(adminAccessTokenCookie)?.value;
+  const refreshToken = cookieStore.get(adminRefreshTokenCookie)?.value;
 
-  if (!accessToken) {
+  if (!accessToken && !refreshToken) {
     return null;
   }
 
-  const supabase = createSupabaseUserClient(accessToken);
+  let supabase = accessToken ? createSupabaseUserClient(accessToken) : null;
 
-  if (!supabase) {
-    return null;
+  let userResult = supabase && accessToken
+    ? await supabase.auth.getUser(accessToken)
+    : null;
+
+  if ((!userResult || userResult.error || !userResult.data.user) && refreshToken) {
+    const refreshClient = createSupabaseRefreshClient();
+
+    if (!refreshClient) {
+      return null;
+    }
+
+    const { data, error } = await refreshClient.auth.refreshSession({
+      refresh_token: refreshToken
+    });
+
+    if (error || !data.session || !data.user) {
+      await clearAdminAuthCookies();
+      return null;
+    }
+
+    accessToken = data.session.access_token;
+    supabase = createSupabaseUserClient(accessToken);
+
+    try {
+      await setAdminAuthCookies(
+        data.session.access_token,
+        data.session.refresh_token
+      );
+    } catch {
+      // Server components cannot always mutate cookies, but the refreshed
+      // access token can still be used for the current request.
+    }
+
+    userResult = {
+      data: { user: data.user },
+      error: null
+    };
   }
 
-  const {
-    data: { user },
-    error: userError
-  } = await supabase.auth.getUser(accessToken);
-
-  if (userError || !user) {
+  if (!supabase || !accessToken || !userResult || userResult.error || !userResult.data.user) {
     return null;
   }
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("id, role, is_active")
-    .eq("id", user.id)
+    .eq("id", userResult.data.user.id)
     .maybeSingle<AdminProfileRow>();
 
   if (
@@ -135,9 +211,9 @@ export async function getAdminSession(): Promise<AdminSession | null> {
 
   return {
     accessToken,
-    email: user.email ?? null,
+    email: userResult.data.user.email ?? null,
     role: profile.role,
-    userId: user.id
+    userId: userResult.data.user.id
   };
 }
 

@@ -27,6 +27,8 @@ export function SiteHeader() {
           <Link href="/foods">Foods</Link>
           <Link href="/places">Places</Link>
           <Link href="/routes">Routes</Link>
+          <Link href="/feed">Feed</Link>
+          <Link href="/search">Search</Link>
         </nav>
         <div className="nav-v2-action">
           <HeaderAuthLink />

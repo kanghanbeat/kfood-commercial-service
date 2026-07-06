@@ -45,7 +45,7 @@ html {
 }
 
 /* Pretendard 로컬 woff2 사용 (CDN 금지 — 프로젝트 기준).
-   ⚠️ 폰트 파일(woff2)을 web/public/fonts/ 에 추가해야 실제 적용됨. 없으면 system 폰트로 fallback.
+   web/public/fonts/ 에서 서빙됨 (내부 대시보드 웹사이트/fonts/woff2-subset/ 원본과 동일 파일). */
 @font-face {
   font-family: 'Pretendard';
   src: url('/fonts/Pretendard-Regular.woff2') format('woff2');
@@ -56,7 +56,6 @@ html {
   src: url('/fonts/Pretendard-Bold.woff2') format('woff2');
   font-weight: 700; font-display: swap;
 }
-*/
 
 body {
   margin: 0;

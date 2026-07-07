@@ -6,6 +6,8 @@ import {
   getPublishedRoutes
 } from "@kfood/data";
 
+import { CardPhoto } from "@/components/card-photo";
+
 function ArrowRightIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -40,7 +42,18 @@ export default async function HomePage() {
           Find iconic dishes, the regions they come from, and the best places
           to taste them.
         </p>
-        <div className="hero-v2-search">Search foods, regions, or places...</div>
+        <form className="hero-v2-search-form" action="/search" method="get" role="search">
+          <input
+            className="hero-v2-search-input"
+            type="search"
+            name="q"
+            placeholder="Search foods, regions, or places..."
+            aria-label="Search foods, regions, or places"
+          />
+          <button className="hero-v2-search-button" type="submit">
+            Search
+          </button>
+        </form>
         <Link className="hero-v2-cta" href="/foods">
           Start your food journey
         </Link>
@@ -62,7 +75,7 @@ export default async function HomePage() {
           <div className="card-grid-v2">
             {trendingFoods.map((food) => (
               <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
-                <div className="card-v2-photo" />
+                <CardPhoto label={food.nameEn} variant="food" />
                 <div className="card-v2-body">
                   <span className="card-v2-title">{food.nameEn}</span>
                   <span className="card-v2-meta">{food.summary}</span>
@@ -96,7 +109,7 @@ export default async function HomePage() {
                   href={`/regions/${region.slug}`}
                   key={region.slug}
                 >
-                  <div className="card-v2-photo tall" />
+                  <CardPhoto label={region.nameEn} variant="region" tall />
                   <div className="card-v2-body">
                     <span className="card-v2-title">{region.nameEn}</span>
                     <span className="card-v2-meta">
@@ -131,7 +144,7 @@ export default async function HomePage() {
           <div className="card-grid-v2">
             {curatedRoutes.map((route) => (
               <Link className="card-v2" href={`/routes/${route.slug}`} key={route.slug}>
-                <div className="card-v2-photo" />
+                <CardPhoto label={route.title} variant="route" />
                 <div className="card-v2-body">
                   <span className="card-v2-title">{route.title}</span>
                   <span className="card-v2-meta">{route.estimatedDuration}</span>

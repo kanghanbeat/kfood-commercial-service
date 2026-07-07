@@ -11,6 +11,8 @@ import {
   getPublishedRegions
 } from "@kfood/data";
 
+import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
+
 export async function generateStaticParams() {
   const foods = await getPublishedFoods();
   return foods.map((food) => ({ foodSlug: food.slug }));
@@ -52,6 +54,7 @@ export default async function FoodDetailPage({
     place.foodSlugs.includes(food.slug)
   );
   const photoReview = getFoodPhotoReviewNote(food);
+  const heroPhoto = resolveCardPhoto(food.nameEn);
   const tasteTags = food.tasteProfile
     .split(",")
     .map((t) => t.trim())
@@ -66,6 +69,16 @@ export default async function FoodDetailPage({
         <span>/</span>
         <span>{food.nameEn}</span>
       </nav>
+
+      <div
+        className="food-hero-photo"
+        style={{ background: heroPhoto.gradient }}
+        aria-hidden="true"
+      >
+        <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
+          {heroPhoto.letter}
+        </span>
+      </div>
 
       <header className="food-v2-header">
         <span className="food-v2-eyebrow">Food guide</span>
@@ -128,6 +141,7 @@ export default async function FoodDetailPage({
                 href={`/regions/${region.slug}`}
                 key={region.slug}
               >
+                <CardPhoto label={region.nameEn} variant="region" />
                 <div className="card-v2-body">
                   <span className="card-v2-title">{region.nameEn}</span>
                   <span className="card-v2-meta">{region.routeTheme}</span>

@@ -1071,6 +1071,169 @@ h3 {
   font-weight: 600;
 }
 
+.hero-v2-quick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 640px;
+}
+
+.hero-v2-quick-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-body);
+}
+
+.hero-v2-quick-chip {
+  padding: 7px 16px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--pill-radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-heading);
+}
+
+.hero-v2-quick-chip:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+/* 히어로 아래 콘텐츠 현황 스트립 — 지금 이 가이드가 다루는 범위를 숫자로 보여준다. */
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 1264px;
+  margin: 0 auto;
+  padding: 32px 48px 0;
+}
+
+.home-stats-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 22px 16px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  text-align: center;
+}
+
+.home-stats-number {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--brand);
+  line-height: 1;
+}
+
+.home-stats-label {
+  font-size: 14px;
+  color: var(--text-body);
+}
+
+/* 취향별 시작점 카드 3종 */
+.home-intent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.home-intent-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 28px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-left: 4px solid var(--brand);
+  border-radius: var(--card-radius);
+}
+
+.home-intent-card:hover {
+  border-color: var(--brand);
+}
+
+.home-intent-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.home-intent-desc {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-body);
+}
+
+/* 홈 카드 설명은 길이가 제각각이라 3줄로 잘라 카드 높이를 맞춘다. */
+.home-v2 .card-v2-meta {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-v2 .card-v2-meta.strong {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+/* 페이지 마무리 CTA 밴드 */
+.home-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 80px 48px;
+  background: var(--brand);
+  text-align: center;
+}
+
+.home-cta-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: #fff;
+  max-width: 640px;
+}
+
+.home-cta-subtitle {
+  font-size: 17px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 560px;
+}
+
+.home-cta-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.home-cta-primary {
+  padding: 15px 28px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--control-radius);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.home-cta-secondary {
+  padding: 15px 28px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  border-radius: var(--control-radius);
+  font-size: 16px;
+  font-weight: 600;
+}
+
 .search-form {
   display: flex;
   align-items: center;
@@ -1300,6 +1463,23 @@ h3 {
 
   .hero-v2-headline {
     font-size: 36px;
+  }
+
+  .home-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 24px 24px 0;
+  }
+
+  .home-intent-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-cta {
+    padding: 56px 24px;
+  }
+
+  .home-cta-title {
+    font-size: 26px;
   }
 }
 

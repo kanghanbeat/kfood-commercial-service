@@ -825,15 +825,38 @@ function mapAdminAuditLog(row: AdminAuditLogRow): AdminAuditLog {
   };
 }
 
+// DB 태그는 capital_region 같은 snake_case 원시 값이라 그대로 노출하면
+// 화면에서 어색하다. 표시 직전에 사람이 읽는 라벨로 바꾼다.
+const TAG_LABEL_OVERRIDES: Record<string, string> = {
+  bbq: "BBQ",
+  first_time: "First-time friendly",
+  solo_travel: "Solo travel",
+  day_trip: "Day trip",
+  near_seoul: "Near Seoul",
+  tteokbokki: "Tteokbokki",
+  jokbal: "Jokbal",
+  budae_jjigae: "Budae-jjigae"
+};
+
+export function humanizeTag(tag: string): string {
+  const override = TAG_LABEL_OVERRIDES[tag];
+  if (override) {
+    return override;
+  }
+  const spaced = tag.replace(/_/g, " ").trim();
+  return spaced ? spaced.charAt(0).toUpperCase() + spaced.slice(1) : tag;
+}
+
 function mapRegion(row: RegionRow): PublicRegion {
+  const displayTags = row.best_for_tags.map(humanizeTag);
   return {
     slug: row.slug,
     nameEn: row.name_en,
-    primaryAudience: row.best_for_tags[0] ?? "K-food travelers",
-    kfoodIdentity: row.best_for_tags.join(", "),
+    primaryAudience: displayTags[0] ?? "K-food travelers",
+    kfoodIdentity: displayTags.join(", "),
     routeTheme: "Curated K-food route",
     intro: row.intro,
-    bestForTags: row.best_for_tags
+    bestForTags: displayTags
   };
 }
 
@@ -1077,11 +1100,11 @@ function mapPlace(row: PlaceRow): PublicPlace {
     businessInfoNote:
       row.business_info_note ?? businessInfoNote(row.trust_tags, row.tourist_tags),
     trustTags: [
-      ...row.trust_tags,
-      ...(row.is_sponsored ? ["sponsored"] : []),
-      ...(row.affiliate_url ? ["affiliate link"] : [])
+      ...row.trust_tags.map(humanizeTag),
+      ...(row.is_sponsored ? ["Sponsored"] : []),
+      ...(row.affiliate_url ? ["Affiliate link"] : [])
     ],
-    cautionTags: row.caution_tags,
+    cautionTags: row.caution_tags.map(humanizeTag),
     lastVerifiedLabel: row.last_verified_at
       ? `Last verified ${row.last_verified_at}`
       : "Verification pending"

@@ -8,7 +8,7 @@
 
 ## 지금 상태 한 줄 요약 (2026-07-07)
 
-**Supabase 키 연결 + 실데이터 읽기/쓰기 검증 완료. PR #1 merge conflict 해결 완료.** 남은 건 ① 실콘텐츠 채우기 ② 나머지 어드민↔공개 흐름 세부 검증 ③ 한빛 리뷰·승인 ④ Supabase 팀에 솔 계정 초대(대시보드 직접 접근용).
+**Supabase 키 연결 + 실데이터 읽기/쓰기 검증 완료. PR #1 merge conflict 해결 완료. 검색 실구현 + 카드 플레이스홀더 + 음식상세 히어로 완료(커밋 `af4e75f`).** 남은 건 ① 실콘텐츠 채우기 ② 나머지 어드민↔공개 흐름 세부 검증 ③ 한빛 리뷰·승인 ④ Supabase 팀에 솔 계정 초대(대시보드 직접 접근용 — 솔 계정으로 대시보드 접속 시 "You do not have access" 확인됨, 한빛이 `shinheesol@gmail.com` 초대 필요).
 
 | 영역 | 상태 |
 |---|---|
@@ -19,7 +19,7 @@
 | 어드민 운영 (신고·감사·회원·게시물·댓글·설정) | ✅ 화면 6탭 완성 + 감사 로그 실동작 확인 / ⚠️ 신고·회원은 아직 데이터 없음 |
 | 커뮤니티 (피드·게시물·댓글, 한빛 제작) | ✅ 병합 완료 + 어드민 4메뉴 편입 + 공개 on/off 토글 추가 |
 | 인증(로그인/세션) | ✅ 로그아웃 튕김 + 로그인 두 번 눌러야 열림 버그 수정(2026-07-07, 커밋 `2bf2c68`) |
-| 검색 | ⬜ preview 문구만, 실제 검색 로직 미구현 |
+| 검색 | ✅ 실구현 완료(2026-07-07, 커밋 `af4e75f`) — 음식·지역·장소·루트 이름·설명·태그 매칭, 홈 히어로 검색창도 실동작 / ⬜ 커뮤니티 게시물·유저 검색은 스키마 준비 후 |
 | 다국어(i18n) | ⬜ 미착수 — 시점·범위는 아래 "향후 결정 사항" 참고 |
 
 ### 인증 버그 수정 상세 (2026-07-07)
@@ -29,7 +29,7 @@
 1. **로그아웃 튕김** (`web/proxy.ts`) — 세션 갱신(refresh) 요청이 일시적으로 실패하면 아직 유효한 토큰까지 지워 로그인 화면으로 보냈다. 한빛이 먼저 JWT 패딩 버그(`801dc5c`)를 고쳤고(이 브랜치에 병합됨), 솔이 추가로 "토큰이 진짜 만료(exp<=now)됐을 때만 세션 삭제"하도록 보강. 일시적 네트워크 문제면 그대로 두고 다음 요청에서 재시도.
 2. **로그인 두 번 눌러야 열림** (`web/lib/sign-in-retry.ts` 신규) — 원인은 Supabase(GoTrue)가 유휴 후 첫 인증 요청에서 올바른 비밀번호에도 `invalid_credentials`(400)를 반환하는 것(디버그 로그로 확인). 같은 자격증명 즉시 재시도 시 성공. 공용 헬퍼 `signInWithPasswordResilient()`로 5xx/네트워크 오류는 2회, invalid_credentials는 1회 자동 재시도. 재시도 후에도 실패하면 진짜 틀린 비밀번호로 처리. 어드민(`/admin/login/email`)·공개(`/auth/login/email`) 양쪽 적용. 실제 로그인 한 번에 되는 것 확인함.
 
-> ⚠️ 병합 메모: 한빛이 이 브랜치(`feature/design-tokens-v2`)에 직접 커밋(`801dc5c`)을 올려서 로컬에서 merge 처리함(커밋 `a42d5e0`). **아직 push 안 함** — 아래 "다음 세션" 참고.
+> 병합 메모: 한빛이 이 브랜치(`feature/design-tokens-v2`)에 직접 커밋(`801dc5c`)을 올려서 로컬에서 merge 처리함(커밋 `a42d5e0`). ✅ push 완료(2026-07-07).
 
 ### PR #1 merge conflict 해결 (2026-07-07)
 
@@ -39,6 +39,21 @@
 - `web/proxy.ts`: main의 `@supabase/ssr` 기반 공개 세션 동기화 구조를 그대로 쓰고, 그 안에 "진짜 만료된 경우에만 세션 삭제" 로직을 다시 넣음
 - `web/components/site-chrome.tsx` + `web/app/layout.tsx`: main이 `HeaderAuthLink`를 async 서버 컴포넌트로 재작성했는데, 이 브랜치의 `SiteHeader`(client component)가 그걸 직접 import하고 있어서 Next.js 빌드 실패 → `RootLayout`(서버)에서 `HeaderAuthLink`를 렌더링해 `SiteHeader`에 prop으로 내려주는 방식으로 수정
 - `tsc --noEmit` · `eslint` · `next build` 전부 통과 확인 후 push. PR #1은 이제 `mergeable: MERGEABLE` 상태.
+
+### 디자인·검색 개선 4건 (2026-07-07, 커밋 `af4e75f`)
+
+Supabase 팀 초대 대기 중에 fallback 데이터로 검증 가능한 프론트 작업 진행:
+
+1. **카드 빈 박스 개선** — 실제 음식 사진이 저작권 검토 대기라 카드가 전부 빈 회색 박스였음. `web/components/card-photo.tsx` 신규: 이름 기반 그라데이션(같은 이름=항상 같은 색) + 첫 글자 모노그램 + 카테고리 태그(DISH/REGION/ROUTE). 홈·검색결과·음식상세에 공통 적용. **실제 사진 확정되면 이 컴포넌트만 `<img>`로 교체하면 됨.**
+2. **검색 실구현** — `/search`가 preview 문구 → 실제 `<form>`+GET(`?q=`)으로 동작. 음식·지역·장소·루트의 이름·설명·태그 대소문자 무시 매칭, 결과는 카테고리별 카드 그리드. 브라우저에서 "spicy" 8건·"Myeongdong" 7건 실확인.
+3. **홈 히어로 검색창** — 가짜 `<div>` → 실제 폼으로 교체, 제출 시 `/search?q=`로 이동 실확인.
+4. **음식 상세** — 상단에 이름 기반 그라데이션 히어로 배너 추가, "Where it fits" 지역 카드에 CardPhoto 썸네일 추가.
+
+검증: `tsc --noEmit`·`eslint`·`next build` 통과, 모바일(375px) 1열 반응형 확인. `.claude/launch.json`(로컬 dev 서버 설정)도 이 커밋에 포함.
+
+### Supabase 대시보드 접근 확인 (2026-07-07)
+
+솔 계정으로 한빛 프로젝트(`gpwxiakwlghjzvoxwpnw`) 대시보드 접속 시 "You do not have access to this project" — 로그인 문제가 아니라 **팀 멤버가 아니라서 생기는 접근 거부**로 확인(솔 계정은 별개 조직 `dropthesori` 소유). 해결: 한빛이 Supabase 대시보드 → Organization Settings → Team에서 `shinheesol@gmail.com` 초대.
 
 ---
 
@@ -100,6 +115,8 @@
 
 **6. 마무리·공유** — ✅ 6-1 Pretendard 폰트 완료 · ⬜ 6-2 이 PR 공유 (진행 중)
 
+**7. 디자인·기능 다듬기 (Supabase 대기 중 진행, 솔 전담)** — ✅ 7-1 카드 플레이스홀더·검색 실구현·음식상세 히어로 완료(2026-07-07, `af4e75f`) · ⬜ 7-2 목록 페이지 4개(`/foods` `/regions` `/routes` `/places`)에는 아직 `CardPhoto` 미적용 — 지금은 텍스트만 있는 카드 상태, 홈/검색과 통일감 있게 추가 필요 · ⬜ 7-3 지역·장소·루트 상세 페이지도 음식 상세처럼 히어로 배너 추가 · ⬜ 7-4 모바일 반응형 전체 페이지 재점검(홈·음식상세만 확인함)
+
 **향후 결정 사항 (시점만 정해둠)**: 다국어(i18n) 버튼 — 실콘텐츠 채운 후(1번 이후) 착수, 한국어·영어·일본어·중국어 4개 추천. 상세 근거는 이 저장소 밖 `K푸드_플랫폼/docs/기획정렬-한빛대조.md`(솔 로컬 기획 문서) 참고.
 
 ---
@@ -117,8 +134,21 @@
 
 ```
 kfood-commercial-service/docs/06-team/session-handoff.md 를 읽고 이어가줘.
-브랜치 feature/design-tokens-v2. 현재 상태·한빛 확인 필요 항목·남은 일 순서대로 확인한 뒤,
-다음에 뭘 할지 제안해줘.
+브랜치 feature/design-tokens-v2.
+
+지난 세션에서: PR #1 merge conflict 해결(커밋 8f1442a), 카드 플레이스홀더·검색 실구현·
+음식상세 히어로 배너 추가(커밋 af4e75f)까지 끝냈어. 전부 GitHub에 push 완료.
+
+이번 세션에서 이어서 할 것 (남은 일 7번, 우선순위 순):
+1. 목록 페이지 4개(/foods, /regions, /routes, /places)에 CardPhoto 컴포넌트 적용
+   — 지금은 홈·검색·음식상세만 적용돼 있고 목록 페이지는 아직 텍스트만 있는
+   빈 카드 상태야 (web/components/card-photo.tsx 재사용하면 됨)
+2. 지역·장소·루트 상세 페이지에도 음식 상세처럼 히어로 배너 추가
+   (web/app/foods/[foodSlug]/page.tsx의 heroPhoto 패턴 참고)
+3. 모바일 반응형 전체 페이지 재점검 (지금까지 홈·음식상세만 확인함)
+
+작업 전에 현재 상태·한빛 확인 필요 항목·남은 일 섹션 순서대로 다시 확인하고,
+Supabase 팀 초대(한빛→솔 계정) 진행됐는지도 물어봐줘.
 ```
 
 ---

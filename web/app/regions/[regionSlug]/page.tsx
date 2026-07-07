@@ -10,6 +10,8 @@ import {
   getRegionPlaces
 } from "@kfood/data";
 
+import { resolveCardPhoto } from "@/components/card-photo";
+
 export async function generateStaticParams() {
   const regions = await getPublishedRegions();
   return regions.map((region) => ({ regionSlug: region.slug }));
@@ -50,8 +52,20 @@ export default async function RegionDetailPage({
     ? allPlaces.filter((place) => place.regionSlug === region.slug)
     : getRegionPlaces(region.slug);
 
+  const heroPhoto = resolveCardPhoto(region.nameEn);
+
   return (
     <main className="page-shell">
+      <div
+        className="food-hero-photo"
+        style={{ background: heroPhoto.gradient }}
+        aria-hidden="true"
+      >
+        <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
+          {heroPhoto.letter}
+        </span>
+      </div>
+
       <header className="detail-header">
         <p className="eyebrow">{region.primaryAudience}</p>
         <h1>{region.nameEn}</h1>

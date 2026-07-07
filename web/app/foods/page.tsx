@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { getPublishedFoods } from "@kfood/data";
 
+import { CardPhoto } from "@/components/card-photo";
+
 export const metadata = {
   title: "K-food Guide"
 };
@@ -29,6 +31,7 @@ export default async function FoodsPage() {
       <div className="card-grid-v2">
         {foods.map((food) => (
           <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
+            <CardPhoto label={food.nameEn} variant="food" />
             <div className="card-v2-body">
               <span className="food-chip spicy">Spicy {food.spicyLevel}/4</span>
               <span className="card-v2-title">{food.nameEn}</span>

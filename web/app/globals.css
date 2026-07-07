@@ -1269,8 +1269,29 @@ h3 {
 }
 
 @media (max-width: 900px) {
+  /* 모바일에서 메뉴를 숨기면 이동 수단이 없어지므로,
+     로고·로그인 아래 줄로 내려 가로 스크롤되는 메뉴로 유지한다. */
+  .nav-v2 {
+    height: auto;
+    padding: 12px 20px;
+  }
+
+  .nav-v2-inner {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
   .nav-v2-menu {
-    display: none;
+    order: 3;
+    flex: 1 0 100%;
+    justify-content: flex-start;
+    gap: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-v2-menu a {
+    white-space: nowrap;
   }
 
   .card-grid-v2 {

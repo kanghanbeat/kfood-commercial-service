@@ -3,7 +3,7 @@
 // 그라데이션 + 모노그램 플레이스홀더를 보여준다.
 // 실제 사진이 확정되면 이 컴포넌트만 <img>로 교체하면 된다.
 
-type CardPhotoVariant = "food" | "region" | "route";
+type CardPhotoVariant = "food" | "region" | "route" | "place";
 
 type Palette = {
   gradient: string;
@@ -43,7 +43,8 @@ export function resolveCardPhoto(label: string) {
 const VARIANT_TAG: Record<CardPhotoVariant, string> = {
   food: "Dish",
   region: "Region",
-  route: "Route"
+  route: "Route",
+  place: "Place"
 };
 
 export function CardPhoto({

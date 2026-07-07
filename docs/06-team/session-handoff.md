@@ -8,7 +8,7 @@
 
 ## 지금 상태 한 줄 요약 (2026-07-07)
 
-**Supabase 키 연결 + 실데이터 읽기/쓰기 검증 완료.** 남은 건 ① 실콘텐츠 채우기 ② 나머지 어드민↔공개 흐름 세부 검증 ③ 한빛 리뷰·승인.
+**Supabase 키 연결 + 실데이터 읽기/쓰기 검증 완료. PR #1 merge conflict 해결 완료.** 남은 건 ① 실콘텐츠 채우기 ② 나머지 어드민↔공개 흐름 세부 검증 ③ 한빛 리뷰·승인 ④ Supabase 팀에 솔 계정 초대(대시보드 직접 접근용).
 
 | 영역 | 상태 |
 |---|---|
@@ -30,6 +30,25 @@
 2. **로그인 두 번 눌러야 열림** (`web/lib/sign-in-retry.ts` 신규) — 원인은 Supabase(GoTrue)가 유휴 후 첫 인증 요청에서 올바른 비밀번호에도 `invalid_credentials`(400)를 반환하는 것(디버그 로그로 확인). 같은 자격증명 즉시 재시도 시 성공. 공용 헬퍼 `signInWithPasswordResilient()`로 5xx/네트워크 오류는 2회, invalid_credentials는 1회 자동 재시도. 재시도 후에도 실패하면 진짜 틀린 비밀번호로 처리. 어드민(`/admin/login/email`)·공개(`/auth/login/email`) 양쪽 적용. 실제 로그인 한 번에 되는 것 확인함.
 
 > ⚠️ 병합 메모: 한빛이 이 브랜치(`feature/design-tokens-v2`)에 직접 커밋(`801dc5c`)을 올려서 로컬에서 merge 처리함(커밋 `a42d5e0`). **아직 push 안 함** — 아래 "다음 세션" 참고.
+
+### PR #1 merge conflict 해결 (2026-07-07)
+
+한빛이 PR #1에서 "코드가 안 올라가고 md파일만 보인다"고 제보 → 확인해보니 코드(60개 파일, +7,356/−1,156)는 전부 올라가 있었고, 실제 원인은 **PR이 `main`과 merge conflict(`web/proxy.ts`) 상태라 GitHub이 diff를 온전히 못 보여준 것**. 한빛이 `main`에 직접 올린 Supabase SSR 기반 인증 재작성(`352694f` 등)과 이 브랜치의 수동 세션 갱신 로직이 같은 파일을 건드려서 충돌 발생.
+
+해결 내용 (커밋 `8f1442a`):
+- `web/proxy.ts`: main의 `@supabase/ssr` 기반 공개 세션 동기화 구조를 그대로 쓰고, 그 안에 "진짜 만료된 경우에만 세션 삭제" 로직을 다시 넣음
+- `web/components/site-chrome.tsx` + `web/app/layout.tsx`: main이 `HeaderAuthLink`를 async 서버 컴포넌트로 재작성했는데, 이 브랜치의 `SiteHeader`(client component)가 그걸 직접 import하고 있어서 Next.js 빌드 실패 → `RootLayout`(서버)에서 `HeaderAuthLink`를 렌더링해 `SiteHeader`에 prop으로 내려주는 방식으로 수정
+- `tsc --noEmit` · `eslint` · `next build` 전부 통과 확인 후 push. PR #1은 이제 `mergeable: MERGEABLE` 상태.
+
+---
+
+## 협업 규칙 (매번 지킬 것 — 솔·한빛·어떤 AI 세션이든 동일 적용)
+
+이번 PR #1 충돌은 두 사람이 같은 인증 관련 파일(`proxy.ts`, `auth/*`)을 몇 주간 각자 브랜치에서 따로 고치다가 한 번에 합치면서 생겼다. 재발 방지용 규칙:
+
+1. **작업 중 브랜치(`feature/design-tokens-v2`)를 자주 `main`과 합칠 것** — 며칠 이상 묵히지 말고, main에 새 커밋이 쌓이면 그때그때 받아서 합쳐둔다. 그래야 충돌이 나도 그날 분량만큼만 작아서 바로 풀 수 있다.
+2. **로그인/세션 관련 파일을 고칠 땐 미리 알릴 것** — `web/proxy.ts`, `web/lib/public-auth.ts`, `web/lib/admin-auth.ts`, `web/app/auth/**`, `web/app/admin/login/**` 은 두 사람이 겹쳐서 고치는 구간이므로, 이 파일들을 건드릴 땐 세션 시작할 때 한 마디 남긴다.
+3. **merge 후에는 반드시 `tsc --noEmit` + `eslint` + `next build` 세 개를 통과시키고 push** — 텍스트 충돌이 안 나도(예: 파일 하나가 다른 파일에서 완전히 다른 형태로 재작성된 경우) 빌드가 깨질 수 있으므로, merge commit이라고 검증을 생략하지 않는다.
 
 ---
 

@@ -8,7 +8,11 @@
 
 ## 지금 상태 한 줄 요약 (2026-07-07)
 
-**Supabase 키 연결 + 실데이터 읽기/쓰기 검증 완료. PR #1 merge conflict 해결 완료. 검색 실구현 + 카드 플레이스홀더 + 음식상세 히어로 완료(커밋 `af4e75f`). 목록 4페이지 CardPhoto + 지역·장소·루트 상세 히어로 + 모바일 nav 복구 완료(2026-07-07 세션2).** 남은 건 ① 실콘텐츠 채우기 ② 나머지 어드민↔공개 흐름 세부 검증 ③ 한빛 리뷰·승인 ④ Supabase 팀에 솔 계정 초대(대시보드 직접 접근용 — 솔 계정으로 대시보드 접속 시 "You do not have access" 확인됨, 한빛이 `shinheesol@gmail.com` 초대 필요).
+**Supabase 키 연결 + 실데이터 읽기/쓰기 검증 완료. PR #1 merge conflict 해결 완료. 검색 실구현 + 카드 플레이스홀더 + 음식상세 히어로 완료(커밋 `af4e75f`). 목록 4페이지 CardPhoto + 지역·장소·루트 상세 히어로 + 모바일 nav 복구 완료(2026-07-07 세션2). Supabase 팀 초대 완료 확인(2026-07-07).** 남은 건 ① 실콘텐츠 채우기 ② 나머지 어드민↔공개 흐름 세부 검증 ③ 한빛 리뷰·승인.
+
+### Supabase 팀 초대 완료 확인 (2026-07-07)
+
+한빛이 `shinheesol@gmail.com`을 Supabase 팀에 초대 완료. 솔 계정으로 브라우저에서 `kfood-commercial-staging` 프로젝트 대시보드(`gpwxiakwlghjzvoxwpnw`) 접속 확인 — 이전엔 "You do not have access to this project"였는데, 이제 프로젝트 상태(Healthy)·DB 리소스·API 로그 전부 정상 노출됨. 이제 솔이 대시보드에서 직접 마이그레이션 적용·로그 확인·테이블 조회 가능.
 
 | 영역 | 상태 |
 |---|---|
@@ -152,9 +156,10 @@ kfood-commercial-service/docs/06-team/session-handoff.md 를 읽고 이어가줘
 지역·장소·루트 상세 히어로 배너, 모바일 반응형 전체 점검 + 모바일 nav 복구.
 전부 GitHub에 push 완료.
 
+Supabase 팀 초대는 완료 확인됨(2026-07-07, 대시보드 직접 접속 확인) — 다시 물어볼 필요 없음.
+
 이번 세션에서 이어서 할 것 (우선순위 순):
 1. 실콘텐츠 채우기 (남은 일 1-2, 지역·음식 50종 — 솔 전담)
-   — 시작 전에 Supabase 팀 초대(한빛→솔 shinheesol@gmail.com) 진행됐는지 먼저 확인
 2. 어드민↔공개 흐름 세부 검증 (남은 일 2-2 발행상태별 노출, 2-3 촬영 태그 연결)
 3. 지역 eyebrow·태그의 DB raw 값(capital_region 등) 표시용 라벨 변환
    — 실콘텐츠 작업과 같이 처리하면 됨

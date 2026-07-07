@@ -5,6 +5,7 @@ import { isCommunityEnabled } from "@kfood/data";
 import { siteConfig } from "@kfood/config";
 
 import { AuthHashRedirector } from "@/components/auth-hash-redirector";
+import { HeaderAuthLink } from "@/components/header-auth-link";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
 
 import "./globals.css";
@@ -31,7 +32,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang="en">
       <body>
         <AuthHashRedirector />
-        <SiteHeader communityEnabled={communityEnabled} />
+        <SiteHeader communityEnabled={communityEnabled} authLink={<HeaderAuthLink />} />
         {children}
         <SiteFooter />
       </body>

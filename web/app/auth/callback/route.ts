@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
-  createPublicSupabaseAuthClient,
+  clearLegacyPublicAuthCookiesOnResponse,
+  createPublicSupabaseServerClient,
   ensurePublicProfile,
-  getSafeNextPath,
-  setPublicAuthCookiesOnResponse
+  getSafeNextPath
 } from "@/lib/public-auth";
 
 export async function GET(request: NextRequest) {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const supabase = await createPublicSupabaseAuthClient();
+  const supabase = await createPublicSupabaseServerClient();
 
   if (!supabase) {
     const loginUrl = new URL("/auth/login", request.url);
@@ -65,10 +65,6 @@ export async function GET(request: NextRequest) {
   });
 
   const response = NextResponse.redirect(new URL(nextPath, request.url));
-  setPublicAuthCookiesOnResponse(
-    response,
-    data.session.access_token,
-    data.session.refresh_token
-  );
+  clearLegacyPublicAuthCookiesOnResponse(response);
   return response;
 }

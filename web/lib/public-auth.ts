@@ -2,13 +2,12 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextResponse } from "next/server";
 
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient, type User } from "@supabase/supabase-js";
 
-const publicAccessTokenCookie = "kfood_public_access_token";
-const publicRefreshTokenCookie = "kfood_public_refresh_token";
-const publicSignedInCookie = "kfood_public_signed_in";
-const publicSessionMaxAge = 60 * 60 * 24 * 7;
-const oauthStorageMaxAge = 60 * 10;
+const legacyPublicAccessTokenCookie = "kfood_public_access_token";
+const legacyPublicRefreshTokenCookie = "kfood_public_refresh_token";
+const legacyPublicSignedInCookie = "kfood_public_signed_in";
 
 export type PublicSession = {
   accessToken: string;
@@ -17,6 +16,20 @@ export type PublicSession = {
   provider: string | null;
   user: User;
   userId: string;
+};
+
+export type PublicSessionDiagnostic = {
+  configurationPresent: boolean;
+  host: string | null;
+  legacyAccessTokenCookiePresent: boolean;
+  legacyRefreshTokenCookiePresent: boolean;
+  legacySignedInHintCookiePresent: boolean;
+  maskedEmail: string | null;
+  provider: string | null;
+  serverSessionValid: boolean;
+  supabaseAuthCookieCount: number;
+  supabaseAuthCookiePresent: boolean;
+  userIdSuffix: string | null;
 };
 
 type PublicProfileInsert = {
@@ -37,8 +50,47 @@ function getSupabaseConfig() {
   return { anonKey, url };
 }
 
-function oauthCookieName(key: string) {
-  return `kfood_public_oauth_${key.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+function isSupabaseAuthCookie(name: string) {
+  return name.startsWith("sb-") && name.includes("auth-token");
+}
+
+function maskEmail(email: string | null | undefined) {
+  if (!email || !email.includes("@")) {
+    return null;
+  }
+
+  const [name, domain] = email.split("@");
+  const visibleName = name.slice(0, 2);
+  const domainParts = domain.split(".");
+  const visibleDomain = domainParts[0]?.slice(0, 2) ?? "";
+  const suffix = domainParts.slice(1).join(".");
+
+  return `${visibleName}${"*".repeat(Math.max(name.length - 2, 2))}@${visibleDomain}***${suffix ? `.${suffix}` : ""}`;
+}
+
+function getPublicName(user: User) {
+  if (typeof user.user_metadata.display_name === "string") {
+    return user.user_metadata.display_name;
+  }
+
+  if (typeof user.user_metadata.name === "string") {
+    return user.user_metadata.name;
+  }
+
+  return null;
+}
+
+function getPublicProvider(user: User) {
+  return typeof user.app_metadata.provider === "string"
+    ? user.app_metadata.provider
+    : null;
+}
+
+function toNextCookieOptions(options: CookieOptions) {
+  return {
+    ...options,
+    secure: process.env.NODE_ENV === "production"
+  };
 }
 
 export function getSafeNextPath(value: string | null | undefined) {
@@ -65,7 +117,7 @@ export async function getRequestOrigin() {
   return `${proto}://${host}`;
 }
 
-export async function createPublicSupabaseAuthClient() {
+export async function createPublicSupabaseServerClient() {
   const config = getSupabaseConfig();
 
   if (!config) {
@@ -74,48 +126,26 @@ export async function createPublicSupabaseAuthClient() {
 
   const cookieStore = await cookies();
 
-  return createClient(config.url, config.anonKey, {
+  return createServerClient(config.url, config.anonKey, {
     auth: {
       detectSessionInUrl: false,
       flowType: "pkce",
-      persistSession: true,
-      storage: {
-        getItem(key: string) {
-          return cookieStore.get(oauthCookieName(key))?.value ?? null;
-        },
-        removeItem(key: string) {
-          cookieStore.set(oauthCookieName(key), "", {
-            httpOnly: true,
-            maxAge: 0,
-            path: "/auth",
-            sameSite: "lax",
-            secure: process.env.NODE_ENV === "production"
+      persistSession: true
+    },
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, options, value }) => {
+            cookieStore.set(name, value, toNextCookieOptions(options));
           });
-        },
-        setItem(key: string, value: string) {
-          cookieStore.set(oauthCookieName(key), value, {
-            httpOnly: true,
-            maxAge: oauthStorageMaxAge,
-            path: "/auth",
-            sameSite: "lax",
-            secure: process.env.NODE_ENV === "production"
-          });
+        } catch {
+          // Server components cannot always mutate cookies. The proxy handles
+          // refresh persistence for navigations where mutation is unavailable.
         }
       }
-    }
-  });
-}
-
-export function createPublicSupabasePasswordClient() {
-  const config = getSupabaseConfig();
-
-  if (!config) {
-    return null;
-  }
-
-  return createClient(config.url, config.anonKey, {
-    auth: {
-      persistSession: false
     }
   });
 }
@@ -139,70 +169,7 @@ export function createPublicSupabaseUserClient(accessToken: string) {
   });
 }
 
-function createPublicSupabaseRefreshClient() {
-  const config = getSupabaseConfig();
-
-  if (!config) {
-    return null;
-  }
-
-  return createClient(config.url, config.anonKey, {
-    auth: {
-      persistSession: false
-    }
-  });
-}
-
-export async function setPublicAuthCookies(
-  accessToken: string,
-  refreshToken: string
-) {
-  const cookieStore = await cookies();
-  const cookieOptions = {
-    httpOnly: true,
-    maxAge: publicSessionMaxAge,
-    path: "/",
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production"
-  };
-
-  cookieStore.set(publicAccessTokenCookie, accessToken, cookieOptions);
-  cookieStore.set(publicRefreshTokenCookie, refreshToken, cookieOptions);
-  cookieStore.set(publicSignedInCookie, "1", {
-    httpOnly: false,
-    maxAge: publicSessionMaxAge,
-    path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production"
-  });
-}
-
-export function setPublicAuthCookiesOnResponse(
-  response: NextResponse,
-  accessToken: string,
-  refreshToken: string
-) {
-  const cookieOptions = {
-    httpOnly: true,
-    maxAge: publicSessionMaxAge,
-    path: "/",
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production"
-  };
-
-  response.cookies.set(publicAccessTokenCookie, accessToken, cookieOptions);
-  response.cookies.set(publicRefreshTokenCookie, refreshToken, cookieOptions);
-  response.cookies.set(publicSignedInCookie, "1", {
-    httpOnly: false,
-    maxAge: publicSessionMaxAge,
-    path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production"
-  });
-}
-
-export async function clearPublicAuthCookies() {
-  const cookieStore = await cookies();
+export function clearLegacyPublicAuthCookiesOnResponse(response: NextResponse) {
   const expiredCookieOptions = {
     httpOnly: true,
     maxAge: 0,
@@ -211,29 +178,9 @@ export async function clearPublicAuthCookies() {
     secure: process.env.NODE_ENV === "production"
   };
 
-  cookieStore.set(publicAccessTokenCookie, "", expiredCookieOptions);
-  cookieStore.set(publicRefreshTokenCookie, "", expiredCookieOptions);
-  cookieStore.set(publicSignedInCookie, "", {
-    httpOnly: false,
-    maxAge: 0,
-    path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production"
-  });
-}
-
-export function clearPublicAuthCookiesOnResponse(response: NextResponse) {
-  const expiredCookieOptions = {
-    httpOnly: true,
-    maxAge: 0,
-    path: "/",
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production"
-  };
-
-  response.cookies.set(publicAccessTokenCookie, "", expiredCookieOptions);
-  response.cookies.set(publicRefreshTokenCookie, "", expiredCookieOptions);
-  response.cookies.set(publicSignedInCookie, "", {
+  response.cookies.set(legacyPublicAccessTokenCookie, "", expiredCookieOptions);
+  response.cookies.set(legacyPublicRefreshTokenCookie, "", expiredCookieOptions);
+  response.cookies.set(legacyPublicSignedInCookie, "", {
     httpOnly: false,
     maxAge: 0,
     path: "/",
@@ -243,84 +190,78 @@ export function clearPublicAuthCookiesOnResponse(response: NextResponse) {
 }
 
 export async function getPublicSession(): Promise<PublicSession | null> {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get(publicAccessTokenCookie)?.value;
-  const refreshToken = cookieStore.get(publicRefreshTokenCookie)?.value;
+  const supabase = await createPublicSupabaseServerClient();
 
-  if (!accessToken && !refreshToken) {
+  if (!supabase) {
     return null;
   }
 
-  const supabase = accessToken
-    ? createPublicSupabaseUserClient(accessToken)
-    : null;
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
 
-  if (supabase && accessToken) {
-    const {
-      data: { user },
-      error
-    } = await supabase.auth.getUser(accessToken);
-
-    if (!error && user) {
-      return {
-        accessToken,
-        email: user.email ?? null,
-        name:
-          typeof user.user_metadata.name === "string"
-            ? user.user_metadata.name
-            : null,
-        provider:
-          typeof user.app_metadata.provider === "string"
-            ? user.app_metadata.provider
-            : null,
-        user,
-        userId: user.id
-      };
-    }
-  }
-
-  if (!refreshToken) {
+  if (!session?.access_token) {
     return null;
   }
 
-  const refreshClient = createPublicSupabaseRefreshClient();
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser();
 
-  if (!refreshClient) {
+  if (error || !user) {
     return null;
-  }
-
-  const { data, error } = await refreshClient.auth.refreshSession({
-    refresh_token: refreshToken
-  });
-
-  if (error || !data.session || !data.user) {
-    await clearPublicAuthCookies();
-    return null;
-  }
-
-  try {
-    await setPublicAuthCookies(
-      data.session.access_token,
-      data.session.refresh_token
-    );
-  } catch {
-    // Server components cannot always mutate cookies, but the refreshed
-    // access token can still be used for the current request.
   }
 
   return {
-    accessToken: data.session.access_token,
-    email: data.user.email ?? null,
-    name:
-      typeof data.user.user_metadata.name === "string"
-        ? data.user.user_metadata.name
-        : null,
-    provider:
-      typeof data.user.app_metadata.provider === "string"
-        ? data.user.app_metadata.provider
-        : null,
-    user: data.user,
-    userId: data.user.id
+    accessToken: session.access_token,
+    email: user.email ?? null,
+    name: getPublicName(user),
+    provider: getPublicProvider(user),
+    user,
+    userId: user.id
+  };
+}
+
+export async function getPublicSessionDiagnostic(): Promise<PublicSessionDiagnostic> {
+  const cookieStore = await cookies();
+  const headerStore = await headers();
+  const allCookies = cookieStore.getAll();
+  const config = getSupabaseConfig();
+  const supabaseAuthCookieCount = allCookies.filter((cookie) =>
+    isSupabaseAuthCookie(cookie.name)
+  ).length;
+  const baseDiagnostic = {
+    configurationPresent: Boolean(config),
+    host: headerStore.get("host"),
+    legacyAccessTokenCookiePresent: Boolean(
+      cookieStore.get(legacyPublicAccessTokenCookie)?.value
+    ),
+    legacyRefreshTokenCookiePresent: Boolean(
+      cookieStore.get(legacyPublicRefreshTokenCookie)?.value
+    ),
+    legacySignedInHintCookiePresent:
+      cookieStore.get(legacyPublicSignedInCookie)?.value === "1",
+    maskedEmail: null,
+    provider: null,
+    serverSessionValid: false,
+    supabaseAuthCookieCount,
+    supabaseAuthCookiePresent: supabaseAuthCookieCount > 0,
+    userIdSuffix: null
+  } satisfies PublicSessionDiagnostic;
+
+  const session = await getPublicSession();
+
+  if (!session) {
+    return baseDiagnostic;
+  }
+
+  return {
+    ...baseDiagnostic,
+    maskedEmail: maskEmail(session.email),
+    provider: session.provider,
+    serverSessionValid: true,
+    userIdSuffix: session.userId.slice(-8)
   };
 }
 

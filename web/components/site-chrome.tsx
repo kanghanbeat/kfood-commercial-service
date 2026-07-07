@@ -2,15 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-import { HeaderAuthLink } from "@/components/header-auth-link";
+import type { ReactNode } from "react";
 
 // 어드민(/admin/*)은 자체 사이드바(AdminShell)를 쓰므로 공개 사이트 헤더/푸터를 숨긴다.
 function isAdmin(pathname: string | null) {
   return pathname?.startsWith("/admin") ?? false;
 }
 
-export function SiteHeader({ communityEnabled = true }: { communityEnabled?: boolean }) {
+export function SiteHeader({
+  authLink,
+  communityEnabled = true
+}: {
+  authLink: ReactNode;
+  communityEnabled?: boolean;
+}) {
   const pathname = usePathname();
   if (isAdmin(pathname)) return null;
 
@@ -30,9 +35,7 @@ export function SiteHeader({ communityEnabled = true }: { communityEnabled?: boo
           {communityEnabled ? <Link href="/feed">Feed</Link> : null}
           <Link href="/search">Search</Link>
         </nav>
-        <div className="nav-v2-action">
-          <HeaderAuthLink />
-        </div>
+        <div className="nav-v2-action">{authLink}</div>
       </div>
     </header>
   );

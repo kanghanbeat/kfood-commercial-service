@@ -6,6 +6,7 @@ import {
   getSafeNextPath,
   setPublicAuthCookiesOnResponse
 } from "@/lib/public-auth";
+import { isTransientAuthError, signInWithPasswordResilient } from "@/lib/sign-in-retry";
 
 function redirectWithError(request: NextRequest, message: string, nextPath: string) {
   const loginUrl = new URL("/auth/login", request.url);
@@ -30,12 +31,17 @@ export async function POST(request: NextRequest) {
     return redirectWithError(request, "Supabase Auth is not configured.", nextPath);
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+  const { data, error } = await signInWithPasswordResilient(supabase, email, password);
 
   if (error || !data.session || !data.user) {
+    if (isTransientAuthError(error)) {
+      return redirectWithError(
+        request,
+        "Sign-in service is temporarily unavailable. Please try again.",
+        nextPath
+      );
+    }
+
     return redirectWithError(
       request,
       "Could not sign in. Check your email and password.",

@@ -5,6 +5,7 @@ import {
   createSupabaseUserClient,
   setAdminAuthCookiesOnResponse
 } from "@/lib/admin-auth";
+import { isTransientAuthError, signInWithPasswordResilient } from "@/lib/sign-in-retry";
 
 function redirectWithError(request: NextRequest, message: string) {
   const loginUrl = new URL("/admin/login", request.url);
@@ -24,12 +25,16 @@ export async function POST(request: NextRequest) {
     return redirectWithError(request, "Supabase Auth is not configured.");
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+  const { data, error } = await signInWithPasswordResilient(supabase, email, password);
 
   if (error || !data.session || !data.user) {
+    if (isTransientAuthError(error)) {
+      return redirectWithError(
+        request,
+        "Sign-in service is temporarily unavailable. Please try again."
+      );
+    }
+
     return redirectWithError(
       request,
       "Invalid admin credentials. Newly invited accounts must set a password first."

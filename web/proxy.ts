@@ -62,6 +62,19 @@ function shouldRefresh(accessToken: string | undefined) {
   return expiresAt - Math.floor(Date.now() / 1000) <= refreshSkewSeconds;
 }
 
+// 만료 임박(skew) 판단과 별개로, "진짜 만료됐는지"만 본다.
+// refreshSession()이 일시적으로 실패했을 때(네트워크 hiccup 등) 아직 유효한
+// 토큰까지 지워버리지 않기 위한 구분 — 진짜 만료된 경우에만 세션을 지운다.
+function isExpired(accessToken: string | undefined) {
+  const expiresAt = getJwtExpiresAt(accessToken);
+
+  if (!expiresAt) {
+    return false;
+  }
+
+  return expiresAt - Math.floor(Date.now() / 1000) <= 0;
+}
+
 async function refreshSession(refreshToken: string | undefined) {
   const config = getSupabaseConfig();
 
@@ -140,7 +153,11 @@ async function refreshScopeIfNeeded(
   const refreshedSession = await refreshSession(refreshToken);
 
   if (!refreshedSession) {
-    clearSessionCookies(requestCookies, scope);
+    // 갱신 요청 자체가 실패해도, 지금 가진 토큰이 아직 만료 전이면 그대로 둔다.
+    // (일시적 네트워크 문제로 멀쩡한 세션을 지우는 것을 방지 — 다음 요청에서 다시 시도됨)
+    if (isExpired(accessToken)) {
+      clearSessionCookies(requestCookies, scope);
+    }
     return;
   }
 

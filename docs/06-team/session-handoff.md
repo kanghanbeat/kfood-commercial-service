@@ -19,10 +19,15 @@
 3. **전체 코드 분석 보고서** — `docs/04-quality/code-analysis-2026-07-08.md` 저장(서브에이전트 분석 + 솔 검증 노트). 핵심: `as unknown as` 캐스팅 10+곳, 단일 조회가 전체 리스트를 페치하는 getPublished* 패턴, fallback이 오류를 삼키는 문제, packages/data 3,200줄 단일 파일. 우선순위 A/B/C로 분류돼 있음. **한빛과 방향 합의 후 리팩터링 권장.**
 4. **A3 즉시 적용: 데이터 오류 로깅** — `logDataError()` 추가, getPublished 4종 + 관계 조회 실패 + productions 조회에 적용. fallback으로 넘어가도 서버 로그에 원인이 남는다.
 
-**막힌 것 (승인·로그인 필요, 솔이 깨어나면):**
-- **2-2 발행상태 토글 검증** — 공유 DB의 실데이터 update라 권한 정책상 자동 진행 불가. japchae를 hidden/draft/archived로 바꿨다 원복하는 5분짜리 테스트 — 승인해주면 바로 실행 (참고: RLS `foods_public_select_published` + 코드의 `eq status published` 이중 필터 확인은 완료, 남은 건 실제 E2E 확인뿐)
-- **장소 시드 적용** — Supabase 대시보드 재로그인 필요 (로그인은 사용자 직접)
-- **마이그레이션 008~011 적용** — 한빛 리뷰 대기 (기존 항목)
+### 대시보드 로그인 후 마무리 (2026-07-08, 같은 날 낮)
+
+로그인 후 사용자 승인 받아 순서대로 실행, 전부 완료:
+
+1. **마이그레이션 008~011 적용 완료** — productions·production_tags·user_food_log·platform_settings 4개 테이블 전부 프로덕션 DB에 생성 확인(REST로 검증). 이제 "From our channels" 섹션이 실제로 콘텐츠를 보여줄 수 있는 상태.
+2. **장소 시드 적용 완료** — 장소 30→34, place_foods 33→46건. 신규 음식 13종의 "Where to try it"이 이제 채워짐.
+3. **2-2 발행상태별 노출 검증 완료** — japchae로 hidden→draft→archived→published 전 구간 테스트: 각 비공개 상태에서 공개 REST(`/rest/v1/foods?slug=eq.japchae`)가 빈 배열, 목록 페이지(49건)·상세 페이지(404) 둘 다 정상 제외 확인. published로 원복 후 REST 50건·상세 페이지 정상 노출까지 재확인. RLS + 코드 필터 이중 방어 실동작 검증 끝.
+
+**한빛 리뷰 대기 항목 없음** — 개발 주도권이 솔로 넘어와서 위 마이그레이션·시드는 리뷰 없이 바로 적용함(위 "개발 주도권 변경" 참고).
 
 ### 음식 50종 달성 + 홈 개선 + 태그 라벨 변환 (2026-07-07 세션3)
 
@@ -186,15 +191,15 @@ kfood-commercial-service/docs/06-team/session-handoff.md 를 읽고 이어가줘
 지역·장소·루트 상세 히어로 배너, 모바일 반응형 전체 점검 + 모바일 nav 복구.
 전부 GitHub에 push 완료.
 
-2026-07-08 세션4까지 완료: 촬영 콘텐츠 공개 노출(웹 측), 장소 시드 SQL 준비, 전체 코드 분석 보고서, 데이터 오류 로깅.
+2026-07-08 세션4 완료: 마이그레이션 008~011 적용, 장소 시드 적용, 2-2 발행상태 토글 전 구간 검증, 촬영 콘텐츠 공개 노출, 데이터 오류 로깅, 전체 코드 분석 보고서. 개발 주도권 솔로 전환(한빛 리뷰 대기 없음).
 
 이번 세션에서 이어서 할 것 (우선순위 순):
-1. Supabase 대시보드 로그인 후 `supabase/sql/seed-places-for-new-foods.sql` 적용 → 음식 상세 "Where to try it" 채워지는지 확인
-2. 2-2 발행상태 토글 검증 (사용자 승인 후 japchae hidden→draft→archived→published 원복 테스트)
-3. 코드 분석 보고서(docs/04-quality/code-analysis-2026-07-08.md) A1·A2 항목 — 한빛과 합의 후 착수
-4. 뼈대 채우기 (남은 일 3: 인사이트 나머지 탭·콘텐츠 제작 실운영·회원 관리)
+1. 어드민에서 촬영 콘텐츠 첫 건 실제 등록 → 음식/지역 상세 "From our channels" 섹션에 실데이터 노출 확인
+2. 코드 분석 보고서(docs/04-quality/code-analysis-2026-07-08.md) A1·A2 착수 — as unknown as 캐스팅 정리, getPublished* 단일조회 쿼리 최적화
+3. 어드민 실기능 연결 (남은 일 3: 인사이트·콘텐츠 제작 탭 읽기전용 → 실동작, 회원 관리 placeholder 구현)
+4. 촬영 태그 → 장소·루트 상세 노출 (음식·지역은 완료, 2-3 나머지)
 
-작업 전에 현재 상태·한빛 확인 필요 항목·남은 일 섹션 순서대로 다시 확인해줘.
+작업 전에 현재 상태·남은 일 섹션 순서대로 다시 확인해줘.
 ```
 
 ---

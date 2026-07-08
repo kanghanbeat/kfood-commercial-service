@@ -1226,8 +1226,25 @@ export async function getPublishedRegions() {
 }
 
 export async function getPublishedRegion(slug: string) {
-  const regions = await getPublishedRegions();
-  return regions.find((region) => region.slug === slug);
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return fallbackData(fallbackRegions).find((region) => region.slug === slug);
+  }
+
+  const { data, error } = await supabase
+    .from("regions")
+    .select("slug, name_en, intro, best_for_tags")
+    .eq("status", "published")
+    .eq("slug", slug)
+    .maybeSingle<RegionRow>();
+
+  if (error) {
+    logDataError("getPublishedRegion", error);
+    return fallbackData(fallbackRegions).find((region) => region.slug === slug);
+  }
+
+  return data ? mapRegion(data) : undefined;
 }
 
 export async function getPublishedFoods() {
@@ -1268,8 +1285,46 @@ export async function getPublishedFoods() {
 }
 
 export async function getPublishedFood(slug: string) {
-  const foods = await getPublishedFoods();
-  return foods.find((food) => food.slug === slug);
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return fallbackData(fallbackFoods).find((food) => food.slug === slug);
+  }
+
+  const [{ data, error }, { data: regionFoodRows, error: relationError }] =
+    await Promise.all([
+      supabase
+        .from("foods")
+        .select(
+          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note"
+        )
+        .eq("status", "published")
+        .eq("slug", slug)
+        .maybeSingle<FoodRow>(),
+      supabase
+        .from("region_foods")
+        .select("regions(slug), foods!inner(slug)")
+        .eq("foods.slug", slug)
+        .returns<RelatedSlugRow[]>()
+    ]);
+
+  if (error) {
+    logDataError("getPublishedFood", error);
+    return fallbackData(fallbackFoods).find((food) => food.slug === slug);
+  }
+
+  if (!data) {
+    return undefined;
+  }
+
+  const food = mapFood(data);
+
+  if (relationError || !regionFoodRows) {
+    logDataError("getPublishedFood.regionFoods", relationError);
+    return food;
+  }
+
+  return addRegionSlugs([food], regionFoodRows)[0];
 }
 
 export async function getPublishedPlaces() {
@@ -1310,8 +1365,46 @@ export async function getPublishedPlaces() {
 }
 
 export async function getPublishedPlace(slug: string) {
-  const places = await getPublishedPlaces();
-  return places.find((place) => place.slug === slug);
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return fallbackData(fallbackPlaces).find((place) => place.slug === slug);
+  }
+
+  const [{ data, error }, { data: placeFoodRows, error: relationError }] =
+    await Promise.all([
+      supabase
+        .from("places")
+        .select(
+          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+        )
+        .eq("status", "published")
+        .eq("slug", slug)
+        .maybeSingle<PlaceRow>(),
+      supabase
+        .from("place_foods")
+        .select("places!inner(slug), foods(slug), display_order")
+        .eq("places.slug", slug)
+        .order("display_order", { ascending: true })
+    ]);
+
+  if (error) {
+    logDataError("getPublishedPlace", error);
+    return fallbackData(fallbackPlaces).find((place) => place.slug === slug);
+  }
+
+  if (!data) {
+    return undefined;
+  }
+
+  const place = mapPlace(data);
+
+  if (relationError || !placeFoodRows) {
+    logDataError("getPublishedPlace.placeFoods", relationError);
+    return place;
+  }
+
+  return addFoodSlugs([place], placeFoodRows as unknown as RelatedSlugRow[])[0];
 }
 
 export async function getPublishedRoutes() {
@@ -1353,8 +1446,47 @@ export async function getPublishedRoutes() {
 }
 
 export async function getPublishedRoute(slug: string) {
-  const routes = await getPublishedRoutes();
-  return routes.find((route) => route.slug === slug);
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return fallbackData(fallbackRoutes).find((route) => route.slug === slug);
+  }
+
+  const [{ data, error }, { data: routePlaceRows, error: relationError }] =
+    await Promise.all([
+      supabase
+        .from("route_guides")
+        .select("slug, title, summary, estimated_duration, regions(slug)")
+        .eq("status", "published")
+        .eq("slug", slug)
+        .maybeSingle<RouteGuideRow>(),
+      supabase
+        .from("route_guide_places")
+        .select("route_guides!inner(slug), places(slug), step_order")
+        .eq("route_guides.slug", slug)
+        .order("step_order", { ascending: true })
+    ]);
+
+  if (error) {
+    logDataError("getPublishedRoute", error);
+    return fallbackData(fallbackRoutes).find((route) => route.slug === slug);
+  }
+
+  if (!data) {
+    return undefined;
+  }
+
+  const route = mapRouteGuide(data);
+
+  if (relationError || !routePlaceRows) {
+    logDataError("getPublishedRoute.routePlaces", relationError);
+    return route;
+  }
+
+  return addRoutePlaceSlugs(
+    [route],
+    routePlaceRows as unknown as RelatedSlugRow[]
+  )[0];
 }
 
 // ── 공개: 촬영·제작 콘텐츠(productions) 노출 ──────────────────

@@ -5,6 +5,7 @@ import {
   getPublishedRegion,
   getPublishedFoods,
   getPublishedPlaces,
+  getPublishedProductionsFor,
   getPublishedRegions,
   getRegionFoods,
   getRegionPlaces
@@ -41,9 +42,10 @@ export default async function RegionDetailPage({
     notFound();
   }
 
-  const [allFoods, allPlaces] = await Promise.all([
+  const [allFoods, allPlaces, productions] = await Promise.all([
     getPublishedFoods(),
-    getPublishedPlaces()
+    getPublishedPlaces(),
+    getPublishedProductionsFor("region", regionSlug)
   ]);
   const foods = allFoods.some((food) => food.regionSlugs.length > 0)
     ? allFoods.filter((food) => food.regionSlugs.includes(region.slug))
@@ -114,6 +116,40 @@ export default async function RegionDetailPage({
           ))}
         </ul>
       </section>
+
+      {productions.length > 0 ? (
+        <section className="section-block" aria-labelledby="region-productions">
+          <div className="section-heading">
+            <p className="eyebrow">From our channels</p>
+            <h2 id="region-productions">Watch and read</h2>
+          </div>
+          <ul className="content-list">
+            {productions.map((production) => (
+              <li key={production.slug}>
+                {production.externalUrl ? (
+                  <a href={production.externalUrl} rel="noreferrer" target="_blank">
+                    <span className="meta-label">
+                      {production.type.toUpperCase()}
+                      {production.channel ? ` · ${production.channel}` : ""}
+                    </span>
+                    <strong>{production.title}</strong>
+                    {production.summary ? <p>{production.summary}</p> : null}
+                  </a>
+                ) : (
+                  <div className="list-item-body">
+                    <span className="meta-label">
+                      {production.type.toUpperCase()}
+                      {production.channel ? ` · ${production.channel}` : ""}
+                    </span>
+                    <strong>{production.title}</strong>
+                    {production.summary ? <p>{production.summary}</p> : null}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </main>
   );
 }

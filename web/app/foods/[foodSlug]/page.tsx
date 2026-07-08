@@ -8,6 +8,7 @@ import {
   getPublishedFood,
   getPublishedFoods,
   getPublishedPlaces,
+  getPublishedProductionsFor,
   getPublishedRegions
 } from "@kfood/data";
 
@@ -44,9 +45,10 @@ export default async function FoodDetailPage({
     notFound();
   }
 
-  const [publishedPlaces, regions] = await Promise.all([
+  const [publishedPlaces, regions, productions] = await Promise.all([
     getPublishedPlaces(),
-    getPublishedRegions()
+    getPublishedRegions(),
+    getPublishedProductionsFor("food", foodSlug)
   ]);
   const sourcePlaces =
     publishedPlaces.length > 0 ? publishedPlaces : fallbackPlaces;
@@ -176,6 +178,43 @@ export default async function FoodDetailPage({
           </div>
         )}
       </section>
+
+      {productions.length > 0 ? (
+        <section aria-labelledby="food-productions">
+          <p className="food-section-title" id="food-productions">
+            From our channels
+          </p>
+          <div className="food-info-grid">
+            {productions.map((production) =>
+              production.externalUrl ? (
+                <a
+                  className="food-info-card"
+                  href={production.externalUrl}
+                  key={production.slug}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <h3>{production.title}</h3>
+                  <p style={{ color: "var(--brand)" }}>
+                    {production.type.toUpperCase()}
+                    {production.channel ? ` · ${production.channel}` : ""}
+                  </p>
+                  {production.summary ? <p>{production.summary}</p> : null}
+                </a>
+              ) : (
+                <div className="food-info-card" key={production.slug}>
+                  <h3>{production.title}</h3>
+                  <p style={{ color: "var(--brand)" }}>
+                    {production.type.toUpperCase()}
+                    {production.channel ? ` · ${production.channel}` : ""}
+                  </p>
+                  {production.summary ? <p>{production.summary}</p> : null}
+                </div>
+              )
+            )}
+          </div>
+        </section>
+      ) : null}
 
       <section aria-labelledby="food-photo-sources">
         <p className="food-section-title" id="food-photo-sources">

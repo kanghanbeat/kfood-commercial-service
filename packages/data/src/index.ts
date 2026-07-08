@@ -352,6 +352,14 @@ function fallbackData<T>(items: T[]): T[] {
   return allowsFallbackData() ? items : [];
 }
 
+// fallback으로 넘어가면 실 DB 장애가 화면에서 안 보이게 되므로,
+// 원인 추적이 가능하도록 서버 로그에는 반드시 남긴다.
+function logDataError(source: string, error: unknown) {
+  if (error) {
+    console.error(`[kfood-data] ${source} failed:`, error);
+  }
+}
+
 function getSupabaseConfig(): SupabaseConfig | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -1210,6 +1218,7 @@ export async function getPublishedRegions() {
     .order("display_order", { ascending: true });
 
   if (error || !data) {
+    logDataError("getPublishedRegions", error);
     return fallbackData(fallbackRegions);
   }
 
@@ -1244,12 +1253,14 @@ export async function getPublishedFoods() {
     ]);
 
   if (error || !data) {
+    logDataError("getPublishedFoods", error);
     return fallbackData(fallbackFoods);
   }
 
   const foods = data.map(mapFood);
 
   if (relationError || !regionFoodRows) {
+    logDataError("getPublishedFoods.regionFoods", relationError);
     return foods;
   }
 
@@ -1284,12 +1295,14 @@ export async function getPublishedPlaces() {
     ]);
 
   if (error || !data) {
+    logDataError("getPublishedPlaces", error);
     return fallbackData(fallbackPlaces);
   }
 
   const places = data.map((row) => mapPlace(row as unknown as PlaceRow));
 
   if (relationError || !placeFoodRows) {
+    logDataError("getPublishedPlaces.placeFoods", relationError);
     return places;
   }
 
@@ -1322,12 +1335,14 @@ export async function getPublishedRoutes() {
     ]);
 
   if (error || !data) {
+    logDataError("getPublishedRoutes", error);
     return fallbackData(fallbackRoutes);
   }
 
   const routes = data.map((row) => mapRouteGuide(row as unknown as RouteGuideRow));
 
   if (relationError || !routePlaceRows) {
+    logDataError("getPublishedRoutes.routePlaces", relationError);
     return routes;
   }
 
@@ -1340,6 +1355,93 @@ export async function getPublishedRoutes() {
 export async function getPublishedRoute(slug: string) {
   const routes = await getPublishedRoutes();
   return routes.find((route) => route.slug === slug);
+}
+
+// ── 공개: 촬영·제작 콘텐츠(productions) 노출 ──────────────────
+// 음식/지역 상세 페이지에서 태그로 연결된 우리 제작 콘텐츠를 보여준다.
+// productions 테이블(마이그레이션 008)이 아직 DB에 없으면 조용히 빈 배열을
+// 반환하므로, 한빛이 마이그레이션을 적용하는 즉시 섹션이 살아난다.
+
+export type PublicProduction = {
+  slug: string;
+  title: string;
+  type: ProductionType;
+  channel: string | null;
+  summary: string | null;
+  externalUrl: string | null;
+  publishedAt: string | null;
+};
+
+type PublicProductionRow = {
+  slug: string;
+  title: string;
+  type: ProductionType;
+  channel: string | null;
+  summary: string | null;
+  external_url: string | null;
+  published_at: string | null;
+};
+
+const PRODUCTION_ENTITY_TABLE: Record<ProductionEntityType, string> = {
+  region: "regions",
+  food: "foods",
+  place: "places",
+  route: "route_guides"
+};
+
+export async function getPublishedProductionsFor(
+  entityType: ProductionEntityType,
+  entitySlug: string
+): Promise<PublicProduction[]> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data: entity, error: entityError } = await supabase
+    .from(PRODUCTION_ENTITY_TABLE[entityType])
+    .select("id")
+    .eq("slug", entitySlug)
+    .maybeSingle<{ id: string }>();
+
+  if (entityError || !entity) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("production_tags")
+    .select(
+      "productions!inner(slug, title, type, channel, summary, external_url, published_at)"
+    )
+    .eq("entity_type", entityType)
+    .eq("entity_id", entity.id);
+
+  if (error || !data) {
+    // 마이그레이션 008 미적용 상태(테이블 없음, PGRST205)는 정상 경로라 로그 제외
+    if (error && (error as { code?: string }).code !== "PGRST205") {
+      logDataError("getPublishedProductionsFor", error);
+    }
+    return [];
+  }
+
+  return data
+    .map((row) => {
+      const production = (row as { productions: PublicProductionRow | PublicProductionRow[] })
+        .productions;
+      return Array.isArray(production) ? production[0] : production;
+    })
+    .filter((row): row is PublicProductionRow => Boolean(row))
+    .map((row) => ({
+      slug: row.slug,
+      title: row.title,
+      type: row.type,
+      channel: row.channel,
+      summary: row.summary,
+      externalUrl: row.external_url,
+      publishedAt: row.published_at
+    }))
+    .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""));
 }
 
 export async function getMyProfile(accessToken: string, userId: string) {

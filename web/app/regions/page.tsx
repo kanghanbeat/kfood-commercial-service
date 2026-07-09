@@ -4,26 +4,24 @@ import { getPublishedRegions } from "@kfood/data";
 
 import { CardPhoto } from "@/components/card-photo";
 import { FoodTabs } from "@/components/food-tabs";
+import { getDict } from "@/lib/i18n";
 
 export const metadata = {
   title: "Seoul K-food Regions"
 };
 
 export default async function RegionsPage() {
-  const regions = await getPublishedRegions();
+  const [regions, dict] = await Promise.all([getPublishedRegions(), getDict()]);
 
   return (
     <div className="food-v2">
       <FoodTabs active="regions" />
       <header className="food-v2-header">
-        <span className="food-v2-eyebrow">Regions</span>
+        <span className="food-v2-eyebrow">{dict.lists.regionsEyebrow}</span>
         <div className="food-v2-names">
-          <span className="food-v2-name-en">Seoul areas by food intent</span>
+          <span className="food-v2-name-en">{dict.lists.regionsTitle}</span>
         </div>
-        <p className="food-v2-summary">
-          Start with the neighborhood that matches the traveler, then move into
-          foods, places, and route ideas.
-        </p>
+        <p className="food-v2-summary">{dict.lists.regionsSummary}</p>
       </header>
       <div className="card-grid-v2">
         {regions.map((region) => (
@@ -33,7 +31,7 @@ export default async function RegionsPage() {
               <span className="food-chip">{region.primaryAudience}</span>
               <span className="card-v2-title">{region.nameEn}</span>
               <span className="card-v2-meta">{region.intro}</span>
-              <span className="card-v2-link">Explore →</span>
+              <span className="card-v2-link">{dict.common.explore} →</span>
             </div>
           </Link>
         ))}

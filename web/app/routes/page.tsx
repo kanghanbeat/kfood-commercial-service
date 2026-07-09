@@ -4,29 +4,28 @@ import { getPublishedRegions, getPublishedRoutes } from "@kfood/data";
 
 import { CardPhoto } from "@/components/card-photo";
 import { FoodTabs } from "@/components/food-tabs";
+import { getDict } from "@/lib/i18n";
 
 export const metadata = {
   title: "K-food Routes"
 };
 
 export default async function RoutesPage() {
-  const [routes, regions] = await Promise.all([
+  const [routes, regions, dict] = await Promise.all([
     getPublishedRoutes(),
-    getPublishedRegions()
+    getPublishedRegions(),
+    getDict()
   ]);
 
   return (
     <div className="food-v2">
       <FoodTabs active="routes" />
       <header className="food-v2-header">
-        <span className="food-v2-eyebrow">Routes</span>
+        <span className="food-v2-eyebrow">{dict.lists.routesEyebrow}</span>
         <div className="food-v2-names">
-          <span className="food-v2-name-en">K-food route ideas</span>
+          <span className="food-v2-name-en">{dict.lists.routesTitle}</span>
         </div>
-        <p className="food-v2-summary">
-          Routes package region, food, and place directions into traveler-sized
-          plans.
-        </p>
+        <p className="food-v2-summary">{dict.lists.routesSummary}</p>
       </header>
       <div className="card-grid-v2">
         {routes.map((route) => {
@@ -40,7 +39,7 @@ export default async function RoutesPage() {
                 <span className="card-v2-meta">
                   {route.summary} {region ? `Start with ${region.nameEn}.` : ""}
                 </span>
-                <span className="card-v2-link">View →</span>
+                <span className="card-v2-link">{dict.common.view} →</span>
               </div>
             </Link>
           );

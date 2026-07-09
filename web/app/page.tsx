@@ -8,6 +8,7 @@ import {
 } from "@kfood/data";
 
 import { CardPhoto } from "@/components/card-photo";
+import { getDict } from "@/lib/i18n";
 
 function ArrowRightIcon() {
   return (
@@ -31,12 +32,14 @@ const QUICK_SEARCHES = ["Tteokbokki", "Korean BBQ", "Market", "Spicy", "Mild"];
 // (기획정렬-한빛대조.md §1-4). 지도는 2주차에 SVG 컴포넌트로 교체 예정 —
 // 이번 주는 자리(플레이스홀더)만 잡는다.
 export default async function HomePage() {
-  const [foods, regions, routes, productions] = await Promise.all([
+  const [foods, regions, routes, productions, dict] = await Promise.all([
     getPublishedFoods(),
     getPublishedRegions(),
     getPublishedRoutes(),
-    getPublishedProductions(6)
+    getPublishedProductions(6),
+    getDict()
   ]);
+  const t = dict.home;
 
   const trendingFoods = foods.slice(0, 6);
   const editorPicks = routes.slice(0, 3);
@@ -46,26 +49,23 @@ export default async function HomePage() {
     <div className="home-v2">
       {/* ① 히어로 */}
       <section className="hero-v2">
-        <span className="hero-v2-badge">For travelers in Korea</span>
-        <h1 className="hero-v2-headline">Discover Korea through its food</h1>
-        <p className="hero-v2-subtitle">
-          Find iconic dishes, the regions they come from, and the best places
-          to taste them.
-        </p>
+        <span className="hero-v2-badge">{t.heroBadge}</span>
+        <h1 className="hero-v2-headline">{t.heroHeadline}</h1>
+        <p className="hero-v2-subtitle">{t.heroSubtitle}</p>
         <form className="hero-v2-search-form" action="/search" method="get" role="search">
           <input
             className="hero-v2-search-input"
             type="search"
             name="q"
-            placeholder="Search foods, regions, or places..."
-            aria-label="Search foods, regions, or places"
+            placeholder={t.searchPlaceholder}
+            aria-label={t.searchPlaceholder}
           />
           <button className="hero-v2-search-button" type="submit">
-            Search
+            {t.searchButton}
           </button>
         </form>
         <div className="hero-v2-quick" aria-label="Popular searches">
-          <span className="hero-v2-quick-label">Popular:</span>
+          <span className="hero-v2-quick-label">{t.popularLabel}</span>
           {QUICK_SEARCHES.map((term) => (
             <Link
               className="hero-v2-quick-chip"
@@ -77,7 +77,7 @@ export default async function HomePage() {
           ))}
         </div>
         <Link className="hero-v2-cta" href="/foods">
-          Start your food journey
+          {t.heroCta}
         </Link>
       </section>
 
@@ -86,22 +86,17 @@ export default async function HomePage() {
         <div className="section-v2-inner">
           <div className="section-v2-header">
             <div className="section-v2-heading">
-              <span className="section-v2-eyebrow">Explore</span>
-              <span className="section-v2-title">Where will you eat next?</span>
-              <span className="section-v2-subtitle">
-                Pick a region and discover the dishes worth traveling for.
-              </span>
+              <span className="section-v2-eyebrow">{t.exploreEyebrow}</span>
+              <span className="section-v2-title">{t.exploreTitle}</span>
+              <span className="section-v2-subtitle">{t.exploreSubtitle}</span>
             </div>
             <Link className="section-v2-link" href="/regions">
-              All regions <ArrowRightIcon />
+              {t.allRegions} <ArrowRightIcon />
             </Link>
           </div>
           <div className="home-map-placeholder" aria-label="Korea food map">
-            <div className="home-map-placeholder-badge">Interactive map coming soon</div>
-            <p className="home-map-placeholder-copy">
-              A clickable map of Korea is on its way. Until then, jump straight
-              into a region:
-            </p>
+            <div className="home-map-placeholder-badge">{t.mapBadge}</div>
+            <p className="home-map-placeholder-copy">{t.mapCopy}</p>
             <div className="home-map-placeholder-links">
               {mapQuickRegions.map((region) => (
                 <Link
@@ -122,14 +117,12 @@ export default async function HomePage() {
         <div className="section-v2-inner">
           <div className="section-v2-header">
             <div className="section-v2-heading">
-              <span className="section-v2-eyebrow">Eat</span>
-              <span className="section-v2-title">Trending K-Food</span>
-              <span className="section-v2-subtitle">
-                The most talked-about dishes travelers are loving right now
-              </span>
+              <span className="section-v2-eyebrow">{t.eatEyebrow}</span>
+              <span className="section-v2-title">{t.trendingTitle}</span>
+              <span className="section-v2-subtitle">{t.trendingSubtitle}</span>
             </div>
             <Link className="section-v2-link" href="/foods">
-              View all <ArrowRightIcon />
+              {dict.common.viewAll} <ArrowRightIcon />
             </Link>
           </div>
           <div className="card-grid-v2">
@@ -137,11 +130,11 @@ export default async function HomePage() {
               <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
                 <CardPhoto label={food.nameEn} variant="food" />
                 <div className="card-v2-body">
-                  <span className="food-chip spicy">Spicy {food.spicyLevel}/4</span>
+                  <span className="food-chip spicy">{dict.common.spicy} {food.spicyLevel}/4</span>
                   <span className="card-v2-title">{food.nameEn}</span>
                   <span className="card-v2-meta">{food.summary}</span>
                   <span className="card-v2-link">
-                    Explore <ArrowRightIcon />
+                    {dict.common.explore} <ArrowRightIcon />
                   </span>
                 </div>
               </Link>
@@ -149,15 +142,12 @@ export default async function HomePage() {
           </div>
           <div className="section-v2-header" style={{ marginTop: 40 }}>
             <div className="section-v2-heading">
-              <span className="section-v2-eyebrow">Editor&apos;s picks</span>
-              <span className="section-v2-title">Curated food routes</span>
-              <span className="section-v2-subtitle">
-                Ready-made food journeys that connect the best dishes, markets,
-                and neighborhoods.
-              </span>
+              <span className="section-v2-eyebrow">{t.editorEyebrow}</span>
+              <span className="section-v2-title">{t.routesTitle}</span>
+              <span className="section-v2-subtitle">{t.routesSubtitle}</span>
             </div>
             <Link className="section-v2-link" href="/routes">
-              View all routes <ArrowRightIcon />
+              {t.viewAllRoutes} <ArrowRightIcon />
             </Link>
           </div>
           <div className="card-grid-v2">
@@ -169,7 +159,7 @@ export default async function HomePage() {
                   <span className="card-v2-title">{route.title}</span>
                   <span className="card-v2-meta">{route.summary}</span>
                   <span className="card-v2-link">
-                    View <ArrowRightIcon />
+                    {dict.common.view} <ArrowRightIcon />
                   </span>
                 </div>
               </Link>
@@ -183,16 +173,14 @@ export default async function HomePage() {
         <div className="section-v2-inner">
           <div className="section-v2-header">
             <div className="section-v2-heading">
-              <span className="section-v2-eyebrow">Watch</span>
-              <span className="section-v2-title">From our channels</span>
-              <span className="section-v2-subtitle">
-                Videos and stories we film at the places on this site.
-              </span>
+              <span className="section-v2-eyebrow">{t.watchEyebrow}</span>
+              <span className="section-v2-title">{t.channelsTitle}</span>
+              <span className="section-v2-subtitle">{t.channelsSubtitle}</span>
             </div>
           </div>
           {productions.length === 0 ? (
             <div className="food-info-card">
-              <p>Fresh videos and posts from our channels are on the way.</p>
+              <p>{t.channelsEmpty}</p>
             </div>
           ) : (
             <div className="food-info-grid">

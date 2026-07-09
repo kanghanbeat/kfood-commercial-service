@@ -7,6 +7,7 @@ import { siteConfig } from "@kfood/config";
 import { AuthHashRedirector } from "@/components/auth-hash-redirector";
 import { HeaderAuthLink } from "@/components/header-auth-link";
 import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { getDict, getLocale } from "@/lib/i18n";
 
 import "./globals.css";
 
@@ -26,15 +27,29 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const communityEnabled = await isCommunityEnabled();
+  const [communityEnabled, locale, dict] = await Promise.all([
+    isCommunityEnabled(),
+    getLocale(),
+    getDict()
+  ]);
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body>
         <AuthHashRedirector />
-        <SiteHeader communityEnabled={communityEnabled} authLink={<HeaderAuthLink />} />
+        <SiteHeader
+          authLink={<HeaderAuthLink />}
+          communityEnabled={communityEnabled}
+          labels={{
+            food: dict.nav.food,
+            community: dict.nav.community,
+            myPage: dict.nav.myPage,
+            switchLanguage: dict.nav.switchLanguage
+          }}
+          locale={locale}
+        />
         {children}
-        <SiteFooter />
+        <SiteFooter labels={dict.footer} />
       </body>
     </html>
   );

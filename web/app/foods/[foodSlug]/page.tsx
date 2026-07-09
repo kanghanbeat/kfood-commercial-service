@@ -13,6 +13,7 @@ import {
 } from "@kfood/data";
 
 import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
+import { getDict } from "@/lib/i18n";
 
 export async function generateStaticParams() {
   const foods = await getPublishedFoods();
@@ -31,8 +32,6 @@ export async function generateMetadata({
   };
 }
 
-const spicyLabels = ["Not spicy", "Mild", "Medium", "Spicy", "Very spicy"];
-
 export default async function FoodDetailPage({
   params
 }: {
@@ -45,11 +44,13 @@ export default async function FoodDetailPage({
     notFound();
   }
 
-  const [publishedPlaces, regions, productions] = await Promise.all([
+  const [publishedPlaces, regions, productions, dict] = await Promise.all([
     getPublishedPlaces(),
     getPublishedRegions(),
-    getPublishedProductionsFor("food", foodSlug)
+    getPublishedProductionsFor("food", foodSlug),
+    getDict()
   ]);
+  const t = dict.foodDetail;
   const sourcePlaces =
     publishedPlaces.length > 0 ? publishedPlaces : fallbackPlaces;
   const places = sourcePlaces.filter((place) =>
@@ -65,9 +66,9 @@ export default async function FoodDetailPage({
   return (
     <div className="food-v2">
       <nav className="food-breadcrumb" aria-label="Breadcrumb">
-        <Link href="/">Home</Link>
+        <Link href="/">{dict.common.home}</Link>
         <span>/</span>
-        <Link href="/foods">Foods</Link>
+        <Link href="/foods">{dict.common.foods}</Link>
         <span>/</span>
         <span>{food.nameEn}</span>
       </nav>
@@ -83,7 +84,7 @@ export default async function FoodDetailPage({
       </div>
 
       <header className="food-v2-header">
-        <span className="food-v2-eyebrow">Food guide</span>
+        <span className="food-v2-eyebrow">{t.eyebrow}</span>
         <div className="food-v2-names">
           <span className="food-v2-name-en">{food.nameEn}</span>
           {food.nameKo && food.nameKo !== food.nameEn ? (
@@ -92,7 +93,7 @@ export default async function FoodDetailPage({
         </div>
         <div className="food-v2-tags">
           <span className="food-chip spicy">
-            Spicy {food.spicyLevel}/4 · {spicyLabels[food.spicyLevel]}
+            {dict.common.spicy} {food.spicyLevel}/4 · {t.spicyLabels[food.spicyLevel]}
           </span>
           {tasteTags.map((tag) => (
             <span className="food-chip" key={tag}>
@@ -105,34 +106,31 @@ export default async function FoodDetailPage({
 
       <section aria-labelledby="food-guide">
         <p className="food-section-title" id="food-guide">
-          What to know before you order
+          {t.knowTitle}
         </p>
         <div className="food-info-grid">
           <div className="food-info-card">
-            <h3>Description</h3>
+            <h3>{t.descriptionH}</h3>
             <p>{food.summary}</p>
           </div>
           <div className="food-info-card">
-            <h3>Taste</h3>
+            <h3>{t.tasteH}</h3>
             <p>{food.tasteProfile}</p>
           </div>
           <div className="food-info-card">
-            <h3>Good to know</h3>
+            <h3>{t.goodToKnowH}</h3>
             <p>{food.beginnerNote}</p>
           </div>
           <div className="food-info-card">
-            <h3>Menu tip</h3>
-            <p>
-              On Korean menus, 매운맛 (spicy level) tells you the heat. Ask for
-              less spicy if you want it milder.
-            </p>
+            <h3>{t.menuTipH}</h3>
+            <p>{t.menuTipBody}</p>
           </div>
         </div>
       </section>
 
       <section aria-labelledby="food-regions">
         <p className="food-section-title" id="food-regions">
-          Where it fits
+          {t.whereItFits}
         </p>
         <div className="card-grid-v2">
           {food.regionSlugs.map((regionSlug) => {
@@ -148,7 +146,7 @@ export default async function FoodDetailPage({
                   <span className="card-v2-title">{region.nameEn}</span>
                   <span className="card-v2-meta">{region.routeTheme}</span>
                   <span className="card-v2-link">
-                    {food.nameEn} in {region.nameEn} →
+                    {t.inRegionLink(food.nameEn, region.nameEn)}
                   </span>
                 </div>
               </Link>
@@ -159,11 +157,11 @@ export default async function FoodDetailPage({
 
       <section aria-labelledby="food-places">
         <p className="food-section-title" id="food-places">
-          Where to try it
+          {t.whereToTry}
         </p>
         {places.length === 0 ? (
           <div className="food-info-card">
-            <p>Verified places for this dish will appear here.</p>
+            <p>{t.placesEmpty}</p>
           </div>
         ) : (
           <div className="card-grid-v2">
@@ -173,7 +171,7 @@ export default async function FoodDetailPage({
                   <span className="card-v2-meta">{place.lastVerifiedLabel}</span>
                   <span className="card-v2-title">{place.nameEn}</span>
                   <span className="card-v2-meta">{place.editorialNote}</span>
-                  <span className="card-v2-link">View →</span>
+                  <span className="card-v2-link">{dict.common.view} →</span>
                 </div>
               </Link>
             ))}
@@ -184,7 +182,7 @@ export default async function FoodDetailPage({
       {productions.length > 0 ? (
         <section aria-labelledby="food-productions">
           <p className="food-section-title" id="food-productions">
-            From our channels
+            {t.channelsTitle}
           </p>
           <div className="food-info-grid">
             {productions.map((production) =>

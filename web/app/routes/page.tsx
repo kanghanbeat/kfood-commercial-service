@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getPublishedRegions, getPublishedRoutes } from "@kfood/data";
 
 import { CardPhoto } from "@/components/card-photo";
+import { FoodTabs } from "@/components/food-tabs";
 
 export const metadata = {
   title: "K-food Routes"
@@ -16,6 +17,7 @@ export default async function RoutesPage() {
 
   return (
     <div className="food-v2">
+      <FoodTabs active="routes" />
       <header className="food-v2-header">
         <span className="food-v2-eyebrow">Routes</span>
         <div className="food-v2-names">

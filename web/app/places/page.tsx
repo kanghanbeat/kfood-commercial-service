@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getPublishedPlaces, getPublishedRegions } from "@kfood/data";
 
 import { CardPhoto } from "@/components/card-photo";
+import { FoodTabs } from "@/components/food-tabs";
 
 export const metadata = {
   title: "K-food Places"
@@ -16,6 +17,7 @@ export default async function PlacesPage() {
 
   return (
     <div className="food-v2">
+      <FoodTabs active="places" />
       <header className="food-v2-header">
         <span className="food-v2-eyebrow">Places</span>
         <div className="food-v2-names">

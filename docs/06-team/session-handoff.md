@@ -8,7 +8,17 @@
 
 ## 지금 상태 한 줄 요약 (2026-07-09)
 
-**서비스 방향 재정렬 완료 (한빛과 구두 논의 완료, 기준 문서 공유는 추후): 3개월 콘텐츠 사이트 집중, 커뮤니티·도감·트래커는 후순위(어드민 공개/비공개 토글로 노출 관리). 상세 조회 최적화 완성(커밋 `c6c7fde`). 메인 개편 준비물(SVG 한국 지도·주차별 작업 계획) 확보.** 다음 작업: 메인 개편 1주차 착수 (3카테고리 내비 + 음식×지역 라우트 + 메인 4섹션 뼈대).
+**메인 개편 1주차 완료: 내비 3카테고리(Food/Community/My Page) 전환 + 음식 하위 탭(Dishes/Regions/Places/Routes), 게시판 토글 3종(community/food_log/journey_share)으로 확대, 음식×지역 조합 라우트 `/foods/[foodSlug]/[regionSlug]` 신설(sitemap 포함), 메인 4섹션 뼈대(히어로/지도 자리/트렌딩·에디터픽/From our channels) 교체.** 다음 작업: 메인 개편 2주차 — SVG 지도 컴포넌트 + 색칠 로직 + 시·도↔지역 매핑(A안).
+
+### 메인 개편 1주차 세션 (2026-07-09, 세션6)
+
+1. **내비게이션 3카테고리 전환** (`web/components/site-chrome.tsx`) — 6개 메뉴(Regions/Foods/Places/Routes/Feed/Search) → 3개(Food `/foods` / Community `/feed`, 토글 연동 / My Page `/mypage`). 지역·장소·루트는 신설 `web/components/food-tabs.tsx`(Dishes/Regions/Places/Routes 탭, JS 탭 아님 — 전부 실제 URL)로 음식 카테고리 하위에 배치, 목록 4페이지 상단에 노출. 기존 URL 전부 유지. `/search`는 메뉴에서만 빠지고 페이지·히어로 검색창은 그대로.
+2. **게시판별 어드민 공개/비공개 토글 확대** — `PlatformSettingKey`를 `community | food_log | journey_share` 3종으로 확장(`packages/data`, 스키마 무변경 — platform_settings가 key/enabled 구조라 키만 추가). 공통 헬퍼 `isBoardEnabled(key)` 신설(기본값 공개=true, 기존 커뮤니티 규칙과 동일). 게이트 적용: 마이페이지 도감 섹션·기록 저장(`food_log`), 여정 리캡·공유 POST·공개 공유 페이지 `/journey/[token]`(`journey_share`, 비공개 시 404). 어드민 설정 패널에 항목 2개 추가.
+3. **음식×지역 조합 라우트 신설** — `web/app/foods/[foodSlug]/[regionSlug]/page.tsx`. SEO 타이틀 "Best {음식} in {지역}", 음식-지역 연결 없는 조합은 404(중복·빈 페이지 방지), 해당 지역 장소 필터 + 다른 지역 칩 + 음식/지역 가이드 교차 링크. 음식 상세의 "Where it fits" 지역 카드가 이제 조합 페이지로 연결(크롤링 경로), sitemap에 조합 URL 전체 추가.
+4. **메인 4섹션 뼈대 교체** (`web/app/page.tsx`) — ①히어로(기존 유지) ②한국 지도 자리(플레이스홀더 + 지역 바로가기 칩 6개, 2주차에 SVG로 교체) ③트렌딩 K-Food 6종 + 에디터 픽(루트 3종) ④From our channels(신설 `getPublishedProductions(limit)` — 태그 무관 최신 제작 콘텐츠, 없으면 준비 중 문구). 기존 스탯 스트립·취향 카드·지역 섹션·하단 CTA 밴드는 4섹션 원칙(기획정렬 §1-4)에 따라 제거.
+5. **잔여물 정리** — `supabase/sql/apply-008-011-production.sql` 삭제(솔 확인 받음: 원본 마이그레이션 4개가 저장소에 있고 프로덕션 적용도 완료라 중복). `web/next-env.d.ts` 변경분은 커밋 제외.
+
+검증: `npm run check`(tsc 4개 워크스페이스 + eslint) 통과, `next build` 통과(신규 라우트 등록 확인). 로컬 실화면 — 홈 4섹션 + 3카테고리 내비, `/foods` 50종 + 탭 활성 표시, `/foods/tteokbokki/sindang` 정상(제목·섹션·breadcrumb), 존재하지 않는 조합 404, From our channels에 실제 DB 콘텐츠(유튜브 영상) 노출, 모바일 375px 가로 넘침 없음, 콘솔 오류 없음.
 
 ### 기획 정렬 + 개편 준비 세션 (2026-07-08~09, 세션5)
 
@@ -203,29 +213,26 @@ kfood-commercial-service/docs/06-team/session-handoff.md 를 읽고 이어가줘
 - /Users/sol/Ai agent/K푸드_플랫폼/docs/기획정렬-한빛대조.md  (방향 기준)
 - /Users/sol/Ai agent/K푸드_플랫폼/docs/메인개편-작업계획.md  (작업 순서)
 
-지난 세션(2026-07-09, 세션5) 완료: 방향 재정렬(콘텐츠 사이트 집중, 커뮤니티·도감
-후순위 + 어드민 토글 노출 관리), 상세 조회 최적화(커밋 c6c7fde), SVG 한국 지도
-확보, 주차별 작업 계획 수립. 한빛과 구두 논의 완료 상태.
+지난 세션(2026-07-09, 세션6) 완료: 메인 개편 1주차 — 내비 3카테고리 +
+음식 하위 탭, 게시판 토글 3종(community/food_log/journey_share),
+음식×지역 라우트 /foods/[foodSlug]/[regionSlug], 메인 4섹션 뼈대.
 
-이번 세션: 메인 개편 1주차 착수.
-1. 내비게이션 3카테고리 전환 (Food / Community / My Page)
-   — 지역·장소·루트는 음식 하위 탭·필터로. 기존 URL은 전부 유지
-2. 게시판별 어드민 공개/비공개 토글 점검·확대
-   (커뮤니티 카테고리 토글은 이미 있음 → 전체 게시판으로)
-3. 음식×지역 라우트 추가: /foods/[foodSlug]/[regionSlug]
-4. 메인 4섹션 뼈대: 히어로 / 지도 자리(플레이스홀더) / 트렌딩·에디터픽 / From our channels
+이번 세션: 메인 개편 2주차 — 지도.
+1. SVG 지도 컴포넌트: 시·도 클릭 → 지역(목록) 이동, 호버 시 지역명+대표 음식 툴팁
+   — 원본: /Users/sol/Ai agent/K푸드_플랫폼/데이터수집/한국지도/korea-provinces.svg
+     (17개 시·도, 각 조각 영문 id: Seoul, Busan, Jeju-do…)
+   — 메인 ② 섹션의 .home-map-placeholder 자리를 교체
+2. 지도 색칠 로직: 콘텐츠 밀도 기준(장소·음식 수), 브랜드 팔레트(#8500FF 계열 농도)
+3. 시·도↔지역 매핑: A안(코드 매핑표 상수, 스키마 무변경).
+   현재 regions 23개는 동네 단위(Sindang 등)라 시·도(17개)→지역 목록 매핑표 필요.
+   지도 클릭 시 /regions?province=… 또는 해당 지역 목록으로 이동
 
 규칙:
-- 시·도↔지역 매핑은 A안(코드 매핑표, 스키마 무변경)으로 시작
 - DB 스키마·RLS·환경변수 변경 금지 (한빛 승인 필요 영역)
 - 디자인 토큰은 docs/02-design/DESIGN.md v2 (#8500FF), 사용자향 카피는 영어
-- 끝나면 npm run check + 로컬 화면 확인 + session-handoff.md 갱신 + push
-
-잔여물 처리: supabase/sql/apply-008-011-production.sql(미추적)은 커밋 여부를
-먼저 물어봐줘. web/next-env.d.ts 변경분은 커밋하지 말 것.
-
-참고: SVG 지도 원본은 /Users/sol/Ai agent/K푸드_플랫폼/데이터수집/한국지도/
-korea-provinces.svg (2주차에 사용 예정, 이번 주는 자리만 잡음).
+- 유료 지도 API 금지 (SVG + 구글맵 임베드·딥링크만)
+- 끝나면 npm run check + next build + 로컬 화면 확인 + session-handoff.md 갱신 + push
+- web/next-env.d.ts 변경분은 커밋하지 말 것
 ```
 
 ---

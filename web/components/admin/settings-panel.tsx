@@ -14,7 +14,19 @@ const settingItems: Array<{ key: PlatformSettingKey; label: string; description:
     key: "community",
     label: "커뮤니티 (피드·게시물·댓글)",
     description:
-      "끄면 공개 사이트에서 Feed 메뉴와 /feed 관련 페이지가 모두 숨겨집니다. 어드민의 게시물·댓글 관리는 계속 사용할 수 있습니다."
+      "끄면 공개 사이트에서 Community 메뉴와 /feed 관련 페이지가 모두 숨겨집니다. 어드민의 게시물·댓글 관리는 계속 사용할 수 있습니다."
+  },
+  {
+    key: "food_log",
+    label: "푸드도감·트래커 (마이페이지 컬렉션)",
+    description:
+      "끄면 마이페이지의 K-food 컬렉션(도감) 섹션과 먹어본 기록 저장이 숨겨집니다. 이미 저장된 기록 데이터는 그대로 유지됩니다."
+  },
+  {
+    key: "journey_share",
+    label: "여정 리캡·공유 URL",
+    description:
+      "끄면 마이페이지의 여정 리캡 페이지와 공유 링크(/journey/…) 공개 페이지가 모두 숨겨집니다. 기존 공유 토큰은 삭제되지 않습니다."
   }
 ];
 

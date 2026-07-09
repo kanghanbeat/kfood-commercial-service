@@ -28,12 +28,9 @@ export function SiteHeader({
           </Link>
         </div>
         <nav className="nav-v2-menu" aria-label="Primary navigation">
-          <Link href="/regions">Regions</Link>
-          <Link href="/foods">Foods</Link>
-          <Link href="/places">Places</Link>
-          <Link href="/routes">Routes</Link>
-          {communityEnabled ? <Link href="/feed">Feed</Link> : null}
-          <Link href="/search">Search</Link>
+          <Link href="/foods">Food</Link>
+          {communityEnabled ? <Link href="/feed">Community</Link> : null}
+          <Link href="/mypage">My Page</Link>
         </nav>
         <div className="nav-v2-action">{authLink}</div>
       </div>

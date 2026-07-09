@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import {
   getMyFoodLog,
   getMyJourneyShareToken,
   getPublishedFoods,
-  getPublishedRegions
+  getPublishedRegions,
+  isBoardEnabled
 } from "@kfood/data";
 
 import {
@@ -29,6 +31,10 @@ export default async function JourneyRecapPage({
 }: {
   searchParams?: Promise<{ error?: string }>;
 }) {
+  if (!(await isBoardEnabled("journey_share"))) {
+    notFound();
+  }
+
   const [session, params] = await Promise.all([
     requirePublicSession("/mypage/journey"),
     searchParams

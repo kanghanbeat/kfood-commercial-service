@@ -1576,6 +1576,42 @@ export async function getPublishedProductionsFor(
     .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""));
 }
 
+// 메인 "From our channels" 섹션용 — 태그와 무관하게 최신 제작 콘텐츠를 가져온다.
+// RLS가 published만 공개하므로 상태 필터는 명시용. 테이블 미존재 시 빈 배열.
+export async function getPublishedProductions(
+  limit = 6
+): Promise<PublicProduction[]> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("productions")
+    .select("slug, title, type, channel, summary, external_url, published_at")
+    .eq("status", "published")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error || !data) {
+    if (error && (error as { code?: string }).code !== "PGRST205") {
+      logDataError("getPublishedProductions", error);
+    }
+    return [];
+  }
+
+  return (data as PublicProductionRow[]).map((row) => ({
+    slug: row.slug,
+    title: row.title,
+    type: row.type,
+    channel: row.channel,
+    summary: row.summary,
+    externalUrl: row.external_url,
+    publishedAt: row.published_at
+  }));
+}
+
 export async function getMyProfile(accessToken: string, userId: string) {
   const supabase = createAuthenticatedClient(accessToken);
 
@@ -2284,8 +2320,12 @@ export async function getAdminAuditLogs(accessToken: string) {
   return data.map((row) => mapAdminAuditLog(row as AdminAuditLogRow));
 }
 
-// 현재는 "community" 하나뿐이지만 다른 카테고리 on/off 토글이 늘어날 수 있어 문자열 키로 둔다.
-export type PlatformSettingKey = "community";
+// 게시판(공개 영역) 단위 on/off 토글 키. platform_settings는 key/enabled 문자열
+// 구조라 키 추가에 스키마 변경이 필요 없다 (기획정렬 §1-1: 노출 여부는 운영에서 결정).
+// - community: 커뮤니티 피드·게시물·댓글 (/feed)
+// - food_log: 푸드도감·트래커 (마이페이지 컬렉션 + 기록 저장)
+// - journey_share: 여정 리캡·공유 URL (/mypage/journey, /journey/[token])
+export type PlatformSettingKey = "community" | "food_log" | "journey_share";
 
 export async function getPlatformSettings(): Promise<Record<string, boolean>> {
   const supabase = createPublicClient();
@@ -2306,8 +2346,14 @@ export async function getPlatformSettings(): Promise<Record<string, boolean>> {
 }
 
 export async function isCommunityEnabled(): Promise<boolean> {
+  return isBoardEnabled("community");
+}
+
+// 게시판 토글 공통 조회. 설정 행이 없으면 공개(true)가 기본값 —
+// 기존 동작(커뮤니티 기본 공개)과 동일한 규칙을 모든 게시판에 적용한다.
+export async function isBoardEnabled(key: PlatformSettingKey): Promise<boolean> {
   const settings = await getPlatformSettings();
-  return settings.community ?? true;
+  return settings[key] ?? true;
 }
 
 export async function updatePlatformSetting(

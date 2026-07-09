@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getPublicJourney, getPublishedFoods, getPublishedRegions } from "@kfood/data";
+import {
+  getPublicJourney,
+  getPublishedFoods,
+  getPublishedRegions,
+  isBoardEnabled
+} from "@kfood/data";
 
 const COLLECTION_GOAL = 50;
 const spicyLabels = ["Not spicy", "Mild", "Medium", "Spicy", "Very spicy"];
@@ -30,6 +35,10 @@ export default async function PublicJourneyPage({
 }: {
   params: Promise<{ shareToken: string }>;
 }) {
+  if (!(await isBoardEnabled("journey_share"))) {
+    notFound();
+  }
+
   const { shareToken } = await params;
   const journey = await getPublicJourney(shareToken);
 

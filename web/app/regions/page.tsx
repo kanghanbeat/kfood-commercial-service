@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getPublishedRegions } from "@kfood/data";
 
 import { CardPhoto } from "@/components/card-photo";
+import { FoodTabs } from "@/components/food-tabs";
 
 export const metadata = {
   title: "Seoul K-food Regions"
@@ -13,6 +14,7 @@ export default async function RegionsPage() {
 
   return (
     <div className="food-v2">
+      <FoodTabs active="regions" />
       <header className="food-v2-header">
         <span className="food-v2-eyebrow">Regions</span>
         <div className="food-v2-names">

@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
-import { enableMyJourneyShare } from "@kfood/data";
+import { enableMyJourneyShare, isBoardEnabled } from "@kfood/data";
 
 import { getPublicSession } from "@/lib/public-auth";
 
@@ -14,6 +14,10 @@ function redirectToJourney(request: NextRequest, message?: string) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await isBoardEnabled("journey_share"))) {
+    return redirectToJourney(request, "Journey sharing is currently unavailable.");
+  }
+
   const session = await getPublicSession();
 
   if (!session) {

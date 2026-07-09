@@ -3,8 +3,8 @@ import Link from "next/link";
 import {
   getMyFoodLog,
   getMyProfile,
+  getPlatformSettings,
   getPublishedFoods,
-  isCommunityEnabled,
   type SupportedLanguage
 } from "@kfood/data";
 
@@ -38,12 +38,15 @@ export default async function MypagePage({
   ]);
 
   await ensurePublicProfile(session);
-  const [profile, foods, triedSlugs, communityEnabled] = await Promise.all([
+  const [profile, foods, triedSlugs, boardSettings] = await Promise.all([
     getMyProfile(session.accessToken, session.userId),
     getPublishedFoods(),
     getMyFoodLog(session.accessToken, session.userId),
-    isCommunityEnabled()
+    getPlatformSettings()
   ]);
+  const communityEnabled = boardSettings.community ?? true;
+  const foodLogEnabled = boardSettings.food_log ?? true;
+  const journeyShareEnabled = boardSettings.journey_share ?? true;
   const displayName = profile?.displayName ?? session.name ?? "";
   const bio = profile?.bio ?? "";
   const preferredLanguage = profile?.preferredLanguage ?? "en";
@@ -128,17 +131,20 @@ export default async function MypagePage({
           </button>
         </form>
       </section>
+      {foodLogEnabled ? (
       <section className="section-block" aria-labelledby="mypage-journey">
         <div className="section-heading">
           <p className="eyebrow">My K-Food Journey</p>
           <h2 id="mypage-journey">Your K-food collection</h2>
           <p>Track what you have tried across your Korean food trip.</p>
         </div>
-        <div className="action-row">
-          <Link className="button secondary" href="/mypage/journey">
-            View your journey recap
-          </Link>
-        </div>
+        {journeyShareEnabled ? (
+          <div className="action-row">
+            <Link className="button secondary" href="/mypage/journey">
+              View your journey recap
+            </Link>
+          </div>
+        ) : null}
         <div className="admin-metric-grid">
           <div className="admin-metric-card">
             <span className="admin-metric-label">Dishes tried</span>
@@ -196,6 +202,7 @@ export default async function MypagePage({
           })}
         </div>
       </section>
+      ) : null}
 
       <section className="section-block" aria-labelledby="mypage-next">
         <div className="section-heading">

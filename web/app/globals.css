@@ -383,6 +383,76 @@ h3 {
   color: #fffaf4;
 }
 
+/* 음식 카테고리 하위 탭 (Dishes/Regions/Places/Routes) — 각 탭은 실제 URL 링크 */
+.food-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.food-subnav-tab {
+  border: 1px solid var(--line);
+  border-radius: var(--pill-radius);
+  color: var(--text-body);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+.food-subnav-tab:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.food-subnav-tab.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+}
+
+/* 메인 ② 한국 지도 자리 — 2주차에 SVG 지도 컴포넌트로 교체 예정 */
+.home-map-placeholder {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(133, 0, 255, 0.08), transparent 45%),
+    linear-gradient(315deg, rgba(220, 242, 243, 0.7), transparent 50%),
+    var(--surface);
+  border: 1px dashed var(--brand);
+  border-radius: var(--card-radius);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 300px;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.home-map-placeholder-badge {
+  background: var(--brand-soft);
+  border-radius: var(--pill-radius);
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 14px;
+}
+
+.home-map-placeholder-copy {
+  color: var(--text-body);
+  font-size: 15px;
+  margin: 0;
+  max-width: 480px;
+}
+
+.home-map-placeholder-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
 .route-visual {
   background:
     linear-gradient(135deg, rgba(133, 0, 255, 0.16), transparent 36%),

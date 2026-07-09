@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
-import { setFoodTried } from "@kfood/data";
+import { isBoardEnabled, setFoodTried } from "@kfood/data";
 
 import { getPublicSession } from "@/lib/public-auth";
 
@@ -12,6 +12,10 @@ function redirectToMypage(request: NextRequest, key: "error" | "updated", value:
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await isBoardEnabled("food_log"))) {
+    return redirectToMypage(request, "error", "Food log is currently unavailable.");
+  }
+
   const session = await getPublicSession();
 
   if (!session) {

@@ -476,6 +476,86 @@ h3 {
   color: var(--brand);
 }
 
+/* 메인 ② 한국 지도 — 시·도 SVG, 콘텐츠 밀도로 색칠 (기획정렬 §1-5) */
+.korea-map {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+}
+
+.korea-map-svg {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+}
+
+.korea-map-province {
+  stroke: #ffffff;
+  stroke-width: 1.2;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+
+.korea-map-province.active {
+  cursor: pointer;
+}
+
+.korea-map-province.active:hover,
+.korea-map-province.active:focus-visible {
+  filter: brightness(0.88);
+  outline: none;
+}
+
+.korea-map-tooltip {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--text-heading);
+  color: #ffffff;
+  border-radius: 10px;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(24, 16, 39, 0.25);
+  max-width: 220px;
+}
+
+.korea-map-tooltip-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.korea-map-tooltip-name em {
+  font-style: normal;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+.korea-map-tooltip-food {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffb27d;
+}
+
+.korea-map-tooltip-meta {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.korea-map-hint {
+  font-size: 13px;
+  color: var(--text-body);
+  margin: 0;
+  text-align: center;
+}
+
 /* 메인 ② 한국 지도 자리 — 2주차에 SVG 지도 컴포넌트로 교체 예정 */
 .home-map-placeholder {
   align-items: center;
@@ -1608,6 +1688,10 @@ h3 {
 
   .home-intent-grid {
     grid-template-columns: 1fr;
+  }
+
+  .korea-map {
+    padding: 14px;
   }
 
   .home-cta {

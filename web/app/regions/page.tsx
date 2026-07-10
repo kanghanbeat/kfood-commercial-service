@@ -5,13 +5,29 @@ import { getPublishedRegions } from "@kfood/data";
 import { CardPhoto } from "@/components/card-photo";
 import { FoodTabs } from "@/components/food-tabs";
 import { getDict } from "@/lib/i18n";
+import { PROVINCES, isProvinceKey } from "@/lib/provinces";
 
 export const metadata = {
   title: "Seoul K-food Regions"
 };
 
-export default async function RegionsPage() {
-  const [regions, dict] = await Promise.all([getPublishedRegions(), getDict()]);
+// 홈 지도에서 시·도를 클릭하면 ?province=<key>로 들어온다 (A안: 코드 매핑표).
+export default async function RegionsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ province?: string }>;
+}) {
+  const [{ province }, regions, dict] = await Promise.all([
+    searchParams,
+    getPublishedRegions(),
+    getDict()
+  ]);
+
+  const provinceInfo =
+    province && isProvinceKey(province) ? PROVINCES[province] : null;
+  const visibleRegions = provinceInfo
+    ? regions.filter((region) => provinceInfo.regionSlugs.includes(region.slug))
+    : regions;
 
   return (
     <div className="food-v2">
@@ -19,12 +35,23 @@ export default async function RegionsPage() {
       <header className="food-v2-header">
         <span className="food-v2-eyebrow">{dict.lists.regionsEyebrow}</span>
         <div className="food-v2-names">
-          <span className="food-v2-name-en">{dict.lists.regionsTitle}</span>
+          <span className="food-v2-name-en">
+            {provinceInfo
+              ? `${provinceInfo.nameEn} · ${provinceInfo.nameKo}`
+              : dict.lists.regionsTitle}
+          </span>
         </div>
         <p className="food-v2-summary">{dict.lists.regionsSummary}</p>
+        {provinceInfo ? (
+          <div className="food-v2-actions">
+            <Link className="button secondary" href="/regions">
+              {dict.home.allRegions}
+            </Link>
+          </div>
+        ) : null}
       </header>
       <div className="card-grid-v2">
-        {regions.map((region) => (
+        {visibleRegions.map((region) => (
           <Link className="card-v2" href={`/regions/${region.slug}`} key={region.slug}>
             <CardPhoto label={region.nameEn} variant="region" />
             <div className="card-v2-body">

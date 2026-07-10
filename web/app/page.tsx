@@ -8,7 +8,9 @@ import {
 } from "@kfood/data";
 
 import { CardPhoto } from "@/components/card-photo";
+import { KoreaMap, type ProvinceStats } from "@/components/korea-map";
 import { getDict } from "@/lib/i18n";
+import { PROVINCES } from "@/lib/provinces";
 
 function ArrowRightIcon() {
   return (
@@ -44,6 +46,19 @@ export default async function HomePage() {
   const trendingFoods = foods.slice(0, 6);
   const editorPicks = routes.slice(0, 3);
   const mapQuickRegions = regions.slice(0, 6);
+
+  // 시·도별 콘텐츠 밀도(지역·음식 수) — 지도 색칠과 툴팁에 쓴다.
+  const publishedRegionSlugs = new Set(regions.map((region) => region.slug));
+  const provinceStats: ProvinceStats = {};
+  for (const [key, info] of Object.entries(PROVINCES)) {
+    const activeRegionSlugs = info.regionSlugs.filter((slug) =>
+      publishedRegionSlugs.has(slug)
+    );
+    const foodCount = foods.filter((food) =>
+      food.regionSlugs.some((slug) => activeRegionSlugs.includes(slug))
+    ).length;
+    provinceStats[key] = { regionCount: activeRegionSlugs.length, foodCount };
+  }
 
   return (
     <div className="home-v2">
@@ -81,7 +96,7 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      {/* ② 한국 지도 (2주차에 SVG 지도로 교체 — 지금은 자리만) */}
+      {/* ② 한국 지도 — 시·도 SVG, 클릭 시 지역 목록 이동 */}
       <section className="section-v2">
         <div className="section-v2-inner">
           <div className="section-v2-header">
@@ -94,20 +109,26 @@ export default async function HomePage() {
               {t.allRegions} <ArrowRightIcon />
             </Link>
           </div>
-          <div className="home-map-placeholder" aria-label="Korea food map">
-            <div className="home-map-placeholder-badge">{t.mapBadge}</div>
-            <p className="home-map-placeholder-copy">{t.mapCopy}</p>
-            <div className="home-map-placeholder-links">
-              {mapQuickRegions.map((region) => (
-                <Link
-                  className="food-subnav-tab"
-                  href={`/regions/${region.slug}`}
-                  key={region.slug}
-                >
-                  {region.nameEn}
-                </Link>
-              ))}
-            </div>
+          <KoreaMap
+            stats={provinceStats}
+            labels={{
+              areas: t.mapAreas,
+              dishes: t.mapDishes,
+              comingSoon: t.mapComingSoon,
+              hint: t.mapHint
+            }}
+          />
+          {/* 지도는 클라이언트 렌더라, 검색엔진·키보드용 지역 바로가기는 링크로도 유지 */}
+          <div className="home-map-placeholder-links">
+            {mapQuickRegions.map((region) => (
+              <Link
+                className="food-subnav-tab"
+                href={`/regions/${region.slug}`}
+                key={region.slug}
+              >
+                {region.nameEn}
+              </Link>
+            ))}
           </div>
         </div>
       </section>

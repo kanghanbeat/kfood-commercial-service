@@ -498,17 +498,24 @@ h3 {
 .korea-map-province {
   stroke: #ffffff;
   stroke-width: 1.2;
-  transition: filter 0.15s ease, opacity 0.15s ease;
+  /* 호버 확대의 기준점을 각 시·도 조각의 중심으로 */
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.18s ease, filter 0.18s ease;
 }
 
 .korea-map-province.active {
   cursor: pointer;
 }
 
-.korea-map-province.active:hover,
-.korea-map-province.active:focus-visible {
-  filter: brightness(0.88);
+.korea-map-province.hovered {
+  transform: scale(1.08);
+  filter: drop-shadow(0 4px 10px rgba(24, 16, 39, 0.35));
   outline: none;
+}
+
+.korea-map-province.active.hovered {
+  filter: brightness(0.92) drop-shadow(0 4px 10px rgba(24, 16, 39, 0.35));
 }
 
 .korea-map-tooltip {

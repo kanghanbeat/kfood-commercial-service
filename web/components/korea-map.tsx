@@ -53,6 +53,9 @@ export function KoreaMap({
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  // 호버 중인 시·도는 살짝 확대해서 보여준다. SVG는 나중에 그린 조각이 위에
+  // 올라오므로, 확대된 조각이 이웃에 가려지지 않게 렌더 순서도 맨 뒤로 보낸다.
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const provinces = useMemo(
     () =>
@@ -96,6 +99,11 @@ export function KoreaMap({
     }
   }
 
+  const hovered = provinces.find((province) => province.id === hoveredId);
+  const orderedProvinces = hovered
+    ? [...provinces.filter((province) => province.id !== hoveredId), hovered]
+    : provinces;
+
   return (
     <div className="korea-map" ref={containerRef}>
       <svg
@@ -104,11 +112,13 @@ export function KoreaMap({
         aria-label="Korea food map by province"
         className="korea-map-svg"
       >
-        {provinces.map((province) => (
+        {orderedProvinces.map((province) => (
           <path
             key={province.id}
             d={province.d}
-            className={`korea-map-province${province.hasContent ? " active" : ""}`}
+            className={`korea-map-province${province.hasContent ? " active" : ""}${
+              province.id === hoveredId ? " hovered" : ""
+            }`}
             fill={fillFor(province.foodCount)}
             role={province.hasContent ? "link" : undefined}
             tabIndex={province.hasContent ? 0 : -1}
@@ -117,8 +127,14 @@ export function KoreaMap({
                 ? ` — ${province.regionCount} ${labels.areas}, ${province.foodCount} ${labels.dishes}`
                 : ` — ${labels.comingSoon}`
             }`}
+            onMouseEnter={() => setHoveredId(province.id)}
             onMouseMove={(event) => showTooltip(event, province)}
-            onMouseLeave={() => setTooltip(null)}
+            onMouseLeave={() => {
+              setHoveredId(null);
+              setTooltip(null);
+            }}
+            onFocus={() => setHoveredId(province.id)}
+            onBlur={() => setHoveredId(null)}
             onClick={() => open(province)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {

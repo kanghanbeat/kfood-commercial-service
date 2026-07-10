@@ -1267,6 +1267,7 @@ export async function getPublishedFoods() {
         .from("region_foods")
         .select("regions(slug), foods(slug), display_order")
         .order("display_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
     ]);
 
   if (error || !data) {
@@ -1281,7 +1282,7 @@ export async function getPublishedFoods() {
     return foods;
   }
 
-  return addRegionSlugs(foods, regionFoodRows as unknown as RelatedSlugRow[]);
+  return addRegionSlugs(foods, regionFoodRows);
 }
 
 export async function getPublishedFood(slug: string) {
@@ -1342,11 +1343,13 @@ export async function getPublishedPlaces() {
           "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
         )
         .eq("status", "published")
-        .order("display_order", { ascending: true }),
+        .order("display_order", { ascending: true })
+        .returns<PlaceRow[]>(),
       supabase
         .from("place_foods")
         .select("places(slug), foods(slug), display_order")
         .order("display_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
     ]);
 
   if (error || !data) {
@@ -1354,14 +1357,14 @@ export async function getPublishedPlaces() {
     return fallbackData(fallbackPlaces);
   }
 
-  const places = data.map((row) => mapPlace(row as unknown as PlaceRow));
+  const places = data.map(mapPlace);
 
   if (relationError || !placeFoodRows) {
     logDataError("getPublishedPlaces.placeFoods", relationError);
     return places;
   }
 
-  return addFoodSlugs(places, placeFoodRows as unknown as RelatedSlugRow[]);
+  return addFoodSlugs(places, placeFoodRows);
 }
 
 export async function getPublishedPlace(slug: string) {
@@ -1386,6 +1389,7 @@ export async function getPublishedPlace(slug: string) {
         .select("places!inner(slug), foods(slug), display_order")
         .eq("places.slug", slug)
         .order("display_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
     ]);
 
   if (error) {
@@ -1404,7 +1408,7 @@ export async function getPublishedPlace(slug: string) {
     return place;
   }
 
-  return addFoodSlugs([place], placeFoodRows as unknown as RelatedSlugRow[])[0];
+  return addFoodSlugs([place], placeFoodRows)[0];
 }
 
 export async function getPublishedRoutes() {
@@ -1420,11 +1424,13 @@ export async function getPublishedRoutes() {
         .from("route_guides")
         .select("slug, title, summary, estimated_duration, regions(slug)")
         .eq("status", "published")
-        .order("display_order", { ascending: true }),
+        .order("display_order", { ascending: true })
+        .returns<RouteGuideRow[]>(),
       supabase
         .from("route_guide_places")
         .select("route_guides(slug), places(slug), step_order")
         .order("step_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
     ]);
 
   if (error || !data) {
@@ -1432,17 +1438,14 @@ export async function getPublishedRoutes() {
     return fallbackData(fallbackRoutes);
   }
 
-  const routes = data.map((row) => mapRouteGuide(row as unknown as RouteGuideRow));
+  const routes = data.map(mapRouteGuide);
 
   if (relationError || !routePlaceRows) {
     logDataError("getPublishedRoutes.routePlaces", relationError);
     return routes;
   }
 
-  return addRoutePlaceSlugs(
-    routes,
-    routePlaceRows as unknown as RelatedSlugRow[]
-  );
+  return addRoutePlaceSlugs(routes, routePlaceRows);
 }
 
 export async function getPublishedRoute(slug: string) {
@@ -1465,6 +1468,7 @@ export async function getPublishedRoute(slug: string) {
         .select("route_guides!inner(slug), places(slug), step_order")
         .eq("route_guides.slug", slug)
         .order("step_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
     ]);
 
   if (error) {
@@ -1483,10 +1487,7 @@ export async function getPublishedRoute(slug: string) {
     return route;
   }
 
-  return addRoutePlaceSlugs(
-    [route],
-    routePlaceRows as unknown as RelatedSlugRow[]
-  )[0];
+  return addRoutePlaceSlugs([route], routePlaceRows)[0];
 }
 
 // ── 공개: 촬영·제작 콘텐츠(productions) 노출 ──────────────────

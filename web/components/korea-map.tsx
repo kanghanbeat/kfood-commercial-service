@@ -2,18 +2,21 @@
 
 // 메인 4섹션 중 ② 한국 지도 (기획정렬 §1-4·§1-5).
 // 유료 지도 API 없이 통계청 시·도 경계 SVG로 구현한다.
-// - 광역시는 소속 도에 합쳐 9개 권역(수도권·강원·충북·충남·전북·전남·경북·경남·제주)
-//   단위로 호버·색칠·클릭이 동작한다.
-// - 관광으로 많이 가는 지역은 지도 위 마커(점)로 표시 — 발행된 지역 중
-//   REGION_MAP_POINTS에 좌표가 등록된 것만 자동으로 그려진다.
+// 가시성 원칙: 기본 화면은 9개 권역 + 이름 라벨만 보여주고,
+// 마우스를 올린 권역만 확대되면서 그 권역의 주요 지역 마커가 나타난다.
+// 마커는 발행된 지역 중 REGION_MAP_POINTS에 좌표가 등록된 것만 자동 렌더.
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { KOREA_MAP_VIEWBOX, PROVINCE_PATHS } from "@/lib/korea-map-paths";
 import {
+  GROUP_LABEL_POINTS,
   PROVINCE_GROUPS,
+  REGION_MAP_POINTS,
+  SUB_LABEL_POINTS,
   groupOfProvince,
+  provinceOfRegion,
   type ProvinceGroupKey
 } from "@/lib/provinces";
 
@@ -67,8 +70,8 @@ export function KoreaMap({
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-  // 호버 중인 권역은 살짝 확대. SVG는 나중에 그린 요소가 위에 오므로
-  // 확대된 권역이 이웃에 가려지지 않게 렌더 순서도 맨 뒤로 보낸다.
+  // 호버 중인 권역은 확대 + 그 권역 마커 표시. SVG는 나중에 그린 요소가
+  // 위에 오므로 확대된 권역이 이웃에 가려지지 않게 렌더 순서도 맨 뒤로.
   const [hoveredGroup, setHoveredGroup] = useState<ProvinceGroupKey | null>(null);
 
   const groups = useMemo(() => {
@@ -104,6 +107,27 @@ export function KoreaMap({
     });
   }, [stats]);
 
+  // 마커를 소속 권역별로 묶는다 — 권역 <g> 안에서 렌더해야 확대 시
+  // 지도와 함께 움직이고, 호버한 권역의 마커만 보여줄 수 있다.
+  const markersByGroup = useMemo(() => {
+    const byGroup = new Map<
+      ProvinceGroupKey,
+      (MapMarker & { labelSide: "left" | "right" | "bottom" | "hidden" })[]
+    >();
+    for (const marker of markers) {
+      const province = provinceOfRegion(marker.slug);
+      const group = province ? groupOfProvince(province) : null;
+      if (!group) {
+        continue;
+      }
+      byGroup.set(group, [
+        ...(byGroup.get(group) ?? []),
+        { ...marker, labelSide: REGION_MAP_POINTS[marker.slug]?.label ?? "right" }
+      ]);
+    }
+    return byGroup;
+  }, [markers]);
+
   function tooltipPosition(event: React.MouseEvent) {
     const bounds = containerRef.current?.getBoundingClientRect();
     if (!bounds) {
@@ -128,20 +152,6 @@ export function KoreaMap({
       meta: group.hasContent
         ? `${group.regionCount} ${labels.areas} · ${group.foodCount} ${labels.dishes}`
         : labels.comingSoon
-    });
-  }
-
-  function showMarkerTooltip(event: React.MouseEvent, marker: MapMarker) {
-    const position = tooltipPosition(event);
-    if (!position) {
-      return;
-    }
-    setTooltip({
-      ...position,
-      title: marker.nameEn,
-      subtitle: null,
-      food: null,
-      meta: null
     });
   }
 
@@ -196,34 +206,96 @@ export function KoreaMap({
             {group.paths.map((path) => (
               <path key={path.id} d={path.d} fill={fillFor(group.foodCount)} />
             ))}
+
+            {/* 수도권 소라벨 — 서울·인천은 항상 이름이 보이게 (그룹과 함께 확대) */}
+            {group.key === "gyeonggi"
+              ? SUB_LABEL_POINTS.map((point) => (
+                  <text
+                    key={point.label}
+                    x={point.x}
+                    y={point.y}
+                    className="korea-map-sublabel"
+                    textAnchor="middle"
+                  >
+                    {point.label}
+                  </text>
+                ))
+              : null}
+
+            {/* 주요 관광 지역 마커 — 이 권역을 호버했을 때만 나타난다 */}
+            {(markersByGroup.get(group.key) ?? []).map((marker) => {
+              const visible = group.key === hoveredGroup;
+              return (
+                <g
+                  key={marker.slug}
+                  className={`korea-map-marker-group${visible ? " visible" : ""}`}
+                >
+                  <circle
+                    className="korea-map-marker"
+                    cx={marker.x}
+                    cy={marker.y}
+                    r={4.5}
+                    role="link"
+                    tabIndex={visible ? 0 : -1}
+                    aria-label={marker.nameEn}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      router.push(`/regions/${marker.slug}`);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        router.push(`/regions/${marker.slug}`);
+                      }
+                    }}
+                  />
+                  {marker.labelSide !== "hidden" ? (
+                    <text
+                      className="korea-map-marker-name"
+                      x={
+                        marker.labelSide === "left"
+                          ? marker.x - 8
+                          : marker.labelSide === "bottom"
+                            ? marker.x
+                            : marker.x + 8
+                      }
+                      y={marker.labelSide === "bottom" ? marker.y + 14 : marker.y + 3}
+                      textAnchor={
+                        marker.labelSide === "left"
+                          ? "end"
+                          : marker.labelSide === "bottom"
+                            ? "middle"
+                            : "start"
+                      }
+                    >
+                      {marker.nameEn}
+                    </text>
+                  ) : null}
+                </g>
+              );
+            })}
           </g>
         ))}
 
-        {/* 주요 관광 지역 마커 — 발행된 지역 + 좌표 등록분만 자동 표시 */}
-        {markers.map((marker) => (
-          <circle
-            key={marker.slug}
-            className="korea-map-marker"
-            cx={marker.x}
-            cy={marker.y}
-            r={5}
-            role="link"
-            tabIndex={0}
-            aria-label={marker.nameEn}
-            onMouseMove={(event) => showMarkerTooltip(event, marker)}
-            onMouseLeave={() => setTooltip(null)}
-            onClick={(event) => {
-              event.stopPropagation();
-              router.push(`/regions/${marker.slug}`);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                router.push(`/regions/${marker.slug}`);
-              }
-            }}
-          />
-        ))}
+        {/* 권역 이름 라벨 — 항상 표시, 호버 중인 권역만 숨김(마커와 겹침 방지) */}
+        {(Object.keys(GROUP_LABEL_POINTS) as ProvinceGroupKey[]).map((key) => {
+          const point = GROUP_LABEL_POINTS[key];
+          const hasContent = groups.find((g) => g.key === key)?.hasContent;
+          return (
+            <text
+              key={key}
+              x={point.x}
+              y={point.y}
+              className={`korea-map-label${hasContent ? " on-color" : ""}${
+                key === hoveredGroup ? " dimmed" : ""
+              }`}
+              textAnchor="middle"
+            >
+              {point.label}
+            </text>
+          );
+        })}
       </svg>
 
       {tooltip ? (

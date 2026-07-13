@@ -514,15 +514,56 @@ h3 {
 }
 
 .korea-map-group.hovered {
-  transform: scale(1.05);
+  transform: scale(1.08);
   filter: drop-shadow(0 4px 10px rgba(24, 16, 39, 0.35));
 }
 
 .korea-map-group.active.hovered {
-  filter: brightness(0.92) drop-shadow(0 4px 10px rgba(24, 16, 39, 0.35));
+  filter: brightness(0.95) drop-shadow(0 4px 10px rgba(24, 16, 39, 0.35));
 }
 
-/* 주요 관광 지역 마커 — 좌표가 등록된 발행 지역만 자동 표시 */
+/* 권역 이름 라벨 — 항상 표시, 호버한 권역만 잠시 숨김 */
+.korea-map-label {
+  font-size: 14px;
+  font-weight: 700;
+  fill: #8a8496;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.15s ease;
+}
+
+.korea-map-label.on-color {
+  fill: #ffffff;
+}
+
+.korea-map-label.dimmed {
+  opacity: 0;
+}
+
+/* 수도권 소라벨 (서울·인천) */
+.korea-map-sublabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: #ffffff;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: rgba(24, 16, 39, 0.35);
+  stroke-width: 2px;
+}
+
+/* 주요 관광 지역 마커 — 호버한 권역의 것만 나타난다 */
+.korea-map-marker-group {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.korea-map-marker-group.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .korea-map-marker {
   fill: var(--accent);
   stroke: #ffffff;
@@ -536,7 +577,18 @@ h3 {
 
 .korea-map-marker:hover,
 .korea-map-marker:focus-visible {
-  transform: scale(1.6);
+  transform: scale(1.5);
+}
+
+.korea-map-marker-name {
+  font-size: 9px;
+  font-weight: 600;
+  fill: #ffffff;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: rgba(24, 16, 39, 0.45);
+  stroke-width: 2.4px;
 }
 
 .korea-map-tooltip {

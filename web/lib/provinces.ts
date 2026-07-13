@@ -221,27 +221,48 @@ export function groupOfProvince(provinceId: string): ProvinceGroupKey | null {
   return null;
 }
 
-// ── 지도 마커 좌표 ────────────────────────────────────────────
-// 관광으로 많이 가는 지역을 지도 위 점(마커)으로 보여준다.
-// 좌표는 위경도 → viewBox(800×607) 선형 변환으로 계산한 값.
+// ── 지도 라벨·마커 좌표 ───────────────────────────────────────
+// 좌표는 위경도 → viewBox(800×607) 선형 변환으로 계산
+// (x = 102.5·lng − 12755.5, y = −105.2·lat + 4067).
+
+// 권역 이름 라벨 위치 (지도에 항상 표시)
+export const GROUP_LABEL_POINTS: Record<
+  ProvinceGroupKey,
+  { x: number; y: number; label: string }
+> = {
+  gyeonggi: { x: 302, y: 152, label: "Gyeonggi" },
+  gangwon: { x: 400, y: 88, label: "Gangwon" },
+  chungbuk: { x: 370, y: 219, label: "Chungbuk" },
+  chungnam: { x: 249, y: 231, label: "Chungnam" },
+  jeonbuk: { x: 282, y: 319, label: "Jeonbuk" },
+  jeonnam: { x: 261, y: 411, label: "Jeonnam" },
+  gyeongbuk: { x: 450, y: 250, label: "Gyeongbuk" },
+  gyeongnam: { x: 417, y: 361, label: "Gyeongnam" },
+  jeju: { x: 214, y: 577, label: "Jeju" }
+};
+
+// 수도권 안에서 항상 보여줄 소라벨 (서울·인천)
+export const SUB_LABEL_POINTS: { x: number; y: number; label: string }[] = [
+  { x: 261, y: 110, label: "Seoul" },
+  { x: 229, y: 137, label: "Incheon" }
+];
+
+// 관광으로 많이 가는 지역 마커 — 권역에 마우스를 올렸을 때만 나타난다.
 // ⚠️ 새 지역을 DB에 추가하고 지도에 마커를 띄우려면 여기에 좌표를 등록해야
 //    한다 — 발행(published)된 지역 중 좌표가 있는 것만 자동으로 그려진다.
-
-export const REGION_MAP_POINTS: Record<string, { x: number; y: number }> = {
-  seoul: { x: 259.9, y: 114.9 },
-  incheon: { x: 231.2, y: 126.4 },
-  suwon: { x: 263.0, y: 146.7 },
-  uijeongbu: { x: 265.5, y: 96.8 },
-  anyang: { x: 257.2, y: 133.0 },
+// label: 점 옆 이름 위치. "hidden"은 이름 생략(서울·인천은 상시 라벨이 있음).
+export const REGION_MAP_POINTS: Record<
+  string,
+  { x: number; y: number; label?: "left" | "right" | "bottom" | "hidden" }
+> = {
+  seoul: { x: 259.9, y: 117.5, label: "hidden" },
+  incheon: { x: 231.2, y: 126.4, label: "hidden" },
+  suwon: { x: 263.0, y: 146.7, label: "left" },
   icheon: { x: 306.6, y: 145.8 },
-  pocheon: { x: 282.5, y: 80.3 },
-  yangpyeong: { x: 311.9, y: 122.7 },
-  gapyeong: { x: 314.3, y: 87.0 },
-  namhansanseong: { x: 280.4, y: 124.0 },
-  paju: { x: 239.4, y: 94.5 },
-  ansan: { x: 244.6, y: 140.7 },
-  yongin: { x: 280.1, y: 149.1 },
-  gwangmyeong: { x: 248.1, y: 124.1 }
+  pocheon: { x: 282.5, y: 80.3, label: "left" },
+  gapyeong: { x: 314.3, y: 87.0, label: "bottom" },
+  paju: { x: 239.4, y: 94.5, label: "left" },
+  yongin: { x: 280.1, y: 149.1, label: "bottom" }
 };
 
 export function provinceOfRegion(regionSlug: string): ProvinceKey | null {

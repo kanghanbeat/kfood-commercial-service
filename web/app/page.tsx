@@ -8,9 +8,13 @@ import {
 } from "@kfood/data";
 
 import { CardPhoto } from "@/components/card-photo";
-import { KoreaMap, type ProvinceStats } from "@/components/korea-map";
+import {
+  KoreaMap,
+  type MapMarker,
+  type ProvinceStats
+} from "@/components/korea-map";
 import { getDict } from "@/lib/i18n";
-import { PROVINCES } from "@/lib/provinces";
+import { PROVINCES, REGION_MAP_POINTS } from "@/lib/provinces";
 
 function ArrowRightIcon() {
   return (
@@ -59,6 +63,16 @@ export default async function HomePage() {
     ).length;
     provinceStats[key] = { regionCount: activeRegionSlugs.length, foodCount };
   }
+
+  // 지도 마커 — 발행된 지역 중 좌표(REGION_MAP_POINTS)가 등록된 것만.
+  // 새 지역을 추가하면 좌표만 등록하면 지도에 자동으로 점이 생긴다.
+  const mapMarkers: MapMarker[] = regions
+    .filter((region) => REGION_MAP_POINTS[region.slug])
+    .map((region) => ({
+      slug: region.slug,
+      nameEn: region.nameEn,
+      ...REGION_MAP_POINTS[region.slug]
+    }));
 
   return (
     <div className="home-v2">
@@ -111,6 +125,7 @@ export default async function HomePage() {
           </div>
           <KoreaMap
             stats={provinceStats}
+            markers={mapMarkers}
             labels={{
               areas: t.mapAreas,
               dishes: t.mapDishes,

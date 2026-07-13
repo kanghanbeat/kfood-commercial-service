@@ -43,23 +43,8 @@ type TooltipState = {
   meta: string | null;
 };
 
-// 콘텐츠 밀도(권역 음식 수) → 채움색. 0이면 중립 회색(클릭 불가).
-const EMPTY_FILL = "#EDE9F2";
-const DENSITY_FILLS = ["#D9BFFF", "#B57BFF", "#8500FF"];
-
-function fillFor(foodCount: number) {
-  if (foodCount <= 0) {
-    return EMPTY_FILL;
-  }
-  if (foodCount <= 10) {
-    return DENSITY_FILLS[0];
-  }
-  if (foodCount <= 30) {
-    return DENSITY_FILLS[1];
-  }
-  return DENSITY_FILLS[2];
-}
-
+// 색은 전부 연보라로 통일하고, 마우스를 올린 권역만 진보라(브랜드색)로
+// 바뀐다 — 색칠은 CSS(.korea-map-group)에서 처리한다.
 export function KoreaMap({
   stats,
   markers,
@@ -206,7 +191,7 @@ export function KoreaMap({
             }}
           >
             {group.paths.map((path) => (
-              <path key={path.id} d={path.d} fill={fillFor(group.foodCount)} />
+              <path key={path.id} d={path.d} />
             ))}
 
             {/* 수도권 소라벨 — 서울·인천은 항상 이름이 보이게 (그룹과 함께 확대) */}

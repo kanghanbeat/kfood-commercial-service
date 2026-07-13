@@ -1067,3 +1067,156 @@ Next action:
 If Hanbit wants the briefing distributed through GitHub, stage, commit, and push
 the chosen file set. Because the local branch is behind the remote branch, fetch
 and reconcile remote changes before pushing if necessary.
+
+## 2026-07-13 Local/Remote Reconciliation And History Rule Update
+
+Date:
+
+2026-07-13
+
+Request:
+
+Hanbit approved the recommended cleanup flow and then asked what to do next.
+After the cleanup was completed, Hanbit asked that the current state be recorded
+in this file and that future command-driven work automatically update
+`history.md` before reporting.
+
+Action:
+
+- Committed the local document batch before pulling remote work:
+
+```text
+80cbd86 docs(team): preserve local planning handoff notes
+```
+
+- Rebased the local document commit on top of the latest
+  `origin/feature/design-tokens-v2`.
+- Resolved document conflicts in:
+
+```text
+docs/06-team/session-handoff.md
+docs/06-team/메인개편-작업계획.md
+```
+
+- Kept the remote Main Redesign Week 2 map completion records as the current
+  source of truth.
+- Preserved Hanbit's 2026-07-09 approval details inside
+  `docs/06-team/session-handoff.md`.
+- Confirmed the new briefing document has a unique filename and does not collide
+  with the remote-added team documents:
+
+```text
+docs/06-team/팀-현재상태-개발방향-브리핑.md
+docs/06-team/벤치마크-레퍼런스.md
+docs/06-team/업무-플로우.md
+docs/06-team/협업-가이드.md
+```
+
+- Pushed the reconciled branch to GitHub after Hanbit refreshed GitHub
+  authentication.
+
+Current GitHub state:
+
+```text
+Repository: https://github.com/kanghanbeat/kfood-commercial-service
+Branch: feature/design-tokens-v2
+Latest commit: 80cbd86 docs(team): preserve local planning handoff notes
+Local state: matches origin/feature/design-tokens-v2
+```
+
+Verification:
+
+```text
+git diff --check
+npm run check
+npm run web:build
+git ls-remote origin refs/heads/feature/design-tokens-v2
+```
+
+Results:
+
+- `git diff --check`: passed.
+- `npm run check`: passed.
+- `npm run web:build`: passed.
+- Build logs included Supabase DNS warnings caused by restricted local network
+  access, but the build completed successfully through fallback behavior.
+- GitHub server branch was confirmed at:
+
+```text
+80cbd86b22d9940d344951b4bf2c05a0c2703199
+```
+
+Issue or misjudgment:
+
+- `gh auth status` inside the Codex environment still reported an invalid token
+  at one point even after Git push/server branch checks were possible. Do not
+  conflate GitHub CLI auth state, Git remote credential state, and actual remote
+  branch state.
+- Earlier "ahead 1" was only true before the successful push. After Hanbit's
+  push, local and remote matched.
+
+Decision rule for next time:
+
+For this project, after any command-driven work that changes state or informs a
+project decision, Codex should update `docs/06-team/history.md` before final
+reporting when the work affects any of the following:
+
+```text
+git state
+GitHub branch/PR state
+auth or GitHub authentication
+Supabase, Vercel, env, RLS, migrations
+public behavior
+admin behavior
+UGC/community behavior
+team process or handoff rules
+next-action decisions
+```
+
+Minimum automatic history entry shape:
+
+```text
+Date
+Request
+Action
+Verification
+Issue or misjudgment
+Decision rule for next time
+Hanbit check items
+Next action
+```
+
+If the work is purely read-only exploration and does not change the repo or a
+decision, Codex may summarize without editing `history.md`. If the exploration
+changes the recommended next action, record it.
+
+Current next-action assessment:
+
+- P0 local/remote reconciliation is complete.
+- Remaining P0 is PR `#1` merge/hold strategy.
+- If continuing development before merge, the recommended next implementation
+  item is:
+
+```text
+Food detail place list grouping by region
+```
+
+Reason:
+
+- It does not require DB schema, RLS, auth, env, or external Google Maps link
+  preparation.
+- It strengthens the SEO path between food detail pages and
+  `/foods/[foodSlug]/[regionSlug]` combination pages.
+- It is lower-risk than merging the full PR immediately and more structurally
+  useful than a hero-only copy/theme update.
+
+Hanbit check items:
+
+- Decide whether PR `#1` should stay held while Main Redesign Week 3 continues.
+- Decide whether Codex should start the low-risk food detail grouping task next.
+
+Next action:
+
+Unless Hanbit chooses to review/merge PR `#1` first, start Main Redesign Week 3
+with food detail place grouping by region. Keep the change schema-free and
+update this history file again before reporting completion.

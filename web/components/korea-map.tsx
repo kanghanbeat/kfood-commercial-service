@@ -11,10 +11,12 @@ import { useRouter } from "next/navigation";
 
 import { KOREA_MAP_VIEWBOX, PROVINCE_PATHS } from "@/lib/korea-map-paths";
 import {
+  DOKDO_POINT,
   GROUP_LABEL_POINTS,
   PROVINCE_GROUPS,
   REGION_MAP_POINTS,
   SUB_LABEL_POINTS,
+  ULLEUNGDO_LABEL,
   groupOfProvince,
   provinceOfRegion,
   type ProvinceGroupKey
@@ -277,6 +279,30 @@ export function KoreaMap({
             })}
           </g>
         ))}
+
+        {/* 울릉도·독도 — 항상 표시 (울릉도 지형은 경북 path에 포함, 독도는 점으로) */}
+        <circle
+          className="korea-map-islet"
+          cx={DOKDO_POINT.x}
+          cy={DOKDO_POINT.y}
+          r={2.4}
+        />
+        <text
+          className="korea-map-islet-label"
+          x={ULLEUNGDO_LABEL.x}
+          y={ULLEUNGDO_LABEL.y}
+          textAnchor="middle"
+        >
+          {ULLEUNGDO_LABEL.label}
+        </text>
+        <text
+          className="korea-map-islet-label"
+          x={DOKDO_POINT.x}
+          y={DOKDO_POINT.y + 14}
+          textAnchor="middle"
+        >
+          {DOKDO_POINT.label}
+        </text>
 
         {/* 권역 이름 라벨 — 항상 표시, 호버 중인 권역만 숨김(마커와 겹침 방지) */}
         {(Object.keys(GROUP_LABEL_POINTS) as ProvinceGroupKey[]).map((key) => {

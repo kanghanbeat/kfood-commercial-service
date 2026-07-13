@@ -247,6 +247,27 @@ export const SUB_LABEL_POINTS: { x: number; y: number; label: string }[] = [
   { x: 229, y: 137, label: "Incheon" }
 ];
 
+// 울릉도·독도 — 항상 표시한다.
+// 울릉도 지형은 SVG(경북 path)에 있어 라벨만 붙이고,
+// 독도는 원본 경계 데이터에 지형이 없어 점으로 직접 그린다.
+// (실제 비율 위치는 x≈789라 viewBox 우측 끝에 잘려, 라벨이 보이도록 살짝 안쪽 배치)
+export const ULLEUNGDO_LABEL = { x: 687, y: 143, label: "Ulleungdo" };
+export const DOKDO_POINT = { x: 762, y: 141, label: "Dokdo" };
+
+// 지역 상세(권역 확대) 지도의 viewBox — path bbox 기준 + 여백.
+// gyeonggi는 서해 섬들 때문에 전체 bbox가 너무 넓어 본토 중심으로 수동 조정.
+export const GROUP_VIEWBOXES: Record<ProvinceGroupKey, string> = {
+  gyeonggi: "200 52 180 150",
+  gangwon: "266 -9 268 194",
+  chungbuk: "284 140 171 157",
+  chungnam: "149 162 195 140",
+  jeonbuk: "171 262 202 114",
+  jeonnam: "44 336 320 186",
+  gyeongbuk: "341 108 363 238",
+  gyeongnam: "317 288 228 162",
+  jeju: "161 503 109 104"
+};
+
 // 관광으로 많이 가는 지역 마커 — 권역에 마우스를 올렸을 때만 나타난다.
 // ⚠️ 새 지역을 DB에 추가하고 지도에 마커를 띄우려면 여기에 좌표를 등록해야
 //    한다 — 발행(published)된 지역 중 좌표가 있는 것만 자동으로 그려진다.

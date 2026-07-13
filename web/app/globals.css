@@ -636,6 +636,89 @@ h3 {
   text-align: center;
 }
 
+/* 울릉도·독도 — 항상 표시 */
+.korea-map-islet {
+  fill: #c9c2d6;
+  stroke: #ffffff;
+  stroke-width: 0.8;
+  pointer-events: none;
+}
+
+.korea-map-islet-label {
+  font-size: 10px;
+  font-weight: 600;
+  fill: #8a8496;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 지역 목록 상단 권역 확대 지도 */
+.province-map {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+}
+
+.province-map-svg {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+}
+
+.province-map-land {
+  stroke: #ffffff;
+  stroke-width: 0.8;
+}
+
+.province-map-sublabel {
+  font-size: 7px;
+  font-weight: 700;
+  fill: #ffffff;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: rgba(24, 16, 39, 0.35);
+  stroke-width: 1.4px;
+}
+
+.province-map-islet-label {
+  font-size: 6px;
+  font-weight: 600;
+  fill: #8a8496;
+  pointer-events: none;
+  user-select: none;
+}
+
+.province-map-marker {
+  fill: var(--accent);
+  stroke: #ffffff;
+  stroke-width: 0.9;
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.15s ease;
+  outline: none;
+}
+
+.province-map-marker:hover,
+.province-map-marker:focus-visible {
+  transform: scale(1.5);
+}
+
+.province-map-marker-name {
+  font-size: 6px;
+  font-weight: 600;
+  fill: var(--text-heading);
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 1.6px;
+}
+
 /* 메인 ② 한국 지도 자리 — 2주차에 SVG 지도 컴포넌트로 교체 예정 */
 .home-map-placeholder {
   align-items: center;

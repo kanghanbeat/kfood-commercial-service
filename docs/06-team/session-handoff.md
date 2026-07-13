@@ -46,6 +46,14 @@
 
 **한빛 검토 결과 (2026-07-09):** 기획정렬 §5 안건 5개 전부 승인(O). 시·도↔지역 매핑은 **A안(코드 매핑표, 스키마 무변경)** 확정 — B안(regions에 province 필드 추가)은 지역 데이터가 커지고 운영 필터가 필요할 때로 유보. 세션6 커밋은 스키마·RLS·환경변수·인증파일 무변경 확인. **PR #1 머지(작업 브랜치를 실서비스 버전 main에 합치는 것)는 솔 결정으로 보류** — PR 안에 한빛의 이전 인증·마이그레이션 변경이 포함돼 있어 머지 시점은 별도 합의. 참고: `docs/04-quality/code-analysis-2026-07-08.md`에 마크다운 줄바꿈용 trailing whitespace 있음(머지 전 정리 권장, 기능 문제 아님).
 
+한빛 승인 상세:
+
+- 세션6 커밋(`d5ac883`, `c1bdb23`, `8f4669a`) 기준 `supabase/`, `.env.example`, `web/proxy.ts`, `web/app/auth/**`, `web/lib/public-auth.ts`, `web/lib/admin-auth.ts` 변경 없음.
+- `PlatformSettingKey = "community" | "food_log" | "journey_share"` 확장은 기존 `platform_settings(key, enabled)` 구조의 문자열 키 추가이며 스키마·RLS 변경이 아님.
+- `web/lib/i18n/`은 `kfood_locale` 쿠키 기반 UI 문구 사전이며 URL·DB·환경변수를 바꾸지 않음.
+- PR #1은 GitHub 기준 `mergeable: MERGEABLE`, `mergeStateStatus: CLEAN`이었으나, 전체 PR에는 마이그레이션 008~011, 인증 보강, `.env.example` 변경이 포함되어 세션6 범위와 분리해서 검토한다.
+- `npm run check`와 `npm run web:build`는 통과. 제한된 네트워크 환경에서 Supabase DNS fetch warning이 있었지만 build 실패는 아니었음.
+
 ### UI 다국어 4개 국어 추가 (2026-07-09, 세션6 후반)
 
 솔 요청: byFood처럼 우측 상단 지구본 → 언어 선택. 결정: **UI 문구만 사전 번역**(콘텐츠는 영어 유지 — 콘텐츠 번역은 스키마·운영 결정 필요라 별도 단계), **쿠키 기반**(URL 무변경 — 기존 SEO 색인 유지), 통화 선택은 가격 표시가 없어 제외.

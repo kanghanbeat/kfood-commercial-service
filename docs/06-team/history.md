@@ -875,3 +875,195 @@ Next action:
 After Hanbit confirms production public auth persistence, discuss and apply the
 design-only subset from PR `#1` separately. Do not merge PR `#1` wholesale before
 auth is stable.
+
+## 2026-07-09 Hanbit Approval For Main Redesign Week 1 And Planning §5
+
+Date:
+
+2026-07-09
+
+Request:
+
+Hanbit asked to approve the current direction and update Markdown records after
+reviewing Session 6 changes, planning documents, and PR `#1` merge readiness.
+
+Action:
+
+- Pulled latest `feature/design-tokens-v2`.
+- Read:
+  - `docs/06-team/session-handoff.md`
+  - `docs/06-team/기획정렬-한빛대조.md`
+  - `docs/06-team/메인개편-작업계획.md`
+- Checked Session 6 diffs separately from the full PR diff.
+- Confirmed Session 6 did not change `supabase/`, `.env.example`,
+  `web/proxy.ts`, `web/app/auth/**`, `web/lib/public-auth.ts`, or
+  `web/lib/admin-auth.ts`.
+- Confirmed `platform_settings` key expansion is a string-key use of the
+  existing `platform_settings(key, enabled)` table, not a schema or RLS change.
+- Confirmed `web/lib/i18n/` is cookie-based UI copy only and does not change
+  schema, RLS, environment variables, or URLs.
+- Confirmed PR `#1` is `MERGEABLE` and `CLEAN` on GitHub.
+- Recorded approval in the three planning/handoff docs.
+
+Verification:
+
+```text
+git pull
+gh pr view 1 --json number,headRefName,baseRefName,mergeStateStatus,mergeable,url
+npm run check
+npm run web:build
+```
+
+Results:
+
+- PR `#1`: `mergeable: MERGEABLE`, `mergeStateStatus: CLEAN`.
+- `npm run check`: passed.
+- `npm run web:build`: passed. Supabase DNS fetch warnings occurred because of
+  the restricted local network, but the build completed through fallback.
+- `git diff --check` found trailing whitespace in
+  `docs/04-quality/code-analysis-2026-07-08.md`; this is a cleanup item before
+  merge, not a functional blocker.
+
+Issue or misjudgment:
+
+The correct approval boundary must distinguish Session 6 from PR `#1` as a
+whole. Session 6 has no schema/RLS/env/auth-file change, but PR `#1` as a whole
+still contains earlier high-risk work such as migrations `008` to `011`,
+auth/session hardening, and `.env.example` updates.
+
+Decision rule for next time:
+
+When approving a broad PR with multiple sessions, always separate:
+
+```text
+latest session diff
+full PR diff against main
+```
+
+Do not describe the whole PR as "schema unchanged" just because the latest
+session is schema unchanged.
+
+Hanbit decision:
+
+- §5 agenda 1, 3-month content-site focus: O.
+- §5 agenda 2, 3-category IA + 4-section home + SVG map: O.
+- Province-to-region mapping for Week 2 map work: **Option A**,
+  code mapping table with no schema change.
+- §5 agenda 3, Sol-led development and Hanbit security/maintenance/review: O.
+- §5 agenda 4, weekly loop: O.
+- §5 agenda 5, Vercel Pro at AdSense timing: O / acknowledged.
+
+Next action:
+
+Start Main Redesign Week 2 map work using Option A. Do not change DB schema,
+RLS, or production environment variables for this step.
+
+## 2026-07-13 Team Briefing Document And Git State Explanation
+
+Date:
+
+2026-07-13
+
+Request:
+
+Hanbit asked for the current GitHub/project state to be turned into a team
+distribution file, then asked what `untracked` means and what it means that four
+older Markdown edits are still uncommitted.
+
+Action:
+
+- Created a team briefing document:
+
+```text
+docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+- The new document summarizes:
+  - current branch and PR state,
+  - detailed change/new-item table,
+  - Hanbit approval/check responsibilities,
+  - remaining work order,
+  - existing direction vs changed development direction,
+  - priority tiers from P0 to P3,
+  - code files that future collaborators must understand.
+- Explained that `untracked` means the file exists locally but Git is not yet
+  tracking it and it will not be included in a commit until explicitly staged
+  with `git add`.
+- Explained that there are five local changes at this point:
+  - four previously modified Markdown files,
+  - one newly created untracked briefing document.
+- Explained that the new briefing document can be committed alone, or all five
+  local document changes can be committed together.
+
+Current local Git state observed:
+
+```text
+M docs/06-team/history.md
+M docs/06-team/session-handoff.md
+M docs/06-team/기획정렬-한빛대조.md
+M docs/06-team/메인개편-작업계획.md
+?? docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+Important context:
+
+- The local branch is `feature/design-tokens-v2`.
+- Earlier in the session, remote `origin/feature/design-tokens-v2` was observed
+  to be 14 commits ahead of local.
+- The latest remote work includes the Main Redesign Week 2 SVG map work.
+- The local worktree has not yet been reconciled with those remote commits
+  because local Markdown edits should not be overwritten casually.
+
+Verification:
+
+```text
+git diff --check -- docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+Result:
+
+- The new briefing document passed `git diff --check`.
+
+Issue or misjudgment:
+
+No code issue was introduced. The main operational risk is Git state confusion:
+new files, modified files, local-only changes, remote-only changes, commits, and
+pushes are easy to conflate.
+
+Decision rule for next time:
+
+Before telling a teammate that something is available on GitHub, confirm it is:
+
+```text
+created locally
+staged
+committed
+pushed
+```
+
+These are four different states. A local untracked file is not visible to other
+teammates through GitHub.
+
+Hanbit check items:
+
+- Decide whether to commit only:
+
+```text
+docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+- Or commit the full local document batch:
+
+```text
+docs/06-team/history.md
+docs/06-team/session-handoff.md
+docs/06-team/기획정렬-한빛대조.md
+docs/06-team/메인개편-작업계획.md
+docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+Next action:
+
+If Hanbit wants the briefing distributed through GitHub, stage, commit, and push
+the chosen file set. Because the local branch is behind the remote branch, fetch
+and reconcile remote changes before pushing if necessary.

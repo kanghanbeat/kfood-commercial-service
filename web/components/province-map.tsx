@@ -19,7 +19,7 @@ import {
 } from "@/lib/provinces";
 import type { MapMarker } from "@/components/korea-map";
 
-const GROUP_FILL = "#D9BFFF";
+const GROUP_FILL = "#EFE7FB";
 
 export function ProvinceMap({
   groupKey,

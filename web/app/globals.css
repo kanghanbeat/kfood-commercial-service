@@ -504,9 +504,9 @@ h3 {
   outline: none;
 }
 
-/* 기본은 전부 연보라, 호버한 권역만 진보라(브랜드색)로 */
+/* 기본은 아주 연한 라벤더, 호버한 권역만 진보라(브랜드색)로 */
 .korea-map-group path {
-  fill: #d9bfff;
+  fill: #efe7fb;
   stroke: #ffffff;
   stroke-width: 1.2;
   transition: fill 0.18s ease;
@@ -525,9 +525,9 @@ h3 {
   fill: var(--brand);
 }
 
-/* 콘텐츠 없는 권역은 호버해도 중간 보라까지만 (클릭 불가 힌트) */
+/* 콘텐츠 없는 권역은 호버해도 연보라까지만 (클릭 불가 힌트) */
 .korea-map-group:not(.active).hovered path {
-  fill: #b57bff;
+  fill: #d9bfff;
 }
 
 .korea-map-group:not(.active) {
@@ -553,16 +553,22 @@ h3 {
   opacity: 0;
 }
 
-/* 수도권 소라벨 (서울·인천) */
+/* 수도권 소라벨 (서울·인천) — 밝은 배경에선 진보라, 호버(진보라 배경) 시 흰색 */
 .korea-map-sublabel {
   font-size: 10.5px;
   font-weight: 700;
-  fill: #ffffff;
+  fill: #5b21a8;
   pointer-events: none;
   user-select: none;
   paint-order: stroke;
-  stroke: rgba(24, 16, 39, 0.35);
+  stroke: #ffffff;
   stroke-width: 2px;
+  transition: fill 0.18s ease;
+}
+
+.korea-map-group.hovered .korea-map-sublabel {
+  fill: #ffffff;
+  stroke: rgba(24, 16, 39, 0.35);
 }
 
 /* 주요 관광 지역 마커 — 호버한 권역의 것만 나타난다 */
@@ -689,11 +695,11 @@ h3 {
 .province-map-sublabel {
   font-size: 7px;
   font-weight: 700;
-  fill: #ffffff;
+  fill: #5b21a8;
   pointer-events: none;
   user-select: none;
   paint-order: stroke;
-  stroke: rgba(24, 16, 39, 0.35);
+  stroke: #ffffff;
   stroke-width: 1.4px;
 }
 

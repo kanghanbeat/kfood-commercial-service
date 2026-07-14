@@ -80,12 +80,38 @@ export default async function RegionsPage({
           </span>
         </div>
         <p className="food-v2-summary">{dict.lists.regionsSummary}</p>
-        {filter ? (
-          <div className="food-v2-actions">
-            <Link className="button secondary" href="/regions">
+        {filter && groupKey ? (
+          // 권역 안 시·도 선택 탭 — 서울처럼 콘텐츠가 많은 곳을 나눠 본다.
+          // 멤버가 2개 이상인 권역(현재는 수도권)에만 표시.
+          <nav
+            className="food-subnav province-member-tabs"
+            aria-label="Provinces in this area"
+          >
+            <Link
+              className={`food-subnav-tab${
+                isProvinceGroupKey(province ?? "") ? " active" : ""
+              }`}
+              href={`/regions?province=${groupKey}`}
+              aria-current={isProvinceGroupKey(province ?? "") ? "page" : undefined}
+            >
+              {PROVINCE_GROUPS[groupKey].nameKo}
+            </Link>
+            {PROVINCE_GROUPS[groupKey].memberIds.length > 1
+              ? PROVINCE_GROUPS[groupKey].memberIds.map((member) => (
+                  <Link
+                    className={`food-subnav-tab${province === member ? " active" : ""}`}
+                    href={`/regions?province=${encodeURIComponent(member)}`}
+                    key={member}
+                    aria-current={province === member ? "page" : undefined}
+                  >
+                    {PROVINCES[member].nameEn}
+                  </Link>
+                ))
+              : null}
+            <Link className="food-subnav-tab" href="/regions">
               {dict.home.allRegions}
             </Link>
-          </div>
+          </nav>
         ) : null}
       </header>
       {filter && groupKey ? (

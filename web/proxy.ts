@@ -147,6 +147,12 @@ function updateRequestCookieJar(
   cookie: ResponseCookie
 ) {
   if (cookie.options.maxAge === 0 || cookie.value === "") {
+    // 공개 세션 쿠키는 지우지 않는다(위 writeSupabaseResponseCookies와 동일 이유).
+    // 미들웨어가 현재 요청의 다운스트림 페이지에 넘길 쿠키에서 세션을 빼버리면
+    // 그 페이지(mypage 등)가 즉시 로그인으로 튕긴다.
+    if (isSupabaseAuthCookieName(cookie.name)) {
+      return;
+    }
     requestCookies.delete(cookie.name);
     return;
   }
@@ -259,12 +265,29 @@ function writeResponseCookies(
   );
 }
 
+function isSupabaseAuthCookieName(name: string) {
+  return name.startsWith("sb-") && name.includes("auth-token");
+}
+
 function writeSupabaseResponseCookies(
   response: NextResponse,
   cookiesToSet: ResponseCookie[],
   headersToSet: Record<string, string>
 ) {
   cookiesToSet.forEach(({ name, options, value }) => {
+    // 미들웨어는 공개 세션 쿠키를 "삭제"하지 않는다.
+    // getUser()가 일시적 이유(네트워크 hiccup, refresh rotation 타이밍)로
+    // 세션을 무효 판단하면 setAll이 빈 값/maxAge 0으로 삭제를 지시하는데,
+    // 그대로 반영하면 방금 로그인한 멀쩡한 세션까지 날아간다
+    // (로그인 직후 두 번째 요청에서 로그아웃되는 버그의 원인).
+    // 실제 로그아웃은 /auth/logout이 담당하므로 미들웨어는 삭제를 건너뛴다.
+    const isAuthDeletion =
+      isSupabaseAuthCookieName(name) && (options.maxAge === 0 || value === "");
+
+    if (isAuthDeletion) {
+      return;
+    }
+
     response.cookies.set(name, value, {
       ...options,
       secure: process.env.NODE_ENV === "production"

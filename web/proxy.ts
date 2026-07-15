@@ -299,10 +299,40 @@ function writeSupabaseResponseCookies(
   });
 }
 
+// Next.js가 화면의 링크를 미리 당겨오는 프리페치 요청인지 판별한다.
+// mypage처럼 링크가 많은 페이지는 진입 순간 수십 개의 프리페치가 동시에
+// 미들웨어를 때리는데, 그 요청마다 세션 토큰을 갱신(회전)하면 회전 충돌로
+// 방금 로그인한 세션이 폐기된다. 프리페치는 화면에 실제로 반영되지 않는
+// 사변적 요청이므로 세션 쿠키를 건드리지 않고 통과시킨다.
+function isPrefetchRequest(request: NextRequest) {
+  if (request.headers.get("next-router-prefetch") === "1") {
+    return true;
+  }
+  const purpose =
+    request.headers.get("sec-purpose") ?? request.headers.get("purpose") ?? "";
+  return purpose.includes("prefetch");
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requestCookies = getRequestCookieJar(request);
   const requestHeaders = new Headers(request.headers);
+
+  // 프리페치 요청은 세션을 갱신/삭제하지 않고 그대로 통과시킨다
+  // (동시 프리페치의 토큰 회전 충돌로 세션이 날아가는 것을 막는다).
+  if (isPrefetchRequest(request)) {
+    const passthrough = NextResponse.next({ request: { headers: requestHeaders } });
+    if (!pathname.startsWith("/admin") || pathname.startsWith("/admin/login")) {
+      return passthrough;
+    }
+    const hasAdminAccessToken = requestCookies.get(adminAccessTokenCookie);
+    if (hasAdminAccessToken) {
+      return passthrough;
+    }
+    const loginUrl = new URL("/admin/login", request.url);
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
   const publicSessionSync = await syncPublicSupabaseSession(requestCookies);
   await refreshAdminScopeIfNeeded(request, requestCookies);

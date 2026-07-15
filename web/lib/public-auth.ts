@@ -128,6 +128,14 @@ export async function createPublicSupabaseServerClient() {
 
   return createServerClient(config.url, config.anonKey, {
     auth: {
+      // 서버 컴포넌트에서는 토큰을 자동 갱신하지 않는다.
+      // RSC는 쿠키를 쓸 수 없어(setAll이 조용히 무시됨), 여기서 refresh가
+      // 일어나면 서버 쪽 refresh token만 회전(rotation)되고 브라우저 쿠키에는
+      // 반영되지 않는다. 그러면 다음 요청이 이미 소비된 토큰을 보내
+      // 재사용 감지에 걸려 세션이 통째로 폐기된다(로그인 직후 mypage처럼
+      // 세션을 여러 번 읽는 페이지에서 로그아웃되는 원인).
+      // 실제 refresh는 쿠키를 쓸 수 있는 미들웨어(proxy.ts)만 담당한다.
+      autoRefreshToken: false,
       detectSessionInUrl: false,
       flowType: "pkce",
       persistSession: true

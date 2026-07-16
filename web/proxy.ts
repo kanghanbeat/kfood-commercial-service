@@ -164,9 +164,15 @@ async function syncPublicSupabaseSession(requestCookies: RequestCookieJar) {
   const config = getSupabaseConfig();
   const cookiesToSet: ResponseCookie[] = [];
   const headersToSet: Record<string, string> = {};
+  // TEMP DIAG — remove after login-bug diagnosis.
+  const debug: Record<string, unknown> = {
+    inSb: Array.from(requestCookies.keys()).filter(isSupabaseAuthCookieName),
+    ops: [] as Array<{ name: string; empty: boolean; maxAge: unknown }>,
+    getUserError: null as string | null
+  };
 
   if (!config) {
-    return { cookiesToSet, headersToSet };
+    return { cookiesToSet, headersToSet, debug };
   }
 
   const supabase = createServerClient(config.url, config.anonKey, {
@@ -179,6 +185,11 @@ async function syncPublicSupabaseSession(requestCookies: RequestCookieJar) {
       },
       setAll(nextCookies, nextHeaders) {
         nextCookies.forEach((cookie) => {
+          (debug.ops as Array<unknown>).push({
+            name: cookie.name,
+            empty: cookie.value === "",
+            maxAge: cookie.options.maxAge
+          });
           updateRequestCookieJar(requestCookies, cookie);
           cookiesToSet.push(cookie);
         });
@@ -187,9 +198,12 @@ async function syncPublicSupabaseSession(requestCookies: RequestCookieJar) {
     }
   });
 
-  await supabase.auth.getUser();
+  const { error } = await supabase.auth.getUser();
+  if (error) {
+    debug.getUserError = `${error.name}:${(error as { status?: number }).status ?? "?"}:${error.message}`;
+  }
 
-  return { cookiesToSet, headersToSet };
+  return { cookiesToSet, headersToSet, debug };
 }
 
 function getRequestCookieJar(request: NextRequest): RequestCookieJar {
@@ -348,6 +362,12 @@ export async function proxy(request: NextRequest) {
     response,
     publicSessionSync.cookiesToSet,
     publicSessionSync.headersToSet
+  );
+  // TEMP DIAG — remove after login-bug diagnosis.
+  response.headers.set("x-dbg-sync", JSON.stringify(publicSessionSync.debug));
+  response.headers.set(
+    "access-control-expose-headers",
+    "x-dbg-sync"
   );
 
   if (pathname.startsWith("/admin/login") || pathname.startsWith("/admin/logout")) {

@@ -8,8 +8,12 @@ import {
   getPublishedFood,
   getPublishedFoods,
   getPublishedPlaces,
+  getPublishedProductionsFor,
   getPublishedRegions
 } from "@kfood/data";
+
+import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
+import { getDict } from "@/lib/i18n";
 
 export async function generateStaticParams() {
   const foods = await getPublishedFoods();
@@ -40,100 +44,203 @@ export default async function FoodDetailPage({
     notFound();
   }
 
-  const [publishedPlaces, regions] = await Promise.all([
+  const [publishedPlaces, regions, productions, dict] = await Promise.all([
     getPublishedPlaces(),
-    getPublishedRegions()
+    getPublishedRegions(),
+    getPublishedProductionsFor("food", foodSlug),
+    getDict()
   ]);
+  const t = dict.foodDetail;
   const sourcePlaces =
     publishedPlaces.length > 0 ? publishedPlaces : fallbackPlaces;
   const places = sourcePlaces.filter((place) =>
     place.foodSlugs.includes(food.slug)
   );
   const photoReview = getFoodPhotoReviewNote(food);
+  const heroPhoto = resolveCardPhoto(food.nameEn);
+  const tasteTags = food.tasteProfile
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
 
   return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Spicy level {food.spicyLevel}/4</p>
-        <h1>{food.nameEn}</h1>
-        <p className="detail-intro">{food.summary}</p>
-        <div className="tag-row">
-          <span className="tag">{food.tasteProfile}</span>
-          <span className="tag">{food.beginnerNote}</span>
+    <div className="food-v2">
+      <nav className="food-breadcrumb" aria-label="Breadcrumb">
+        <Link href="/">{dict.common.home}</Link>
+        <span>/</span>
+        <Link href="/foods">{dict.common.foods}</Link>
+        <span>/</span>
+        <span>{food.nameEn}</span>
+      </nav>
+
+      <div
+        className="food-hero-photo"
+        style={{ background: heroPhoto.gradient }}
+        aria-hidden="true"
+      >
+        <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
+          {heroPhoto.letter}
+        </span>
+      </div>
+
+      <header className="food-v2-header">
+        <span className="food-v2-eyebrow">{t.eyebrow}</span>
+        <div className="food-v2-names">
+          <span className="food-v2-name-en">{food.nameEn}</span>
+          {food.nameKo && food.nameKo !== food.nameEn ? (
+            <span className="food-v2-name-ko">{food.nameKo}</span>
+          ) : null}
         </div>
+        <div className="food-v2-tags">
+          <span className="food-chip spicy">
+            {dict.common.spicy} {food.spicyLevel}/4 · {t.spicyLabels[food.spicyLevel]}
+          </span>
+          {tasteTags.map((tag) => (
+            <span className="food-chip" key={tag}>
+              {tag}
+            </span>
+          ))}
+        </div>
+        <p className="food-v2-summary">{food.summary}</p>
       </header>
 
-      <section className="section-block" aria-labelledby="food-regions">
-        <div className="section-heading">
-          <p className="eyebrow">Where it fits</p>
-          <h2 id="food-regions">Regions</h2>
+      <section aria-labelledby="food-guide">
+        <p className="food-section-title" id="food-guide">
+          {t.knowTitle}
+        </p>
+        <div className="food-info-grid">
+          <div className="food-info-card">
+            <h3>{t.descriptionH}</h3>
+            <p>{food.summary}</p>
+          </div>
+          <div className="food-info-card">
+            <h3>{t.tasteH}</h3>
+            <p>{food.tasteProfile}</p>
+          </div>
+          <div className="food-info-card">
+            <h3>{t.goodToKnowH}</h3>
+            <p>{food.beginnerNote}</p>
+          </div>
+          <div className="food-info-card">
+            <h3>{t.menuTipH}</h3>
+            <p>{t.menuTipBody}</p>
+          </div>
         </div>
-        <ul className="content-list">
+      </section>
+
+      <section aria-labelledby="food-regions">
+        <p className="food-section-title" id="food-regions">
+          {t.whereItFits}
+        </p>
+        <div className="card-grid-v2">
           {food.regionSlugs.map((regionSlug) => {
             const region = regions.find((item) => item.slug === regionSlug);
             return region ? (
-              <li key={region.slug}>
-                <Link href={`/regions/${region.slug}`}>
-                  <span className="meta-label">{region.primaryAudience}</span>
-                  <strong>{region.nameEn}</strong>
-                  <p>{region.routeTheme}</p>
-                </Link>
-              </li>
+              <Link
+                className="card-v2"
+                href={`/foods/${food.slug}/${region.slug}`}
+                key={region.slug}
+              >
+                <CardPhoto label={region.nameEn} variant="region" />
+                <div className="card-v2-body">
+                  <span className="card-v2-title">{region.nameEn}</span>
+                  <span className="card-v2-meta">{region.routeTheme}</span>
+                  <span className="card-v2-link">
+                    {t.inRegionLink(food.nameEn, region.nameEn)}
+                  </span>
+                </div>
+              </Link>
             ) : null;
           })}
-        </ul>
+        </div>
       </section>
 
-      <section className="section-block" aria-labelledby="food-photo-sources">
-        <div className="section-heading">
-          <p className="eyebrow">Photo sourcing</p>
-          <h2 id="food-photo-sources">Copyright-safe image candidates</h2>
-          <p>
-            Use these links to review candidate photos before storing or
-            displaying an image. A photo is not approved until title, author,
-            source, license, and attribution requirements are recorded.
-          </p>
-        </div>
-        <div className="review-note">
-          <span>{photoReview.label}</span>
-          <p>{photoReview.note}</p>
-          <small>{photoReview.nextAction}</small>
-        </div>
-        <ul className="content-list">
-          {getFoodPhotoSourceCandidates(food).map((candidate) => (
-            <li key={candidate.sourceName}>
-              <a
-                className="list-item-body"
-                href={candidate.href}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <span className="meta-label">{candidate.sourceName}</span>
-                <strong>{candidate.licenseFit}</strong>
-                <p>{candidate.reviewNote}</p>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="section-block" aria-labelledby="food-places">
-        <div className="section-heading">
-          <p className="eyebrow">Try it here</p>
-          <h2 id="food-places">Place directions</h2>
-        </div>
-        <ul className="content-list">
-          {places.map((place) => (
-            <li key={place.slug}>
-              <Link href={`/places/${place.slug}`}>
-                <span className="meta-label">{place.lastVerifiedLabel}</span>
-                <strong>{place.nameEn}</strong>
-                <p>{place.editorialNote}</p>
+      <section aria-labelledby="food-places">
+        <p className="food-section-title" id="food-places">
+          {t.whereToTry}
+        </p>
+        {places.length === 0 ? (
+          <div className="food-info-card">
+            <p>{t.placesEmpty}</p>
+          </div>
+        ) : (
+          <div className="card-grid-v2">
+            {places.map((place) => (
+              <Link className="card-v2" href={`/places/${place.slug}`} key={place.slug}>
+                <div className="card-v2-body">
+                  <span className="card-v2-meta">{place.lastVerifiedLabel}</span>
+                  <span className="card-v2-title">{place.nameEn}</span>
+                  <span className="card-v2-meta">{place.editorialNote}</span>
+                  <span className="card-v2-link">{dict.common.view} →</span>
+                </div>
               </Link>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        )}
       </section>
-    </main>
+
+      {productions.length > 0 ? (
+        <section aria-labelledby="food-productions">
+          <p className="food-section-title" id="food-productions">
+            {t.channelsTitle}
+          </p>
+          <div className="food-info-grid">
+            {productions.map((production) =>
+              production.externalUrl ? (
+                <a
+                  className="food-info-card"
+                  href={production.externalUrl}
+                  key={production.slug}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <h3>{production.title}</h3>
+                  <p style={{ color: "var(--brand)" }}>
+                    {production.type.toUpperCase()}
+                    {production.channel ? ` · ${production.channel}` : ""}
+                  </p>
+                  {production.summary ? <p>{production.summary}</p> : null}
+                </a>
+              ) : (
+                <div className="food-info-card" key={production.slug}>
+                  <h3>{production.title}</h3>
+                  <p style={{ color: "var(--brand)" }}>
+                    {production.type.toUpperCase()}
+                    {production.channel ? ` · ${production.channel}` : ""}
+                  </p>
+                  {production.summary ? <p>{production.summary}</p> : null}
+                </div>
+              )
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      <section aria-labelledby="food-photo-sources">
+        <p className="food-section-title" id="food-photo-sources">
+          Photo sourcing
+        </p>
+        <div className="food-info-card" style={{ marginBottom: 16 }}>
+          <h3>{photoReview.label}</h3>
+          <p>{photoReview.note}</p>
+          <p style={{ color: "var(--text-heading)" }}>{photoReview.nextAction}</p>
+        </div>
+        <div className="food-info-grid">
+          {getFoodPhotoSourceCandidates(food).map((candidate) => (
+            <a
+              className="food-info-card"
+              href={candidate.href}
+              key={candidate.sourceName}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <h3>{candidate.sourceName}</h3>
+              <p style={{ color: "var(--brand)" }}>{candidate.licenseFit}</p>
+              <p>{candidate.reviewNote}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

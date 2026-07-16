@@ -8,6 +8,8 @@ import {
   getPublishedRegion
 } from "@kfood/data";
 
+import { resolveCardPhoto } from "@/components/card-photo";
+
 export async function generateStaticParams() {
   const routes = await getPublishedRoutes();
   return routes.map((route) => ({ routeSlug: route.slug }));
@@ -49,8 +51,20 @@ export default async function RouteDetailPage({
           .filter((place) => place !== undefined)
       : places;
 
+  const heroPhoto = resolveCardPhoto(route.title);
+
   return (
     <main className="page-shell">
+      <div
+        className="food-hero-photo"
+        style={{ background: heroPhoto.gradient }}
+        aria-hidden="true"
+      >
+        <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
+          {heroPhoto.letter}
+        </span>
+      </div>
+
       <header className="detail-header">
         <p className="eyebrow">{route.estimatedDuration}</p>
         <h1>{route.title}</h1>

@@ -352,6 +352,14 @@ function fallbackData<T>(items: T[]): T[] {
   return allowsFallbackData() ? items : [];
 }
 
+// fallback으로 넘어가면 실 DB 장애가 화면에서 안 보이게 되므로,
+// 원인 추적이 가능하도록 서버 로그에는 반드시 남긴다.
+function logDataError(source: string, error: unknown) {
+  if (error) {
+    console.error(`[kfood-data] ${source} failed:`, error);
+  }
+}
+
 function getSupabaseConfig(): SupabaseConfig | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -825,15 +833,38 @@ function mapAdminAuditLog(row: AdminAuditLogRow): AdminAuditLog {
   };
 }
 
+// DB 태그는 capital_region 같은 snake_case 원시 값이라 그대로 노출하면
+// 화면에서 어색하다. 표시 직전에 사람이 읽는 라벨로 바꾼다.
+const TAG_LABEL_OVERRIDES: Record<string, string> = {
+  bbq: "BBQ",
+  first_time: "First-time friendly",
+  solo_travel: "Solo travel",
+  day_trip: "Day trip",
+  near_seoul: "Near Seoul",
+  tteokbokki: "Tteokbokki",
+  jokbal: "Jokbal",
+  budae_jjigae: "Budae-jjigae"
+};
+
+export function humanizeTag(tag: string): string {
+  const override = TAG_LABEL_OVERRIDES[tag];
+  if (override) {
+    return override;
+  }
+  const spaced = tag.replace(/_/g, " ").trim();
+  return spaced ? spaced.charAt(0).toUpperCase() + spaced.slice(1) : tag;
+}
+
 function mapRegion(row: RegionRow): PublicRegion {
+  const displayTags = row.best_for_tags.map(humanizeTag);
   return {
     slug: row.slug,
     nameEn: row.name_en,
-    primaryAudience: row.best_for_tags[0] ?? "K-food travelers",
-    kfoodIdentity: row.best_for_tags.join(", "),
+    primaryAudience: displayTags[0] ?? "K-food travelers",
+    kfoodIdentity: displayTags.join(", "),
     routeTheme: "Curated K-food route",
     intro: row.intro,
-    bestForTags: row.best_for_tags
+    bestForTags: displayTags
   };
 }
 
@@ -1077,11 +1108,11 @@ function mapPlace(row: PlaceRow): PublicPlace {
     businessInfoNote:
       row.business_info_note ?? businessInfoNote(row.trust_tags, row.tourist_tags),
     trustTags: [
-      ...row.trust_tags,
-      ...(row.is_sponsored ? ["sponsored"] : []),
-      ...(row.affiliate_url ? ["affiliate link"] : [])
+      ...row.trust_tags.map(humanizeTag),
+      ...(row.is_sponsored ? ["Sponsored"] : []),
+      ...(row.affiliate_url ? ["Affiliate link"] : [])
     ],
-    cautionTags: row.caution_tags,
+    cautionTags: row.caution_tags.map(humanizeTag),
     lastVerifiedLabel: row.last_verified_at
       ? `Last verified ${row.last_verified_at}`
       : "Verification pending"
@@ -1187,6 +1218,7 @@ export async function getPublishedRegions() {
     .order("display_order", { ascending: true });
 
   if (error || !data) {
+    logDataError("getPublishedRegions", error);
     return fallbackData(fallbackRegions);
   }
 
@@ -1194,8 +1226,25 @@ export async function getPublishedRegions() {
 }
 
 export async function getPublishedRegion(slug: string) {
-  const regions = await getPublishedRegions();
-  return regions.find((region) => region.slug === slug);
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return fallbackData(fallbackRegions).find((region) => region.slug === slug);
+  }
+
+  const { data, error } = await supabase
+    .from("regions")
+    .select("slug, name_en, intro, best_for_tags")
+    .eq("status", "published")
+    .eq("slug", slug)
+    .maybeSingle<RegionRow>();
+
+  if (error) {
+    logDataError("getPublishedRegion", error);
+    return fallbackData(fallbackRegions).find((region) => region.slug === slug);
+  }
+
+  return data ? mapRegion(data) : undefined;
 }
 
 export async function getPublishedFoods() {
@@ -1218,24 +1267,65 @@ export async function getPublishedFoods() {
         .from("region_foods")
         .select("regions(slug), foods(slug), display_order")
         .order("display_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
     ]);
 
   if (error || !data) {
+    logDataError("getPublishedFoods", error);
     return fallbackData(fallbackFoods);
   }
 
   const foods = data.map(mapFood);
 
   if (relationError || !regionFoodRows) {
+    logDataError("getPublishedFoods.regionFoods", relationError);
     return foods;
   }
 
-  return addRegionSlugs(foods, regionFoodRows as unknown as RelatedSlugRow[]);
+  return addRegionSlugs(foods, regionFoodRows);
 }
 
 export async function getPublishedFood(slug: string) {
-  const foods = await getPublishedFoods();
-  return foods.find((food) => food.slug === slug);
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return fallbackData(fallbackFoods).find((food) => food.slug === slug);
+  }
+
+  const [{ data, error }, { data: regionFoodRows, error: relationError }] =
+    await Promise.all([
+      supabase
+        .from("foods")
+        .select(
+          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note"
+        )
+        .eq("status", "published")
+        .eq("slug", slug)
+        .maybeSingle<FoodRow>(),
+      supabase
+        .from("region_foods")
+        .select("regions(slug), foods!inner(slug)")
+        .eq("foods.slug", slug)
+        .returns<RelatedSlugRow[]>()
+    ]);
+
+  if (error) {
+    logDataError("getPublishedFood", error);
+    return fallbackData(fallbackFoods).find((food) => food.slug === slug);
+  }
+
+  if (!data) {
+    return undefined;
+  }
+
+  const food = mapFood(data);
+
+  if (relationError || !regionFoodRows) {
+    logDataError("getPublishedFood.regionFoods", relationError);
+    return food;
+  }
+
+  return addRegionSlugs([food], regionFoodRows)[0];
 }
 
 export async function getPublishedPlaces() {
@@ -1253,29 +1343,72 @@ export async function getPublishedPlaces() {
           "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
         )
         .eq("status", "published")
-        .order("display_order", { ascending: true }),
+        .order("display_order", { ascending: true })
+        .returns<PlaceRow[]>(),
       supabase
         .from("place_foods")
         .select("places(slug), foods(slug), display_order")
         .order("display_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
     ]);
 
   if (error || !data) {
+    logDataError("getPublishedPlaces", error);
     return fallbackData(fallbackPlaces);
   }
 
-  const places = data.map((row) => mapPlace(row as unknown as PlaceRow));
+  const places = data.map(mapPlace);
 
   if (relationError || !placeFoodRows) {
+    logDataError("getPublishedPlaces.placeFoods", relationError);
     return places;
   }
 
-  return addFoodSlugs(places, placeFoodRows as unknown as RelatedSlugRow[]);
+  return addFoodSlugs(places, placeFoodRows);
 }
 
 export async function getPublishedPlace(slug: string) {
-  const places = await getPublishedPlaces();
-  return places.find((place) => place.slug === slug);
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return fallbackData(fallbackPlaces).find((place) => place.slug === slug);
+  }
+
+  const [{ data, error }, { data: placeFoodRows, error: relationError }] =
+    await Promise.all([
+      supabase
+        .from("places")
+        .select(
+          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+        )
+        .eq("status", "published")
+        .eq("slug", slug)
+        .maybeSingle<PlaceRow>(),
+      supabase
+        .from("place_foods")
+        .select("places!inner(slug), foods(slug), display_order")
+        .eq("places.slug", slug)
+        .order("display_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
+    ]);
+
+  if (error) {
+    logDataError("getPublishedPlace", error);
+    return fallbackData(fallbackPlaces).find((place) => place.slug === slug);
+  }
+
+  if (!data) {
+    return undefined;
+  }
+
+  const place = mapPlace(data);
+
+  if (relationError || !placeFoodRows) {
+    logDataError("getPublishedPlace.placeFoods", relationError);
+    return place;
+  }
+
+  return addFoodSlugs([place], placeFoodRows)[0];
 }
 
 export async function getPublishedRoutes() {
@@ -1291,32 +1424,193 @@ export async function getPublishedRoutes() {
         .from("route_guides")
         .select("slug, title, summary, estimated_duration, regions(slug)")
         .eq("status", "published")
-        .order("display_order", { ascending: true }),
+        .order("display_order", { ascending: true })
+        .returns<RouteGuideRow[]>(),
       supabase
         .from("route_guide_places")
         .select("route_guides(slug), places(slug), step_order")
         .order("step_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
     ]);
 
   if (error || !data) {
+    logDataError("getPublishedRoutes", error);
     return fallbackData(fallbackRoutes);
   }
 
-  const routes = data.map((row) => mapRouteGuide(row as unknown as RouteGuideRow));
+  const routes = data.map(mapRouteGuide);
 
   if (relationError || !routePlaceRows) {
+    logDataError("getPublishedRoutes.routePlaces", relationError);
     return routes;
   }
 
-  return addRoutePlaceSlugs(
-    routes,
-    routePlaceRows as unknown as RelatedSlugRow[]
-  );
+  return addRoutePlaceSlugs(routes, routePlaceRows);
 }
 
 export async function getPublishedRoute(slug: string) {
-  const routes = await getPublishedRoutes();
-  return routes.find((route) => route.slug === slug);
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return fallbackData(fallbackRoutes).find((route) => route.slug === slug);
+  }
+
+  const [{ data, error }, { data: routePlaceRows, error: relationError }] =
+    await Promise.all([
+      supabase
+        .from("route_guides")
+        .select("slug, title, summary, estimated_duration, regions(slug)")
+        .eq("status", "published")
+        .eq("slug", slug)
+        .maybeSingle<RouteGuideRow>(),
+      supabase
+        .from("route_guide_places")
+        .select("route_guides!inner(slug), places(slug), step_order")
+        .eq("route_guides.slug", slug)
+        .order("step_order", { ascending: true })
+        .returns<RelatedSlugRow[]>()
+    ]);
+
+  if (error) {
+    logDataError("getPublishedRoute", error);
+    return fallbackData(fallbackRoutes).find((route) => route.slug === slug);
+  }
+
+  if (!data) {
+    return undefined;
+  }
+
+  const route = mapRouteGuide(data);
+
+  if (relationError || !routePlaceRows) {
+    logDataError("getPublishedRoute.routePlaces", relationError);
+    return route;
+  }
+
+  return addRoutePlaceSlugs([route], routePlaceRows)[0];
+}
+
+// ── 공개: 촬영·제작 콘텐츠(productions) 노출 ──────────────────
+// 음식/지역 상세 페이지에서 태그로 연결된 우리 제작 콘텐츠를 보여준다.
+// productions 테이블(마이그레이션 008)이 아직 DB에 없으면 조용히 빈 배열을
+// 반환하므로, 한빛이 마이그레이션을 적용하는 즉시 섹션이 살아난다.
+
+export type PublicProduction = {
+  slug: string;
+  title: string;
+  type: ProductionType;
+  channel: string | null;
+  summary: string | null;
+  externalUrl: string | null;
+  publishedAt: string | null;
+};
+
+type PublicProductionRow = {
+  slug: string;
+  title: string;
+  type: ProductionType;
+  channel: string | null;
+  summary: string | null;
+  external_url: string | null;
+  published_at: string | null;
+};
+
+const PRODUCTION_ENTITY_TABLE: Record<ProductionEntityType, string> = {
+  region: "regions",
+  food: "foods",
+  place: "places",
+  route: "route_guides"
+};
+
+export async function getPublishedProductionsFor(
+  entityType: ProductionEntityType,
+  entitySlug: string
+): Promise<PublicProduction[]> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data: entity, error: entityError } = await supabase
+    .from(PRODUCTION_ENTITY_TABLE[entityType])
+    .select("id")
+    .eq("slug", entitySlug)
+    .maybeSingle<{ id: string }>();
+
+  if (entityError || !entity) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("production_tags")
+    .select(
+      "productions!inner(slug, title, type, channel, summary, external_url, published_at)"
+    )
+    .eq("entity_type", entityType)
+    .eq("entity_id", entity.id);
+
+  if (error || !data) {
+    // 마이그레이션 008 미적용 상태(테이블 없음, PGRST205)는 정상 경로라 로그 제외
+    if (error && (error as { code?: string }).code !== "PGRST205") {
+      logDataError("getPublishedProductionsFor", error);
+    }
+    return [];
+  }
+
+  return data
+    .map((row) => {
+      const production = (row as { productions: PublicProductionRow | PublicProductionRow[] })
+        .productions;
+      return Array.isArray(production) ? production[0] : production;
+    })
+    .filter((row): row is PublicProductionRow => Boolean(row))
+    .map((row) => ({
+      slug: row.slug,
+      title: row.title,
+      type: row.type,
+      channel: row.channel,
+      summary: row.summary,
+      externalUrl: row.external_url,
+      publishedAt: row.published_at
+    }))
+    .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""));
+}
+
+// 메인 "From our channels" 섹션용 — 태그와 무관하게 최신 제작 콘텐츠를 가져온다.
+// RLS가 published만 공개하므로 상태 필터는 명시용. 테이블 미존재 시 빈 배열.
+export async function getPublishedProductions(
+  limit = 6
+): Promise<PublicProduction[]> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("productions")
+    .select("slug, title, type, channel, summary, external_url, published_at")
+    .eq("status", "published")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+
+  if (error || !data) {
+    if (error && (error as { code?: string }).code !== "PGRST205") {
+      logDataError("getPublishedProductions", error);
+    }
+    return [];
+  }
+
+  return (data as PublicProductionRow[]).map((row) => ({
+    slug: row.slug,
+    title: row.title,
+    type: row.type,
+    channel: row.channel,
+    summary: row.summary,
+    externalUrl: row.external_url,
+    publishedAt: row.published_at
+  }));
 }
 
 export async function getMyProfile(accessToken: string, userId: string) {
@@ -1379,6 +1673,154 @@ export async function updateMyProfile(
   }
 
   return { ok: true };
+}
+
+export async function getMyFoodLog(accessToken: string, userId: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return new Map<string, string>();
+  }
+
+  const { data, error } = await supabase
+    .from("user_food_log")
+    .select("tried_at, foods(slug)")
+    .eq("user_id", userId);
+
+  if (error || !data) {
+    return new Map<string, string>();
+  }
+
+  const entries = data
+    .map((row) => {
+      const food = row.foods as { slug: string } | { slug: string }[] | null;
+      const slug = food ? (Array.isArray(food) ? food[0]?.slug : food.slug) : null;
+      return slug ? ([slug, row.tried_at] as const) : null;
+    })
+    .filter((entry): entry is readonly [string, string] => entry !== null);
+
+  return new Map(entries);
+}
+
+export async function setFoodTried(
+  accessToken: string,
+  userId: string,
+  foodSlug: string,
+  tried: boolean
+): Promise<UserPostMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase user client is not configured." };
+  }
+
+  const foodId = await resolveEntityIdBySlug(supabase, "foods", foodSlug);
+
+  if (!foodId) {
+    return { ok: false, message: "Dish not found." };
+  }
+
+  if (tried) {
+    const { error } = await supabase
+      .from("user_food_log")
+      .upsert(
+        { food_id: foodId, user_id: userId },
+        { onConflict: "user_id,food_id", ignoreDuplicates: true }
+      );
+
+    if (error) {
+      return { ok: false, message: "Could not save this record. Please try again later." };
+    }
+
+    return { ok: true };
+  }
+
+  const { error } = await supabase
+    .from("user_food_log")
+    .delete()
+    .eq("user_id", userId)
+    .eq("food_id", foodId);
+
+  if (error) {
+    return { ok: false, message: "Could not update this record. Please try again later." };
+  }
+
+  return { ok: true };
+}
+
+export type JourneyShareMutationResult =
+  | { ok: true; token: string }
+  | { ok: false; message: string };
+
+export type PublicJourney = {
+  displayName: string | null;
+  entries: Array<{ foodSlug: string; triedAt: string }>;
+};
+
+export async function getMyJourneyShareToken(accessToken: string, userId: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("journey_share_token")
+    .eq("id", userId)
+    .maybeSingle<{ journey_share_token: string | null }>();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data.journey_share_token;
+}
+
+export async function enableMyJourneyShare(
+  accessToken: string
+): Promise<JourneyShareMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase user client is not configured." };
+  }
+
+  const { data, error } = await supabase.rpc("enable_my_journey_share");
+
+  if (error || !data) {
+    return { ok: false, message: "Could not create a share link. Please try again later." };
+  }
+
+  return { ok: true, token: data as string };
+}
+
+export async function getPublicJourney(shareToken: string): Promise<PublicJourney | null> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const [{ data: profileRows, error: profileError }, { data: entryRows, error: entryError }] =
+    await Promise.all([
+      supabase.rpc("get_public_journey_profile", { p_share_token: shareToken }),
+      supabase.rpc("get_public_journey", { p_share_token: shareToken })
+    ]);
+
+  if (profileError || !profileRows || profileRows.length === 0) {
+    return null;
+  }
+
+  const profile = profileRows as unknown as Array<{ display_name: string | null }>;
+  const entries = entryError
+    ? []
+    : (entryRows as unknown as Array<{ food_slug: string; tried_at: string }>).map((row) => ({
+        foodSlug: row.food_slug,
+        triedAt: row.tried_at
+      }));
+
+  return { displayName: profile[0]?.display_name ?? null, entries };
 }
 
 export async function getPublishedUserPosts(limit = 30) {
@@ -1879,6 +2321,80 @@ export async function getAdminAuditLogs(accessToken: string) {
   return data.map((row) => mapAdminAuditLog(row as AdminAuditLogRow));
 }
 
+// 게시판(공개 영역) 단위 on/off 토글 키. platform_settings는 key/enabled 문자열
+// 구조라 키 추가에 스키마 변경이 필요 없다 (기획정렬 §1-1: 노출 여부는 운영에서 결정).
+// - community: 커뮤니티 피드·게시물·댓글 (/feed)
+// - food_log: 푸드도감·트래커 (마이페이지 컬렉션 + 기록 저장)
+// - journey_share: 여정 리캡·공유 URL (/mypage/journey, /journey/[token])
+export type PlatformSettingKey = "community" | "food_log" | "journey_share";
+
+export async function getPlatformSettings(): Promise<Record<string, boolean>> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return { community: true };
+  }
+
+  const { data, error } = await supabase
+    .from("platform_settings")
+    .select("key, enabled");
+
+  if (error || !data) {
+    return { community: true };
+  }
+
+  return Object.fromEntries(data.map((row) => [row.key, row.enabled]));
+}
+
+export async function isCommunityEnabled(): Promise<boolean> {
+  return isBoardEnabled("community");
+}
+
+// 게시판 토글 공통 조회. 설정 행이 없으면 공개(true)가 기본값 —
+// 기존 동작(커뮤니티 기본 공개)과 동일한 규칙을 모든 게시판에 적용한다.
+export async function isBoardEnabled(key: PlatformSettingKey): Promise<boolean> {
+  const settings = await getPlatformSettings();
+  return settings[key] ?? true;
+}
+
+export async function updatePlatformSetting(
+  accessToken: string,
+  key: PlatformSettingKey,
+  enabled: boolean,
+  actorId: string
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("platform_settings")
+    .upsert({ enabled, key, updated_at: new Date().toISOString(), updated_by: actorId })
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Setting could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "platform_setting.update",
+    actor_id: actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: key,
+    entity_type: "platform_setting"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Setting updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
 export async function updateAdminReportStatus(
   accessToken: string,
   input: UpdateAdminReportInput
@@ -2008,6 +2524,865 @@ export async function updateAdminPlace(
   if (auditError) {
     return { ok: false, message: "Place updated, but audit log failed." };
   }
+
+  return { ok: true };
+}
+
+// ── Admin: regions CRUD ─────────────────────────────────────
+// 기존 RLS(regions_editor_manage: editor/admin 쓰기 허용) 위에 얹은 앱 함수.
+// updateAdminPlace 패턴을 그대로 따름(감사 로그 포함).
+
+export type AdminRegion = {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameKo: string;
+  intro: string;
+  bestForTags: string[];
+  displayOrder: number;
+  status: PublicationStatus;
+  editorialNote: string | null;
+  updatedAt: string | null;
+};
+
+type AdminRegionRow = {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_ko: string;
+  intro: string;
+  best_for_tags: string[] | null;
+  display_order: number;
+  status: PublicationStatus;
+  editorial_note: string | null;
+  updated_at: string | null;
+};
+
+function mapAdminRegion(row: AdminRegionRow): AdminRegion {
+  return {
+    id: row.id,
+    slug: row.slug,
+    nameEn: row.name_en,
+    nameKo: row.name_ko,
+    intro: row.intro,
+    bestForTags: row.best_for_tags ?? [],
+    displayOrder: row.display_order,
+    status: row.status,
+    editorialNote: row.editorial_note,
+    updatedAt: row.updated_at
+  };
+}
+
+export type CreateAdminRegionInput = {
+  actorId: string;
+  slug: string;
+  nameEn: string;
+  nameKo: string;
+  intro: string;
+  bestForTags?: string[];
+  editorialNote?: string;
+  status: PublicationStatus;
+};
+
+export type UpdateAdminRegionInput = CreateAdminRegionInput & {
+  regionId: string;
+};
+
+const adminRegionColumns =
+  "id, slug, name_en, name_ko, intro, best_for_tags, display_order, status, editorial_note, updated_at";
+
+export async function getAdminRegions(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("regions")
+    .select(adminRegionColumns)
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminRegion(row as unknown as AdminRegionRow));
+}
+
+function validateRegionInput(input: CreateAdminRegionInput) {
+  if (!input.slug.trim()) return "Slug is required.";
+  if (!input.nameEn.trim()) return "English name is required.";
+  if (!input.nameKo.trim()) return "Korean name is required.";
+  if (!input.intro.trim()) return "Intro is required.";
+  return null;
+}
+
+function regionWritePayload(input: CreateAdminRegionInput) {
+  return {
+    slug: input.slug.trim(),
+    name_en: input.nameEn.trim(),
+    name_ko: input.nameKo.trim(),
+    intro: input.intro.trim(),
+    best_for_tags: input.bestForTags ?? [],
+    editorial_note: input.editorialNote?.trim() || null,
+    status: input.status,
+    updated_at: new Date().toISOString()
+  };
+}
+
+export async function createAdminRegion(
+  accessToken: string,
+  input: CreateAdminRegionInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateRegionInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("regions")
+    .insert(regionWritePayload(input))
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Region could not be created." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "region.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "region"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Region created, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminRegion(
+  accessToken: string,
+  input: UpdateAdminRegionInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateRegionInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("regions")
+    .select("*")
+    .eq("id", input.regionId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Region was not found." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("regions")
+    .update(regionWritePayload(input))
+    .eq("id", input.regionId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Region could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "region.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.regionId,
+    entity_type: "region"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Region updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+// ── Admin: foods CRUD ───────────────────────────────────────
+// 기존 RLS(foods_editor_manage) 위에 얹은 앱 함수. 지역 CRUD와 동일 패턴.
+
+export type AdminFood = {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameKo: string;
+  romanizedName: string | null;
+  description: string;
+  tasteProfile: string | null;
+  spicyLevel: number;
+  beginnerNote: string | null;
+  eatingGuide: string | null;
+  cautionNote: string | null;
+  status: PublicationStatus;
+  editorialNote: string | null;
+  updatedAt: string | null;
+};
+
+type AdminFoodRow = {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_ko: string;
+  romanized_name: string | null;
+  description: string;
+  taste_profile: string | null;
+  spicy_level: number;
+  beginner_note: string | null;
+  eating_guide: string | null;
+  caution_note: string | null;
+  status: PublicationStatus;
+  editorial_note: string | null;
+  updated_at: string | null;
+};
+
+function mapAdminFood(row: AdminFoodRow): AdminFood {
+  return {
+    id: row.id,
+    slug: row.slug,
+    nameEn: row.name_en,
+    nameKo: row.name_ko,
+    romanizedName: row.romanized_name,
+    description: row.description,
+    tasteProfile: row.taste_profile,
+    spicyLevel: row.spicy_level,
+    beginnerNote: row.beginner_note,
+    eatingGuide: row.eating_guide,
+    cautionNote: row.caution_note,
+    status: row.status,
+    editorialNote: row.editorial_note,
+    updatedAt: row.updated_at
+  };
+}
+
+export type CreateAdminFoodInput = {
+  actorId: string;
+  slug: string;
+  nameEn: string;
+  nameKo: string;
+  romanizedName?: string;
+  description: string;
+  tasteProfile?: string;
+  spicyLevel: number;
+  beginnerNote?: string;
+  eatingGuide?: string;
+  cautionNote?: string;
+  editorialNote?: string;
+  status: PublicationStatus;
+};
+
+export type UpdateAdminFoodInput = CreateAdminFoodInput & { foodId: string };
+
+const adminFoodColumns =
+  "id, slug, name_en, name_ko, romanized_name, description, taste_profile, spicy_level, beginner_note, eating_guide, caution_note, status, editorial_note, updated_at";
+
+export async function getAdminFoods(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("foods")
+    .select(adminFoodColumns)
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminFood(row as unknown as AdminFoodRow));
+}
+
+function validateFoodInput(input: CreateAdminFoodInput) {
+  if (!input.slug.trim()) return "Slug is required.";
+  if (!input.nameEn.trim()) return "English name is required.";
+  if (!input.nameKo.trim()) return "Korean name is required.";
+  if (!input.description.trim()) return "Description is required.";
+  if (input.spicyLevel < 0 || input.spicyLevel > 4)
+    return "Spicy level must be between 0 and 4.";
+  return null;
+}
+
+function foodWritePayload(input: CreateAdminFoodInput) {
+  return {
+    slug: input.slug.trim(),
+    name_en: input.nameEn.trim(),
+    name_ko: input.nameKo.trim(),
+    romanized_name: input.romanizedName?.trim() || null,
+    description: input.description.trim(),
+    taste_profile: input.tasteProfile?.trim() || null,
+    spicy_level: input.spicyLevel,
+    beginner_note: input.beginnerNote?.trim() || null,
+    eating_guide: input.eatingGuide?.trim() || null,
+    caution_note: input.cautionNote?.trim() || null,
+    editorial_note: input.editorialNote?.trim() || null,
+    status: input.status,
+    updated_at: new Date().toISOString()
+  };
+}
+
+export async function createAdminFood(
+  accessToken: string,
+  input: CreateAdminFoodInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateFoodInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("foods")
+    .insert(foodWritePayload(input))
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Food could not be created." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "food.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "food"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Food created, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminFood(
+  accessToken: string,
+  input: UpdateAdminFoodInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateFoodInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("foods")
+    .select("*")
+    .eq("id", input.foodId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Food was not found." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("foods")
+    .update(foodWritePayload(input))
+    .eq("id", input.foodId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Food could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "food.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.foodId,
+    entity_type: "food"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Food updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+// ── Admin: routes CRUD ──────────────────────────────────────
+// 기존 RLS(route_guides_editor_manage) 위에 얹은 앱 함수. region_id 필수(FK).
+
+export type AdminRoute = {
+  id: string;
+  slug: string;
+  regionId: string;
+  title: string;
+  summary: string;
+  estimatedDuration: string | null;
+  transportMode: string | null;
+  recommendedForTags: string[];
+  editorialNote: string | null;
+  status: PublicationStatus;
+  updatedAt: string | null;
+};
+
+type AdminRouteRow = {
+  id: string;
+  slug: string;
+  region_id: string;
+  title: string;
+  summary: string;
+  estimated_duration: string | null;
+  transport_mode: string | null;
+  recommended_for_tags: string[] | null;
+  editorial_note: string | null;
+  status: PublicationStatus;
+  updated_at: string | null;
+};
+
+function mapAdminRoute(row: AdminRouteRow): AdminRoute {
+  return {
+    id: row.id,
+    slug: row.slug,
+    regionId: row.region_id,
+    title: row.title,
+    summary: row.summary,
+    estimatedDuration: row.estimated_duration,
+    transportMode: row.transport_mode,
+    recommendedForTags: row.recommended_for_tags ?? [],
+    editorialNote: row.editorial_note,
+    status: row.status,
+    updatedAt: row.updated_at
+  };
+}
+
+export type CreateAdminRouteInput = {
+  actorId: string;
+  slug: string;
+  regionId: string;
+  title: string;
+  summary: string;
+  estimatedDuration?: string;
+  transportMode?: string;
+  recommendedForTags?: string[];
+  editorialNote?: string;
+  status: PublicationStatus;
+};
+
+export type UpdateAdminRouteInput = CreateAdminRouteInput & { routeId: string };
+
+const adminRouteColumns =
+  "id, slug, region_id, title, summary, estimated_duration, transport_mode, recommended_for_tags, editorial_note, status, updated_at";
+
+export async function getAdminRoutes(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("route_guides")
+    .select(adminRouteColumns)
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminRoute(row as unknown as AdminRouteRow));
+}
+
+function validateRouteInput(input: CreateAdminRouteInput) {
+  if (!input.slug.trim()) return "Slug is required.";
+  if (!input.regionId.trim()) return "Region is required.";
+  if (!input.title.trim()) return "Title is required.";
+  if (!input.summary.trim()) return "Summary is required.";
+  return null;
+}
+
+function routeWritePayload(input: CreateAdminRouteInput) {
+  return {
+    slug: input.slug.trim(),
+    region_id: input.regionId,
+    title: input.title.trim(),
+    summary: input.summary.trim(),
+    estimated_duration: input.estimatedDuration?.trim() || null,
+    transport_mode: input.transportMode?.trim() || null,
+    recommended_for_tags: input.recommendedForTags ?? [],
+    editorial_note: input.editorialNote?.trim() || null,
+    status: input.status,
+    updated_at: new Date().toISOString()
+  };
+}
+
+export async function createAdminRoute(
+  accessToken: string,
+  input: CreateAdminRouteInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateRouteInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("route_guides")
+    .insert(routeWritePayload(input))
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Route could not be created." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "route.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "route"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Route created, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminRoute(
+  accessToken: string,
+  input: UpdateAdminRouteInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateRouteInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("route_guides")
+    .select("*")
+    .eq("id", input.routeId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Route was not found." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("route_guides")
+    .update(routeWritePayload(input))
+    .eq("id", input.routeId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Route could not be updated." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "route.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.routeId,
+    entity_type: "route"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Route updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+// ── Admin: productions (촬영·제작 콘텐츠, B) CRUD + 태그 ──────
+// 신규 테이블(007_productions.sql). 참조 콘텐츠를 태그로 연결.
+
+export type ProductionType = "video" | "blog" | "reels" | "shorts" | "photo";
+export type ProductionEntityType = "region" | "food" | "place" | "route";
+
+export type ProductionTag = {
+  entityType: ProductionEntityType;
+  entityId: string;
+};
+
+export type AdminProduction = {
+  id: string;
+  slug: string;
+  title: string;
+  titleKo: string | null;
+  type: ProductionType;
+  channel: string | null;
+  summary: string | null;
+  externalUrl: string | null;
+  status: PublicationStatus;
+  editorialNote: string | null;
+  tags: ProductionTag[];
+  updatedAt: string | null;
+};
+
+type ProductionTagRow = { entity_type: ProductionEntityType; entity_id: string };
+
+type AdminProductionRow = {
+  id: string;
+  slug: string;
+  title: string;
+  title_ko: string | null;
+  type: ProductionType;
+  channel: string | null;
+  summary: string | null;
+  external_url: string | null;
+  status: PublicationStatus;
+  editorial_note: string | null;
+  updated_at: string | null;
+  production_tags?: ProductionTagRow[] | null;
+};
+
+function mapAdminProduction(row: AdminProductionRow): AdminProduction {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    titleKo: row.title_ko,
+    type: row.type,
+    channel: row.channel,
+    summary: row.summary,
+    externalUrl: row.external_url,
+    status: row.status,
+    editorialNote: row.editorial_note,
+    tags: (row.production_tags ?? []).map((tag) => ({
+      entityType: tag.entity_type,
+      entityId: tag.entity_id
+    })),
+    updatedAt: row.updated_at
+  };
+}
+
+export type CreateAdminProductionInput = {
+  actorId: string;
+  slug: string;
+  title: string;
+  titleKo?: string;
+  type: ProductionType;
+  channel?: string;
+  summary?: string;
+  externalUrl?: string;
+  editorialNote?: string;
+  status: PublicationStatus;
+  tags: ProductionTag[];
+};
+
+export type UpdateAdminProductionInput = CreateAdminProductionInput & {
+  productionId: string;
+};
+
+const adminProductionColumns =
+  "id, slug, title, title_ko, type, channel, summary, external_url, status, editorial_note, updated_at, production_tags(entity_type, entity_id)";
+
+export async function getAdminProductions(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("productions")
+    .select(adminProductionColumns)
+    .order("display_order", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => mapAdminProduction(row as unknown as AdminProductionRow));
+}
+
+function validateProductionInput(input: CreateAdminProductionInput) {
+  if (!input.slug.trim()) return "Slug is required.";
+  if (!input.title.trim()) return "Title is required.";
+  return null;
+}
+
+function productionWritePayload(input: CreateAdminProductionInput) {
+  return {
+    slug: input.slug.trim(),
+    title: input.title.trim(),
+    title_ko: input.titleKo?.trim() || null,
+    type: input.type,
+    channel: input.channel?.trim() || null,
+    summary: input.summary?.trim() || null,
+    external_url: input.externalUrl?.trim() || null,
+    editorial_note: input.editorialNote?.trim() || null,
+    status: input.status,
+    updated_at: new Date().toISOString()
+  };
+}
+
+async function replaceProductionTags(
+  supabase: NonNullable<ReturnType<typeof createAuthenticatedClient>>,
+  productionId: string,
+  tags: ProductionTag[]
+) {
+  await supabase.from("production_tags").delete().eq("production_id", productionId);
+
+  if (tags.length === 0) {
+    return null;
+  }
+
+  const { error } = await supabase.from("production_tags").insert(
+    tags.map((tag) => ({
+      production_id: productionId,
+      entity_type: tag.entityType,
+      entity_id: tag.entityId
+    }))
+  );
+
+  return error ? "Content saved, but tags failed." : null;
+}
+
+export async function createAdminProduction(
+  accessToken: string,
+  input: CreateAdminProductionInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateProductionInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("productions")
+    .insert(productionWritePayload(input))
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Content could not be created." };
+  }
+
+  const productionId = (afterData as { id: string }).id;
+  const tagError = await replaceProductionTags(supabase, productionId, input.tags);
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "production.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: productionId,
+    entity_type: "production"
+  });
+
+  if (tagError) return { ok: false, message: tagError };
+  if (auditError) return { ok: false, message: "Content created, but audit log failed." };
+
+  return { ok: true };
+}
+
+export async function updateAdminProduction(
+  accessToken: string,
+  input: UpdateAdminProductionInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const validationError = validateProductionInput(input);
+  if (validationError) {
+    return { ok: false, message: validationError };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("productions")
+    .select("*")
+    .eq("id", input.productionId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "Content was not found." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("productions")
+    .update(productionWritePayload(input))
+    .eq("id", input.productionId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "Content could not be updated." };
+  }
+
+  const tagError = await replaceProductionTags(
+    supabase,
+    input.productionId,
+    input.tags
+  );
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "production.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.productionId,
+    entity_type: "production"
+  });
+
+  if (tagError) return { ok: false, message: tagError };
+  if (auditError) return { ok: false, message: "Content updated, but audit log failed." };
 
   return { ok: true };
 }

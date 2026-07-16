@@ -1,8 +1,11 @@
+import { notFound } from "next/navigation";
+
 import {
   getPublishedFoods,
   getPublishedPlaces,
   getPublishedRegions,
   getPublishedRoutes,
+  isCommunityEnabled,
   type SupportedLanguage,
   type UserPostVisibility
 } from "@kfood/data";
@@ -35,6 +38,10 @@ export default async function NewFeedRecordPage({
 }: {
   searchParams?: Promise<{ error?: string }>;
 }) {
+  if (!(await isCommunityEnabled())) {
+    notFound();
+  }
+
   const [session, params, foods, places, regions, routes] = await Promise.all([
     requirePublicSession("/feed/new"),
     searchParams,

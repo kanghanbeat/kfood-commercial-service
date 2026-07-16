@@ -2,140 +2,255 @@ import Link from "next/link";
 
 import {
   getPublishedFoods,
-  getPublishedPlaces,
+  getPublishedProductions,
   getPublishedRegions,
   getPublishedRoutes
 } from "@kfood/data";
 
+import { CardPhoto } from "@/components/card-photo";
+import {
+  KoreaMap,
+  type MapMarker,
+  type ProvinceStats
+} from "@/components/korea-map";
+import { getDict } from "@/lib/i18n";
+import { PROVINCES, REGION_MAP_POINTS } from "@/lib/provinces";
+
+function ArrowRightIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M8 3l5 5-5 5M3 8h10"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// 히어로 검색창 바로 아래에 노출하는 인기 검색어. 실제 검색 결과가
+// 나오는 키워드만 넣는다(이름·설명·태그 매칭 기준).
+const QUICK_SEARCHES = ["Tteokbokki", "Korean BBQ", "Market", "Spicy", "Mild"];
+
+// 메인은 4섹션 고정: ①히어로 ②한국 지도 ③트렌딩·에디터 픽 ④채널 연동
+// (기획정렬-한빛대조.md §1-4). 지도는 2주차에 SVG 컴포넌트로 교체 예정 —
+// 이번 주는 자리(플레이스홀더)만 잡는다.
 export default async function HomePage() {
-  const [foods, places, regions, routes] = await Promise.all([
+  const [foods, regions, routes, productions, dict] = await Promise.all([
     getPublishedFoods(),
-    getPublishedPlaces(),
     getPublishedRegions(),
-    getPublishedRoutes()
+    getPublishedRoutes(),
+    getPublishedProductions(6),
+    getDict()
   ]);
+  const t = dict.home;
+
+  const trendingFoods = foods.slice(0, 6);
+  const editorPicks = routes.slice(0, 3);
+  const mapQuickRegions = regions.slice(0, 6);
+
+  // 시·도별 콘텐츠 밀도(지역·음식 수) — 지도 색칠과 툴팁에 쓴다.
+  const publishedRegionSlugs = new Set(regions.map((region) => region.slug));
+  const provinceStats: ProvinceStats = {};
+  for (const [key, info] of Object.entries(PROVINCES)) {
+    const activeRegionSlugs = info.regionSlugs.filter((slug) =>
+      publishedRegionSlugs.has(slug)
+    );
+    const foodCount = foods.filter((food) =>
+      food.regionSlugs.some((slug) => activeRegionSlugs.includes(slug))
+    ).length;
+    provinceStats[key] = { regionCount: activeRegionSlugs.length, foodCount };
+  }
+
+  // 지도 마커 — 발행된 지역 중 좌표(REGION_MAP_POINTS)가 등록된 것만.
+  // 새 지역을 추가하면 좌표만 등록하면 지도에 자동으로 점이 생긴다.
+  const mapMarkers: MapMarker[] = regions
+    .filter((region) => REGION_MAP_POINTS[region.slug])
+    .map((region) => ({
+      slug: region.slug,
+      nameEn: region.nameEn,
+      ...REGION_MAP_POINTS[region.slug]
+    }));
 
   return (
-    <main className="page-shell">
-      <section className="hero-grid">
-        <div className="hero-copy">
-          <p className="eyebrow">Seoul alpha directory</p>
-          <h1>Find what to eat, where to try it, and how to route it.</h1>
-          <p>
-            A web-first K-food guide for travelers who need practical food
-            choices, trusted editorial notes, real user records, and routes
-            that work on the ground.
-          </p>
-          <div className="entry-actions" aria-label="Start options">
-            <div className="entry-choice-card">
-              <span>Be guest</span>
-              <strong>Browse without an account</strong>
-              <p>Start with trusted search or preview the community feed.</p>
-              <div className="entry-choice-links">
-                <Link className="button primary" href="/search">
-                  Search guide
-                </Link>
-                <Link className="button secondary" href="/feed">
-                  Preview feed
-                </Link>
-              </div>
-            </div>
-            <Link className="entry-action-card" href="/auth/login?next=/mypage">
-              <span>Sign up</span>
-              <strong>Create your activity hub</strong>
-              <p>Prepare your profile for future records, likes, and follows.</p>
+    <div className="home-v2">
+      {/* ① 히어로 */}
+      <section className="hero-v2">
+        <span className="hero-v2-badge">{t.heroBadge}</span>
+        <h1 className="hero-v2-headline">{t.heroHeadline}</h1>
+        <p className="hero-v2-subtitle">{t.heroSubtitle}</p>
+        <form className="hero-v2-search-form" action="/search" method="get" role="search">
+          <input
+            className="hero-v2-search-input"
+            type="search"
+            name="q"
+            placeholder={t.searchPlaceholder}
+            aria-label={t.searchPlaceholder}
+          />
+          <button className="hero-v2-search-button" type="submit">
+            {t.searchButton}
+          </button>
+        </form>
+        <div className="hero-v2-quick" aria-label="Popular searches">
+          <span className="hero-v2-quick-label">{t.popularLabel}</span>
+          {QUICK_SEARCHES.map((term) => (
+            <Link
+              className="hero-v2-quick-chip"
+              href={`/search?q=${encodeURIComponent(term.toLowerCase())}`}
+              key={term}
+            >
+              {term}
             </Link>
-            <Link className="entry-action-card" href="/auth/login?next=/feed">
-              <span>Log in</span>
-              <strong>Continue with your account</strong>
-              <p>Use admin/editor access or return to your K-food workspace.</p>
+          ))}
+        </div>
+        <Link className="hero-v2-cta" href="/foods">
+          {t.heroCta}
+        </Link>
+      </section>
+
+      {/* ② 한국 지도 — 시·도 SVG, 클릭 시 지역 목록 이동 */}
+      <section className="section-v2">
+        <div className="section-v2-inner">
+          <div className="section-v2-header">
+            <div className="section-v2-heading">
+              <span className="section-v2-eyebrow">{t.exploreEyebrow}</span>
+              <span className="section-v2-title">{t.exploreTitle}</span>
+              <span className="section-v2-subtitle">{t.exploreSubtitle}</span>
+            </div>
+            <Link className="section-v2-link" href="/regions">
+              {t.allRegions} <ArrowRightIcon />
             </Link>
           </div>
-        </div>
-        <div className="route-visual" aria-label="Seoul alpha route preview">
-          {regions.map((region, index) => (
-            <Link
-              className="route-node"
-              href={`/regions/${region.slug}`}
-              key={region.slug}
-              style={{ "--node-index": index } as React.CSSProperties}
-            >
-              <span>{region.nameEn}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="metric-strip" aria-label="Alpha coverage">
-        <div>
-          <strong>{regions.length}</strong>
-          <span>regions</span>
-        </div>
-        <div>
-          <strong>{foods.length}</strong>
-          <span>foods</span>
-        </div>
-        <div>
-          <strong>{places.length}</strong>
-          <span>place directions</span>
-        </div>
-        <div>
-          <strong>{routes.length}</strong>
-          <span>routes</span>
-        </div>
-      </section>
-
-      <section className="section-block" aria-labelledby="community-start">
-        <div className="section-heading">
-          <p className="eyebrow">Directory core + community layer</p>
-          <h2 id="community-start">Start from records, search, or recommendations</h2>
-          <p>
-            User records add lived context, while verified foods, regions,
-            places, and routes remain the service&apos;s trusted base.
-          </p>
-        </div>
-        <ul className="directory-grid">
-          <li className="directory-card">
-            <Link href="/feed">
-              <span>Community records</span>
-              <strong>Feed</strong>
-              <p>See public K-food moments connected to trusted food and area data.</p>
-            </Link>
-          </li>
-          <li className="directory-card">
-            <Link href="/search">
-              <span>Unified discovery</span>
-              <strong>Search</strong>
-              <p>Find foods, areas, places, routes, posts, and users from one surface.</p>
-            </Link>
-          </li>
-          <li className="directory-card">
-            <Link href="/recommend">
-              <span>Curated guidance</span>
-              <strong>Recommend</strong>
-              <p>Browse editorial picks and route ideas before personalization arrives.</p>
-            </Link>
-          </li>
-        </ul>
-      </section>
-
-      <section className="section-block" aria-labelledby="alpha-regions">
-        <div className="section-heading">
-          <p className="eyebrow">Trusted data layer</p>
-          <h2 id="alpha-regions">Seoul alpha areas</h2>
-        </div>
-        <ul className="directory-grid">
-          {regions.map((region) => (
-            <li className="directory-card" key={region.slug}>
-              <Link href={`/regions/${region.slug}`}>
-                <span>{region.primaryAudience}</span>
-                <strong>{region.nameEn}</strong>
-                <p>{region.routeTheme}</p>
+          <KoreaMap
+            stats={provinceStats}
+            markers={mapMarkers}
+            labels={{
+              areas: t.mapAreas,
+              dishes: t.mapDishes,
+              comingSoon: t.mapComingSoon,
+              hint: t.mapHint
+            }}
+          />
+          {/* 지도는 클라이언트 렌더라, 검색엔진·키보드용 지역 바로가기는 링크로도 유지 */}
+          <div className="home-map-placeholder-links">
+            {mapQuickRegions.map((region) => (
+              <Link
+                className="food-subnav-tab"
+                href={`/regions/${region.slug}`}
+                key={region.slug}
+              >
+                {region.nameEn}
               </Link>
-            </li>
-          ))}
-        </ul>
+            ))}
+          </div>
+        </div>
       </section>
-    </main>
+
+      {/* ③ 트렌딩 음식 + 에디터 픽 */}
+      <section className="section-v2 alt">
+        <div className="section-v2-inner">
+          <div className="section-v2-header">
+            <div className="section-v2-heading">
+              <span className="section-v2-eyebrow">{t.eatEyebrow}</span>
+              <span className="section-v2-title">{t.trendingTitle}</span>
+              <span className="section-v2-subtitle">{t.trendingSubtitle}</span>
+            </div>
+            <Link className="section-v2-link" href="/foods">
+              {dict.common.viewAll} <ArrowRightIcon />
+            </Link>
+          </div>
+          <div className="card-grid-v2">
+            {trendingFoods.map((food) => (
+              <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
+                <CardPhoto label={food.nameEn} variant="food" />
+                <div className="card-v2-body">
+                  <span className="food-chip spicy">{dict.common.spicy} {food.spicyLevel}/4</span>
+                  <span className="card-v2-title">{food.nameEn}</span>
+                  <span className="card-v2-meta">{food.summary}</span>
+                  <span className="card-v2-link">
+                    {dict.common.explore} <ArrowRightIcon />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="section-v2-header" style={{ marginTop: 40 }}>
+            <div className="section-v2-heading">
+              <span className="section-v2-eyebrow">{t.editorEyebrow}</span>
+              <span className="section-v2-title">{t.routesTitle}</span>
+              <span className="section-v2-subtitle">{t.routesSubtitle}</span>
+            </div>
+            <Link className="section-v2-link" href="/routes">
+              {t.viewAllRoutes} <ArrowRightIcon />
+            </Link>
+          </div>
+          <div className="card-grid-v2">
+            {editorPicks.map((route) => (
+              <Link className="card-v2" href={`/routes/${route.slug}`} key={route.slug}>
+                <CardPhoto label={route.title} variant="route" />
+                <div className="card-v2-body">
+                  <span className="food-chip">{route.estimatedDuration}</span>
+                  <span className="card-v2-title">{route.title}</span>
+                  <span className="card-v2-meta">{route.summary}</span>
+                  <span className="card-v2-link">
+                    {dict.common.view} <ArrowRightIcon />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ④ 채널 연동 — From our channels */}
+      <section className="section-v2">
+        <div className="section-v2-inner">
+          <div className="section-v2-header">
+            <div className="section-v2-heading">
+              <span className="section-v2-eyebrow">{t.watchEyebrow}</span>
+              <span className="section-v2-title">{t.channelsTitle}</span>
+              <span className="section-v2-subtitle">{t.channelsSubtitle}</span>
+            </div>
+          </div>
+          {productions.length === 0 ? (
+            <div className="food-info-card">
+              <p>{t.channelsEmpty}</p>
+            </div>
+          ) : (
+            <div className="food-info-grid">
+              {productions.map((production) =>
+                production.externalUrl ? (
+                  <a
+                    className="food-info-card"
+                    href={production.externalUrl}
+                    key={production.slug}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <h3>{production.title}</h3>
+                    <p style={{ color: "var(--brand)" }}>
+                      {production.type.toUpperCase()}
+                      {production.channel ? ` · ${production.channel}` : ""}
+                    </p>
+                    {production.summary ? <p>{production.summary}</p> : null}
+                  </a>
+                ) : (
+                  <div className="food-info-card" key={production.slug}>
+                    <h3>{production.title}</h3>
+                    <p style={{ color: "var(--brand)" }}>
+                      {production.type.toUpperCase()}
+                      {production.channel ? ` · ${production.channel}` : ""}
+                    </p>
+                    {production.summary ? <p>{production.summary}</p> : null}
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
   );
 }

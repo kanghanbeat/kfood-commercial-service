@@ -217,7 +217,29 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   };
 }
 
+// 개발용 어드민 미리보기 세션. 프로덕션에선 절대 동작하지 않음(NODE_ENV 가드).
+// .env.local 에 ADMIN_PREVIEW=true 가 있을 때만 활성. Supabase 없이 화면 확인용.
+function adminPreviewSession(): AdminSession | null {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.ADMIN_PREVIEW === "true"
+  ) {
+    return {
+      accessToken: "admin-preview",
+      userId: "admin-preview",
+      email: "preview@local",
+      role: "admin"
+    };
+  }
+  return null;
+}
+
 export async function requireAdminSession() {
+  const preview = adminPreviewSession();
+  if (preview) {
+    return preview;
+  }
+
   const session = await getAdminSession();
 
   if (!session) {

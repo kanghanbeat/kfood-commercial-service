@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   getPublishedFoods,
   getPublishedPlaces,
@@ -8,7 +10,6 @@ import {
   type UserPostVisibility
 } from "@kfood/data";
 
-import { AdminNav } from "@/components/admin-nav";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -64,7 +65,11 @@ export default async function NewAdminUserPostPage({
           this for alpha seed posts while public social login remains closed.
         </p>
       </header>
-      <AdminNav />
+      <div className="action-row">
+        <Link className="button secondary" href="/admin/operations?tab=posts">
+          게시물 관리로 돌아가기
+        </Link>
+      </div>
       {params?.error ? (
         <p className="status-message error">{params.error}</p>
       ) : null}

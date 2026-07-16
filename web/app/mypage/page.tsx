@@ -1,11 +1,16 @@
 import Link from "next/link";
 
 import {
+  getMyFoodLog,
   getMyProfile,
+  getPlatformSettings,
+  getPublishedFoods,
   type SupportedLanguage
 } from "@kfood/data";
 
 import { ensurePublicProfile, requirePublicSession } from "@/lib/public-auth";
+
+const COLLECTION_GOAL = 50;
 
 export const metadata = {
   robots: {
@@ -33,7 +38,15 @@ export default async function MypagePage({
   ]);
 
   await ensurePublicProfile(session);
-  const profile = await getMyProfile(session.accessToken, session.userId);
+  const [profile, foods, triedSlugs, boardSettings] = await Promise.all([
+    getMyProfile(session.accessToken, session.userId),
+    getPublishedFoods(),
+    getMyFoodLog(session.accessToken, session.userId),
+    getPlatformSettings()
+  ]);
+  const communityEnabled = boardSettings.community ?? true;
+  const foodLogEnabled = boardSettings.food_log ?? true;
+  const journeyShareEnabled = boardSettings.journey_share ?? true;
   const displayName = profile?.displayName ?? session.name ?? "";
   const bio = profile?.bio ?? "";
   const preferredLanguage = profile?.preferredLanguage ?? "en";
@@ -72,12 +85,16 @@ export default async function MypagePage({
           </div>
         </dl>
         <div className="action-row">
-          <Link className="button secondary" href="/feed">
-            Open feed
-          </Link>
-          <Link className="button secondary" href="/auth/logout">
-            Sign out
-          </Link>
+          {communityEnabled ? (
+            <Link className="button secondary" href="/feed">
+              Open feed
+            </Link>
+          ) : null}
+          <form action="/auth/logout" method="post">
+            <button className="button secondary" type="submit">
+              Sign out
+            </button>
+          </form>
         </div>
       </section>
       <section className="form-panel">
@@ -116,6 +133,79 @@ export default async function MypagePage({
           </button>
         </form>
       </section>
+      {foodLogEnabled ? (
+      <section className="section-block" aria-labelledby="mypage-journey">
+        <div className="section-heading">
+          <p className="eyebrow">My K-Food Journey</p>
+          <h2 id="mypage-journey">Your K-food collection</h2>
+          <p>Track what you have tried across your Korean food trip.</p>
+        </div>
+        {journeyShareEnabled ? (
+          <div className="action-row">
+            <Link className="button secondary" href="/mypage/journey">
+              View your journey recap
+            </Link>
+          </div>
+        ) : null}
+        <div className="admin-metric-grid">
+          <div className="admin-metric-card">
+            <span className="admin-metric-label">Dishes tried</span>
+            <span className="admin-metric-value">
+              {triedSlugs.size}/{COLLECTION_GOAL}
+            </span>
+            <span className="admin-metric-sub">First tasting goal</span>
+          </div>
+          <div className="admin-metric-card">
+            <span className="admin-metric-label">Verified</span>
+            <span className="admin-metric-value">0</span>
+            <span className="admin-metric-sub">Visits confirmed</span>
+          </div>
+          <div className="admin-metric-card">
+            <span className="admin-metric-label">Challenges</span>
+            <span className="admin-metric-value">0</span>
+            <span className="admin-metric-sub">Missions completed</span>
+          </div>
+          <div className="admin-metric-card">
+            <span className="admin-metric-label">Collection</span>
+            <span className="admin-metric-value">
+              {triedSlugs.size}/{foods.length}
+            </span>
+            <span className="admin-metric-sub">Published dishes</span>
+          </div>
+        </div>
+        <div className="collection-grid">
+          {foods.map((food, index) => {
+            const tried = triedSlugs.has(food.slug);
+            return (
+              <div
+                className={tried ? "collection-item tried" : "collection-item"}
+                key={food.slug}
+              >
+                <span className="collection-num">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <Link className="collection-name" href={`/foods/${food.slug}`}>
+                  {food.nameEn}
+                </Link>
+                <form action="/mypage/food-log" method="post">
+                  <input name="food_slug" type="hidden" value={food.slug} />
+                  <input name="tried" type="hidden" value={tried ? "0" : "1"} />
+                  <button
+                    className={
+                      tried ? "collection-state-toggle tried" : "collection-state-toggle"
+                    }
+                    type="submit"
+                  >
+                    {tried ? "TRIED" : "Not yet"}
+                  </button>
+                </form>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      ) : null}
+
       <section className="section-block" aria-labelledby="mypage-next">
         <div className="section-heading">
           <p className="eyebrow">UGC foundation</p>

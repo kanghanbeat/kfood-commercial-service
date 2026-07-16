@@ -2,7 +2,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextResponse } from "next/server";
 
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { createClient, type User } from "@supabase/supabase-js";
 
 const legacyPublicAccessTokenCookie = "kfood_public_access_token";
@@ -86,13 +86,6 @@ function getPublicProvider(user: User) {
     : null;
 }
 
-function toNextCookieOptions(options: CookieOptions) {
-  return {
-    ...options,
-    secure: process.env.NODE_ENV === "production"
-  };
-}
-
 export function getSafeNextPath(value: string | null | undefined) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
     return "/";
@@ -126,12 +119,11 @@ export async function createPublicSupabaseServerClient() {
 
   const cookieStore = await cookies();
 
+  // Supabase 공식(@supabase/ssr) 서버 컴포넌트 패턴 그대로.
+  // 세션 갱신·쿠키 발급은 미들웨어(proxy.ts)와 인증 라우트가 담당하고,
+  // 여기서는 읽기만 한다(setAll의 try/catch는 공식 문서 그대로 — RSC에서는
+  // 쿠키를 쓸 수 없어 무시되는 것이 정상).
   return createServerClient(config.url, config.anonKey, {
-    auth: {
-      detectSessionInUrl: false,
-      flowType: "pkce",
-      persistSession: true
-    },
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -139,11 +131,10 @@ export async function createPublicSupabaseServerClient() {
       setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, options, value }) => {
-            cookieStore.set(name, value, toNextCookieOptions(options));
+            cookieStore.set(name, value, options);
           });
         } catch {
-          // Server components cannot always mutate cookies. The proxy handles
-          // refresh persistence for navigations where mutation is unavailable.
+          // Server Components cannot mutate cookies; middleware refreshes.
         }
       }
     }
@@ -265,7 +256,31 @@ export async function getPublicSessionDiagnostic(): Promise<PublicSessionDiagnos
   };
 }
 
+// 개발용 미리보기 세션. 프로덕션에선 절대 동작하지 않음(NODE_ENV 가드).
+// .env.local 에 ADMIN_PREVIEW=true 일 때만 로컬에서 로그인 없이 /mypage·/profile 열람.
+function publicPreviewSession(): PublicSession | null {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.ADMIN_PREVIEW === "true"
+  ) {
+    return {
+      accessToken: "public-preview",
+      email: "preview@local",
+      name: "Preview User",
+      provider: "preview",
+      user: { id: "public-preview" } as unknown as User,
+      userId: "public-preview"
+    };
+  }
+  return null;
+}
+
 export async function requirePublicSession(nextPath = "/mypage") {
+  const preview = publicPreviewSession();
+  if (preview) {
+    return preview;
+  }
+
   const session = await getPublicSession();
 
   if (!session) {

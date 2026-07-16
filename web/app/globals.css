@@ -1,14 +1,37 @@
 :root {
   color-scheme: light;
-  --ink: #1f2523;
-  --muted: #5d6863;
-  --line: #d9dfd6;
-  --surface: #f7f5ef;
-  --panel: #ffffff;
-  --accent: #b3362d;
-  --accent-dark: #812820;
-  --leaf: #28705a;
-  --gold: #c8942f;
+
+  /* ── DESIGN.md v2 토큰 (정식 이름 — 새 컴포넌트는 이 이름을 쓴다) ── */
+  --brand:          #8500FF;   /* 메인 바이올렛 (기존 빨강 자리 대체) */
+  --brand-strong:   #6A00CC;   /* 버튼 호버 */
+  --brand-soft:     #F0E5FF;   /* 연보라 배경·칩 */
+  --accent:         #FF5E00;   /* 서브 강조 오렌지 (포인트·핵심 CTA용, v2 정식) */
+  --accent-soft:    #FFE9DC;
+  --surface:        #FFFFFF;   /* 페이지 배경 (항상 흰색) */
+  --card:           #FFFFFF;   /* 카드·패널 (경계선으로 구분) */
+  --sidebar-dark:   #1C0033;   /* 어드민 사이드바·푸터 */
+  --sidebar-muted:  #D9CDEA;
+  --border-default: #ECE7F2;   /* 경계선 1px */
+  --text-heading:   #17141C;   /* 제목·강조 */
+  --text-body:      #6A6273;   /* 본문·라벨 */
+  --ivory:          #FCF7EF;   /* 따뜻한 보조 배경 */
+  --mint:           #DCF2F3;   /* 시원한 포인트 */
+  --success:        #16A34A;  --success-soft: #E4EFE8;
+  --warning:        #D97706;  --warning-soft: #F7EEDB;
+  --danger:         #DC2626;  --danger-soft:  #F3E2E6;
+  --card-radius:    12px;  --control-radius: 8px;  --pill-radius: 9999px;
+  --font-main:      'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ── 한빛 기존 이름 → v2 연결 (기존 CSS 수십 군데가 안 깨지게 alias) ── */
+  --muted:       var(--text-body);
+  --line:        var(--border-default);
+  --panel:       var(--card);
+  --leaf:        var(--success);   /* 초록 → success */
+  --gold:        var(--warning);   /* 금색 → warning */
+  --accent-dark: var(--danger);    /* error 텍스트용으로만 쓰이던 진빨강 → danger */
+  /* --ink(글자)·--accent(주황) 은 위 v2 토큰으로 직접 정의됨.
+     기존에 --accent(빨강=primary)로 쓰던 자리는 아래 규칙에서 var(--brand)로 교체. */
+  --ink: var(--text-heading);
 }
 
 * {
@@ -18,9 +41,20 @@
 html {
   background: var(--surface);
   color: var(--ink);
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--font-main);
+}
+
+/* Pretendard 로컬 woff2 사용 (CDN 금지 — 프로젝트 기준).
+   web/public/fonts/ 에서 서빙됨 (내부 대시보드 웹사이트/fonts/woff2-subset/ 원본과 동일 파일). */
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/fonts/Pretendard-Regular.woff2') format('woff2');
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/fonts/Pretendard-Bold.woff2') format('woff2');
+  font-weight: 700; font-display: swap;
 }
 
 body {
@@ -64,7 +98,7 @@ a {
 }
 
 .site-header nav a.auth-link {
-  color: var(--accent);
+  color: var(--brand);
 }
 
 .site-footer {
@@ -122,7 +156,7 @@ a {
 }
 
 .admin-nav a.admin-nav-signout {
-  color: var(--accent);
+  color: var(--brand);
   margin-left: auto;
 }
 
@@ -148,7 +182,7 @@ a {
 }
 
 .eyebrow {
-  color: var(--accent);
+  color: var(--brand);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;
@@ -251,9 +285,14 @@ h3 {
 }
 
 .button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fffaf4;
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+}
+
+.button.primary:hover {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
 }
 
 .button.secondary {
@@ -344,11 +383,407 @@ h3 {
   color: #fffaf4;
 }
 
+/* 음식 카테고리 하위 탭 (Dishes/Regions/Places/Routes) — 각 탭은 실제 URL 링크 */
+.food-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.food-subnav-tab {
+  border: 1px solid var(--line);
+  border-radius: var(--pill-radius);
+  color: var(--text-body);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 16px;
+  text-decoration: none;
+}
+
+.food-subnav-tab:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.food-subnav-tab.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+}
+
+/* 헤더 지구본 언어 선택기 (byFood 패턴 — 쿠키 저장, URL 무변경) */
+.lang-switcher {
+  position: relative;
+}
+
+.lang-switcher-button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--pill-radius);
+  color: var(--text-heading);
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 6px;
+  padding: 8px 12px;
+}
+
+.lang-switcher-button:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.lang-switcher-menu {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  box-shadow: 0 12px 32px rgba(23, 20, 28, 0.12);
+  list-style: none;
+  margin: 6px 0 0;
+  min-width: 140px;
+  padding: 6px;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 40;
+}
+
+.lang-switcher-option {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-heading);
+  cursor: pointer;
+  display: block;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.lang-switcher-option:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.lang-switcher-option.active {
+  color: var(--brand);
+}
+
+/* 메인 ② 한국 지도 — 시·도 SVG, 콘텐츠 밀도로 색칠 (기획정렬 §1-5) */
+.korea-map {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+}
+
+.korea-map-svg {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+}
+
+/* 권역(도 단위 그룹) — 광역시 조각까지 하나로 묶어 확대·색칠·클릭 */
+.korea-map-group {
+  /* 호버 확대의 기준점을 권역 전체의 중심으로 */
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.18s ease, filter 0.18s ease;
+  outline: none;
+}
+
+/* 기본은 아주 연한 라벤더, 호버한 권역만 진보라(브랜드색)로 */
+.korea-map-group path {
+  fill: #efe7fb;
+  stroke: #ffffff;
+  stroke-width: 1.2;
+  transition: fill 0.18s ease;
+}
+
+.korea-map-group.active {
+  cursor: pointer;
+}
+
+.korea-map-group.hovered {
+  transform: scale(1.08);
+  filter: drop-shadow(0 4px 10px rgba(24, 16, 39, 0.35));
+}
+
+.korea-map-group.active.hovered path {
+  fill: var(--brand);
+}
+
+/* 콘텐츠 없는 권역은 호버해도 연보라까지만 (클릭 불가 힌트) */
+.korea-map-group:not(.active).hovered path {
+  fill: #d9bfff;
+}
+
+.korea-map-group:not(.active) {
+  cursor: default;
+}
+
+/* 권역 이름 라벨 — 항상 표시, 호버한 권역만 잠시 숨김.
+   배경이 연보라로 통일되어 라벨은 진한 보라 한 가지로 쓴다. */
+.korea-map-label {
+  font-size: 14px;
+  font-weight: 700;
+  fill: #5b21a8;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.15s ease;
+}
+
+.korea-map-label.on-color {
+  fill: #5b21a8;
+}
+
+.korea-map-label.dimmed {
+  opacity: 0;
+}
+
+/* 수도권 소라벨 (서울·인천) — 밝은 배경에선 진보라, 호버(진보라 배경) 시 흰색 */
+.korea-map-sublabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: #5b21a8;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 2px;
+  transition: fill 0.18s ease;
+}
+
+.korea-map-group.hovered .korea-map-sublabel {
+  fill: #ffffff;
+  stroke: rgba(24, 16, 39, 0.35);
+}
+
+/* 주요 관광 지역 마커 — 호버한 권역의 것만 나타난다 */
+.korea-map-marker-group {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.korea-map-marker-group.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.korea-map-marker {
+  fill: var(--accent);
+  stroke: #ffffff;
+  stroke-width: 1.6;
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.15s ease;
+  outline: none;
+}
+
+.korea-map-marker:hover,
+.korea-map-marker:focus-visible {
+  transform: scale(1.5);
+}
+
+.korea-map-marker-name {
+  font-size: 9px;
+  font-weight: 600;
+  fill: #ffffff;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: rgba(24, 16, 39, 0.45);
+  stroke-width: 2.4px;
+}
+
+.korea-map-tooltip {
+  position: absolute;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--text-heading);
+  color: #ffffff;
+  border-radius: 10px;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(24, 16, 39, 0.25);
+  max-width: 220px;
+}
+
+.korea-map-tooltip-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.korea-map-tooltip-name em {
+  font-style: normal;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+.korea-map-tooltip-food {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffb27d;
+}
+
+.korea-map-tooltip-meta {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.korea-map-hint {
+  font-size: 13px;
+  color: var(--text-body);
+  margin: 0;
+  text-align: center;
+}
+
+/* 울릉도·독도 — 항상 표시 */
+.korea-map-islet {
+  fill: #c9c2d6;
+  stroke: #ffffff;
+  stroke-width: 0.8;
+  pointer-events: none;
+}
+
+.korea-map-islet-label {
+  font-size: 10px;
+  font-weight: 600;
+  fill: #8a8496;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 지역 목록 상단 권역 확대 지도 */
+.province-map {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+}
+
+.province-map-svg {
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+}
+
+.province-map-land {
+  stroke: #ffffff;
+  stroke-width: 0.8;
+}
+
+.province-map-sublabel {
+  font-size: 7px;
+  font-weight: 700;
+  fill: #5b21a8;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 1.4px;
+}
+
+.province-map-islet-label {
+  font-size: 6px;
+  font-weight: 600;
+  fill: #8a8496;
+  pointer-events: none;
+  user-select: none;
+}
+
+.province-map-marker {
+  fill: var(--accent);
+  stroke: #ffffff;
+  stroke-width: 0.9;
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.15s ease;
+  outline: none;
+}
+
+.province-map-marker:hover,
+.province-map-marker:focus-visible {
+  transform: scale(1.5);
+}
+
+.province-map-marker-name {
+  font-size: 6px;
+  font-weight: 600;
+  fill: var(--text-heading);
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 1.6px;
+}
+
+/* 메인 ② 한국 지도 자리 — 2주차에 SVG 지도 컴포넌트로 교체 예정 */
+.home-map-placeholder {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(133, 0, 255, 0.08), transparent 45%),
+    linear-gradient(315deg, rgba(220, 242, 243, 0.7), transparent 50%),
+    var(--surface);
+  border: 1px dashed var(--brand);
+  border-radius: var(--card-radius);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 300px;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.home-map-placeholder-badge {
+  background: var(--brand-soft);
+  border-radius: var(--pill-radius);
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 14px;
+}
+
+.home-map-placeholder-copy {
+  color: var(--text-body);
+  font-size: 15px;
+  margin: 0;
+  max-width: 480px;
+}
+
+.home-map-placeholder-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
 .route-visual {
   background:
-    linear-gradient(135deg, rgba(179, 54, 45, 0.18), transparent 36%),
-    linear-gradient(225deg, rgba(40, 112, 90, 0.18), transparent 42%),
-    #fffaf4;
+    linear-gradient(135deg, rgba(133, 0, 255, 0.16), transparent 36%),
+    linear-gradient(225deg, rgba(220, 242, 243, 0.6), transparent 42%),
+    var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
   min-height: 420px;
@@ -631,7 +1066,7 @@ h3 {
 }
 
 .tag {
-  background: #edf4ef;
+  background: var(--success-soft);
   border-radius: 999px;
   padding: 7px 10px;
 }
@@ -652,7 +1087,7 @@ h3 {
 
 .source-link span,
 .inline-link {
-  color: var(--accent);
+  color: var(--brand);
   font-size: 13px;
   font-weight: 900;
 }
@@ -703,7 +1138,7 @@ h3 {
 
 .review-no_candidate .review-note,
 .review-wrong_subject .review-note {
-  border-left-color: var(--accent);
+  border-left-color: var(--danger);
 }
 
 .form-panel {
@@ -783,13 +1218,13 @@ h3 {
 }
 
 .status-message.success {
-  background: #edf4ef;
-  color: var(--leaf);
+  background: var(--success-soft);
+  color: var(--success);
 }
 
 .status-message.error {
-  background: #fff0ed;
-  color: var(--accent-dark);
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .definition-list {
@@ -852,4 +1287,1382 @@ h3 {
   .feed-utility {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================================
+   Home v2 — Pencil 시안(home.html) 이식. DESIGN.md v2 토큰 사용.
+   ============================================================ */
+
+:root {
+  --photo-placeholder: #E5DDD2;
+}
+
+.home-v2 {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-v2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72px;
+  padding: 0 48px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.nav-v2-inner {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  max-width: 1264px;
+}
+
+.nav-v2-logo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-v2-wordmark {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.nav-v2-menu {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 36px;
+}
+
+.nav-v2-menu a {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-body);
+}
+
+.nav-v2-menu a.active {
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.nav-v2-action {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-v2-login,
+.nav-v2-action .auth-link {
+  padding: 10px 22px;
+  background: var(--brand);
+  color: #fff;
+  border-radius: var(--control-radius);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.hero-v2 {
+  background: var(--ivory);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 96px 48px;
+  text-align: center;
+}
+
+.hero-v2-badge {
+  padding: 8px 16px;
+  background: var(--mint);
+  border-radius: var(--pill-radius);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.hero-v2-headline {
+  max-width: 820px;
+  font-size: 56px;
+  line-height: 1.05;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.hero-v2-subtitle {
+  max-width: 600px;
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--text-body);
+}
+
+.hero-v2-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 640px;
+  padding: 14px 18px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  color: var(--text-body);
+  font-size: 16px;
+}
+
+.hero-v2-search-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 640px;
+  padding: 8px 8px 8px 18px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+}
+
+.hero-v2-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-heading);
+  font-size: 16px;
+}
+
+.hero-v2-search-input::placeholder {
+  color: var(--text-body);
+}
+
+.hero-v2-search-button {
+  flex-shrink: 0;
+  padding: 12px 22px;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--control-radius);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hero-v2-search-button:hover {
+  background: var(--brand-strong);
+}
+
+.hero-v2-cta {
+  padding: 16px 28px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--control-radius);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.hero-v2-quick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 640px;
+}
+
+.hero-v2-quick-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-body);
+}
+
+.hero-v2-quick-chip {
+  padding: 7px 16px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--pill-radius);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-heading);
+}
+
+.hero-v2-quick-chip:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+/* 히어로 아래 콘텐츠 현황 스트립 — 지금 이 가이드가 다루는 범위를 숫자로 보여준다. */
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  width: 100%;
+  max-width: 1264px;
+  margin: 0 auto;
+  padding: 32px 48px 0;
+}
+
+.home-stats-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 22px 16px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  text-align: center;
+}
+
+.home-stats-number {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--brand);
+  line-height: 1;
+}
+
+.home-stats-label {
+  font-size: 14px;
+  color: var(--text-body);
+}
+
+/* 취향별 시작점 카드 3종 */
+.home-intent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.home-intent-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 28px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-left: 4px solid var(--brand);
+  border-radius: var(--card-radius);
+}
+
+.home-intent-card:hover {
+  border-color: var(--brand);
+}
+
+.home-intent-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.home-intent-desc {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-body);
+}
+
+/* 홈 카드 설명은 길이가 제각각이라 3줄로 잘라 카드 높이를 맞춘다. */
+.home-v2 .card-v2-meta {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-v2 .card-v2-meta.strong {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+/* 페이지 마무리 CTA 밴드 */
+.home-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 80px 48px;
+  background: var(--brand);
+  text-align: center;
+}
+
+.home-cta-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: #fff;
+  max-width: 640px;
+}
+
+.home-cta-subtitle {
+  font-size: 17px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 560px;
+}
+
+.home-cta-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.home-cta-primary {
+  padding: 15px 28px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--control-radius);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.home-cta-secondary {
+  padding: 15px 28px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  border-radius: var(--control-radius);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-input {
+  flex: 1;
+  min-height: 48px;
+  padding: 12px 16px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--control-radius);
+  color: var(--text-heading);
+  font: inherit;
+  font-size: 16px;
+}
+
+.search-input::placeholder {
+  color: var(--text-body);
+}
+
+.section-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 80px 48px;
+  align-items: center;
+}
+
+.section-v2-inner {
+  width: 100%;
+  max-width: 1264px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.section-v2-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+}
+
+.section-v2-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-v2-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 12px;
+  background: var(--brand-soft);
+  border-radius: var(--pill-radius);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--brand);
+  text-transform: uppercase;
+}
+
+.section-v2-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.section-v2-subtitle {
+  max-width: 560px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-body);
+}
+
+.section-v2-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--brand);
+  white-space: nowrap;
+}
+
+.card-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+.card-v2 {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-v2-photo {
+  position: relative;
+  height: 200px;
+  background: var(--photo-placeholder);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.card-v2-photo.tall {
+  height: 300px;
+}
+
+.card-v2-photo-mono {
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  user-select: none;
+}
+
+.card-v2-photo.tall .card-v2-photo-mono {
+  font-size: 128px;
+}
+
+.card-v2-photo-tag {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(2px);
+}
+
+.card-v2-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+}
+
+.card-v2-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.card-v2-meta {
+  font-size: 15px;
+  color: var(--text-body);
+}
+
+.card-v2-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.section-v2.alt {
+  background: var(--ivory);
+}
+
+.footer-v2 {
+  background: var(--sidebar-dark);
+  color: var(--sidebar-muted);
+  padding: 32px 48px;
+  display: flex;
+  justify-content: center;
+}
+
+.footer-v2-nav {
+  width: 100%;
+  max-width: 1264px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.footer-v2-nav a {
+  color: var(--sidebar-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  /* 모바일에서 메뉴를 숨기면 이동 수단이 없어지므로,
+     로고·로그인 아래 줄로 내려 가로 스크롤되는 메뉴로 유지한다. */
+  .nav-v2 {
+    height: auto;
+    padding: 12px 20px;
+  }
+
+  .nav-v2-inner {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
+  .nav-v2-menu {
+    order: 3;
+    flex: 1 0 100%;
+    justify-content: flex-start;
+    gap: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-v2-menu a {
+    white-space: nowrap;
+  }
+
+  .card-grid-v2 {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-v2-headline {
+    font-size: 36px;
+  }
+
+  .home-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 24px 24px 0;
+  }
+
+  .home-intent-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .korea-map {
+    padding: 14px;
+  }
+
+  .home-cta {
+    padding: 56px 24px;
+  }
+
+  .home-cta-title {
+    font-size: 26px;
+  }
+}
+
+/* ============================================================
+   Admin v2 — Pencil 시안(admin-*.html) 이식. DESIGN.md v2 토큰.
+   사이드바 4메뉴 + 상단 탭 + 메트릭/테이블 공통 패턴.
+   ============================================================ */
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  background: var(--sidebar-dark);
+  color: var(--sidebar-muted);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  gap: 28px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.admin-sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+}
+
+.admin-sidebar-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--control-radius);
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.admin-sidebar-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-sidebar-brand strong {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.admin-sidebar-brand span {
+  font-size: 12px;
+  color: var(--sidebar-muted);
+}
+
+.admin-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.admin-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: var(--control-radius);
+  color: var(--sidebar-muted);
+}
+
+.admin-menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-menu-item.active {
+  background: var(--brand);
+}
+
+.admin-menu-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.admin-menu-desc {
+  font-size: 12px;
+  color: var(--sidebar-muted);
+}
+
+.admin-menu-item.active .admin-menu-desc {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.admin-sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: var(--control-radius);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-sidebar-footer-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--sidebar-muted);
+}
+
+.admin-sidebar-footer-value {
+  font-size: 12px;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.admin-sidebar-signout {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-soft);
+  margin-top: 4px;
+}
+
+.admin-main {
+  background: var(--surface);
+  padding: 32px 40px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.admin-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.admin-topbar-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 720px;
+}
+
+.admin-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+.admin-topbar h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.admin-topbar p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text-body);
+}
+
+.admin-topbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.admin-btn {
+  padding: 10px 18px;
+  border-radius: var(--control-radius);
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--border-default);
+  background: var(--card);
+  color: var(--text-heading);
+  cursor: pointer;
+}
+
+.admin-btn.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.admin-btn.primary:hover {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-default);
+  flex-wrap: wrap;
+}
+
+.admin-tab {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-body);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.admin-tab:hover {
+  color: var(--text-heading);
+}
+
+.admin-tab.active {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+
+.admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-metric-card {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-metric-label {
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.admin-metric-value {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.admin-metric-sub {
+  font-size: 12px;
+  color: var(--text-body);
+}
+
+.admin-delta-up {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.admin-delta-down {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.admin-panel {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-panel-head h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.admin-panel-head p {
+  font-size: 14px;
+  color: var(--text-body);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-body);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.admin-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-heading);
+  vertical-align: top;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--pill-radius);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-badge.brand {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.admin-badge.success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.admin-badge.warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.admin-badge.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.admin-flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-flow-step {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-flow-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.admin-flow-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.admin-flow-desc {
+  font-size: 12px;
+  color: var(--text-body);
+}
+
+.admin-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-body);
+  font-size: 14px;
+}
+
+.admin-form-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .admin-menu {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .admin-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ============================================================
+   Food detail v2 — Pencil 시안(food-detail.html) 이식.
+   기존 신뢰 기능(사진 저작권·지역·장소)은 유지, 디자인만 v2.
+   ============================================================ */
+
+.food-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 32px 48px 72px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.food-breadcrumb {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.food-breadcrumb a {
+  color: var(--text-body);
+}
+
+.food-breadcrumb a:hover {
+  color: var(--brand);
+}
+
+.food-hero-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 260px;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+}
+
+.food-hero-photo-mono {
+  font-size: 140px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  user-select: none;
+}
+
+.food-v2-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.food-v2-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.food-v2-names {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.food-v2-name-en {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.food-v2-name-ko {
+  font-size: 20px;
+  color: var(--text-body);
+}
+
+.food-v2-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.food-chip {
+  padding: 6px 12px;
+  border-radius: var(--pill-radius);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.food-chip.spicy {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.food-v2-summary {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--text-body);
+  max-width: 720px;
+}
+
+.food-v2-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.food-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.food-info-card {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.food-info-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.food-info-card p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-body);
+}
+
+.food-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .food-v2 {
+    padding: 24px;
+  }
+
+  .food-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .food-v2-name-en {
+    font-size: 30px;
+  }
+}
+
+/* ============================================================
+   My Journey v2 — Pencil 시안(mypage.html) 이식.
+   도감(50종) 트래커. tried 상태는 사용자 데이터 연동 전까지 기본값.
+   ============================================================ */
+
+.mypage-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 32px 48px 72px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.mypage-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mypage-header .food-v2-eyebrow {
+  text-transform: uppercase;
+}
+
+.mypage-header h1 {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.mypage-header p {
+  font-size: 16px;
+  color: var(--text-body);
+  max-width: 640px;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.collection-item {
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.collection-item.tried {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.collection-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-body);
+}
+
+.collection-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.collection-state {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-body);
+}
+
+.collection-state.tried {
+  color: var(--brand-strong);
+}
+
+.collection-state-toggle {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-body);
+}
+
+.collection-state-toggle:hover {
+  text-decoration: underline;
+}
+
+.collection-state-toggle.tried {
+  color: var(--brand-strong);
+}
+
+/* ── 콘텐츠 추가 통합 입구 (유형 선택 드롭다운) ── */
+.admin-add-menu {
+  position: relative;
+}
+
+.admin-add-menu > summary {
+  list-style: none;
+}
+
+.admin-add-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-add-menu-list {
+  position: absolute;
+  right: 0;
+  margin-top: 6px;
+  min-width: 220px;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 20;
+  box-shadow: 0 8px 24px rgba(28, 0, 51, 0.12);
+}
+
+.admin-add-menu-title {
+  font-size: 12px;
+  color: var(--text-body);
+  padding: 6px 10px;
+}
+
+.admin-add-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 10px;
+  border-radius: var(--control-radius);
+}
+
+.admin-add-menu-item:hover {
+  background: var(--brand-soft);
+}
+
+.admin-add-menu-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.admin-add-menu-desc {
+  font-size: 12px;
+  color: var(--text-body);
+}
+
+/* ── 촬영 콘텐츠 태그 선택 (참조 콘텐츠 연결) ── */
+.admin-tag-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  background: var(--ivory);
+}
+
+.admin-tag-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-tag-group-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.admin-tag-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-tag-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--pill-radius);
+  background: var(--card);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-tag-option input {
+  min-height: auto;
+  width: auto;
+  margin: 0;
 }

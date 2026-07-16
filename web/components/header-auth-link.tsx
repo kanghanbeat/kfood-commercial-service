@@ -1,17 +1,18 @@
 import Link from "next/link";
 
 import { getPublicSession } from "@/lib/public-auth";
+import { getDict } from "@/lib/i18n";
 
 export async function HeaderAuthLink() {
-  const session = await getPublicSession();
+  const [session, dict] = await Promise.all([getPublicSession(), getDict()]);
 
   return session ? (
     <Link className="auth-link" href="/mypage">
-      Mypage
+      {dict.nav.mypage}
     </Link>
   ) : (
     <Link className="auth-link" href="/auth/login">
-      Log in
+      {dict.nav.login}
     </Link>
   );
 }

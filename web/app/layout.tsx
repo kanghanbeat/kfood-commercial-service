@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { isCommunityEnabled } from "@kfood/data";
 import { siteConfig } from "@kfood/config";
 
 import { AuthHashRedirector } from "@/components/auth-hash-redirector";
 import { HeaderAuthLink } from "@/components/header-auth-link";
+import { SiteFooter, SiteHeader } from "@/components/site-chrome";
+import { getDict, getLocale } from "@/lib/i18n";
 
 import "./globals.css";
 
@@ -24,44 +26,30 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const [communityEnabled, locale, dict] = await Promise.all([
+    isCommunityEnabled(),
+    getLocale(),
+    getDict()
+  ]);
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body>
         <AuthHashRedirector />
-        <header className="site-header">
-          <Link className="brand" href="/">
-            K-food Service
-          </Link>
-          <nav aria-label="Primary navigation">
-            <Link href="/feed">Feed</Link>
-            <Link href="/search">Search</Link>
-            <Link href="/recommend">Recommend</Link>
-            <HeaderAuthLink />
-          </nav>
-        </header>
+        <SiteHeader
+          authLink={<HeaderAuthLink />}
+          communityEnabled={communityEnabled}
+          labels={{
+            food: dict.nav.food,
+            community: dict.nav.community,
+            myPage: dict.nav.myPage,
+            switchLanguage: dict.nav.switchLanguage
+          }}
+          locale={locale}
+        />
         {children}
-        <footer className="site-footer">
-          <div className="footer-grid" aria-label="Trust and policy navigation">
-            <nav aria-labelledby="footer-support">
-              <h2 id="footer-support">Support</h2>
-              <Link href="/report">Report</Link>
-              <Link href="/contact">Contact</Link>
-            </nav>
-            <nav aria-labelledby="footer-trust">
-              <h2 id="footer-trust">Trust</h2>
-              <Link href="/editorial-policy">Editorial Policy</Link>
-              <Link href="/content-policy">Content Policy</Link>
-              <Link href="/disclosures">Disclosures</Link>
-              <Link href="/maps-notice">Maps Notice</Link>
-            </nav>
-            <nav aria-labelledby="footer-legal">
-              <h2 id="footer-legal">Legal</h2>
-              <Link href="/privacy">Privacy</Link>
-              <Link href="/terms">Terms</Link>
-            </nav>
-          </div>
-        </footer>
+        <SiteFooter labels={dict.footer} />
       </body>
     </html>
   );

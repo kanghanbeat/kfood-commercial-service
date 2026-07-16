@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 
 const adminAccessTokenCookie = "kfood_admin_access_token";
 const adminRefreshTokenCookie = "kfood_admin_refresh_token";
@@ -14,12 +14,9 @@ type RefreshResult = {
   refresh_token: string;
 };
 
-type RequestCookieJar = Map<string, string>;
-type ResponseCookie = {
-  name: string;
-  options: CookieOptions;
-  value: string;
-};
+// 어드민 세션 쿠키를 이번 응답에서 어떻게 처리할지.
+// null = 건드리지 않음, "clear" = 만료돼서 삭제, 객체 = 갱신된 토큰으로 교체.
+type AdminCookieUpdate = { access: string; refresh: string } | "clear" | null;
 
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -65,6 +62,19 @@ function shouldRefresh(accessToken: string | undefined) {
   return expiresAt - Math.floor(Date.now() / 1000) <= refreshSkewSeconds;
 }
 
+// 만료 임박(skew) 판단과 별개로, "진짜 만료됐는지"만 본다.
+// refreshSession()이 일시적으로 실패했을 때(네트워크 hiccup 등) 아직 유효한
+// 토큰까지 지워버리지 않기 위한 구분 — 진짜 만료된 경우에만 세션을 지운다.
+function isExpired(accessToken: string | undefined) {
+  const expiresAt = getJwtExpiresAt(accessToken);
+
+  if (!expiresAt) {
+    return false;
+  }
+
+  return expiresAt - Math.floor(Date.now() / 1000) <= 0;
+}
+
 async function refreshSession(refreshToken: string | undefined) {
   const config = getSupabaseConfig();
 
@@ -91,214 +101,127 @@ async function refreshSession(refreshToken: string | undefined) {
   return (await response.json()) as RefreshResult;
 }
 
-function setSessionCookies(
-  requestCookies: RequestCookieJar,
-  session: RefreshResult
-) {
-  requestCookies.set(adminAccessTokenCookie, session.access_token);
-  requestCookies.set(adminRefreshTokenCookie, session.refresh_token);
-}
-
-function clearSessionCookies(requestCookies: RequestCookieJar) {
-  requestCookies.delete(adminAccessTokenCookie);
-  requestCookies.delete(adminRefreshTokenCookie);
-}
-
-async function refreshAdminScopeIfNeeded(
-  request: NextRequest,
-  requestCookies: RequestCookieJar
-) {
+// 어드민 세션(경로 /admin 한정 커스텀 쿠키)은 공개 세션과 완전히 분리해서 관리한다.
+async function computeAdminUpdate(
+  request: NextRequest
+): Promise<AdminCookieUpdate> {
   const accessToken = request.cookies.get(adminAccessTokenCookie)?.value;
   const refreshToken = request.cookies.get(adminRefreshTokenCookie)?.value;
 
   if (!shouldRefresh(accessToken)) {
-    return;
+    return null;
   }
 
   const refreshedSession = await refreshSession(refreshToken);
 
   if (!refreshedSession) {
-    clearSessionCookies(requestCookies);
+    // 갱신 요청 자체가 실패해도, 지금 가진 토큰이 아직 만료 전이면 그대로 둔다.
+    return isExpired(accessToken) ? "clear" : null;
+  }
+
+  return {
+    access: refreshedSession.access_token,
+    refresh: refreshedSession.refresh_token
+  };
+}
+
+function applyAdminCookies(response: NextResponse, update: AdminCookieUpdate) {
+  if (!update) {
     return;
   }
 
-  setSessionCookies(requestCookies, refreshedSession);
-}
-
-function updateRequestCookieJar(
-  requestCookies: RequestCookieJar,
-  cookie: ResponseCookie
-) {
-  if (cookie.options.maxAge === 0 || cookie.value === "") {
-    requestCookies.delete(cookie.name);
-    return;
-  }
-
-  requestCookies.set(cookie.name, cookie.value);
-}
-
-async function syncPublicSupabaseSession(requestCookies: RequestCookieJar) {
-  const config = getSupabaseConfig();
-  const cookiesToSet: ResponseCookie[] = [];
-  const headersToSet: Record<string, string> = {};
-
-  if (!config) {
-    return { cookiesToSet, headersToSet };
-  }
-
-  const supabase = createServerClient(config.url, config.anonKey, {
-    cookies: {
-      getAll() {
-        return Array.from(requestCookies.entries()).map(([name, value]) => ({
-          name,
-          value
-        }));
-      },
-      setAll(nextCookies, nextHeaders) {
-        nextCookies.forEach((cookie) => {
-          updateRequestCookieJar(requestCookies, cookie);
-          cookiesToSet.push(cookie);
-        });
-        Object.assign(headersToSet, nextHeaders);
-      }
-    }
-  });
-
-  await supabase.auth.getUser();
-
-  return { cookiesToSet, headersToSet };
-}
-
-function getRequestCookieJar(request: NextRequest): RequestCookieJar {
-  return new Map(
-    request.cookies.getAll().map((cookie) => [cookie.name, cookie.value])
-  );
-}
-
-function serializeCookieHeader(cookies: RequestCookieJar) {
-  return Array.from(cookies.entries())
-    .map(([name, value]) => `${name}=${value}`)
-    .join("; ");
-}
-
-function writeResponseCookies(
-  request: NextRequest,
-  response: NextResponse,
-  requestCookies: RequestCookieJar
-) {
-  const secure = process.env.NODE_ENV === "production";
-
-  const writeHttpOnlyCookie = (
-    name: string,
-    path: string,
-    maxAge: number,
-    fallbackValue?: string
-  ) => {
-    const originalValue = request.cookies.get(name)?.value;
-    const nextValue = requestCookies.get(name);
-
-    if (nextValue && nextValue !== originalValue) {
-      response.cookies.set(name, nextValue, {
-        httpOnly: true,
-        maxAge,
-        path,
-        sameSite: "lax",
-        secure
-      });
-      return;
-    }
-
-    if (!nextValue && originalValue) {
-      response.cookies.set(name, "", {
-        httpOnly: true,
-        maxAge: 0,
-        path,
-        sameSite: "lax",
-        secure
-      });
-      return;
-    }
-
-    if (fallbackValue && !originalValue && nextValue === fallbackValue) {
-      response.cookies.set(name, fallbackValue, {
-        httpOnly: true,
-        maxAge,
-        path,
-        sameSite: "lax",
-        secure
-      });
-    }
+  const base = {
+    httpOnly: true,
+    path: "/admin",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
   };
 
-  writeHttpOnlyCookie(
-    adminAccessTokenCookie,
-    "/admin",
-    adminSessionMaxAge
-  );
-  writeHttpOnlyCookie(
-    adminRefreshTokenCookie,
-    "/admin",
-    adminSessionMaxAge
-  );
-}
+  if (update === "clear") {
+    response.cookies.set(adminAccessTokenCookie, "", { ...base, maxAge: 0 });
+    response.cookies.set(adminRefreshTokenCookie, "", { ...base, maxAge: 0 });
+    return;
+  }
 
-function writeSupabaseResponseCookies(
-  response: NextResponse,
-  cookiesToSet: ResponseCookie[],
-  headersToSet: Record<string, string>
-) {
-  cookiesToSet.forEach(({ name, options, value }) => {
-    response.cookies.set(name, value, {
-      ...options,
-      secure: process.env.NODE_ENV === "production"
-    });
+  response.cookies.set(adminAccessTokenCookie, update.access, {
+    ...base,
+    maxAge: adminSessionMaxAge
   });
-
-  Object.entries(headersToSet).forEach(([key, value]) => {
-    response.headers.set(key, value);
+  response.cookies.set(adminRefreshTokenCookie, update.refresh, {
+    ...base,
+    maxAge: adminSessionMaxAge
   });
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const requestCookies = getRequestCookieJar(request);
-  const requestHeaders = new Headers(request.headers);
 
-  const publicSessionSync = await syncPublicSupabaseSession(requestCookies);
-  await refreshAdminScopeIfNeeded(request, requestCookies);
+  // 1) 어드민 세션 갱신 — 다운스트림 페이지가 새 토큰을 읽도록 요청 쿠키에 반영
+  const adminUpdate = await computeAdminUpdate(request);
 
-  requestHeaders.set("cookie", serializeCookieHeader(requestCookies));
-  const response = NextResponse.next({
-    request: {
-      headers: requestHeaders
+  if (adminUpdate === "clear") {
+    request.cookies.delete(adminAccessTokenCookie);
+    request.cookies.delete(adminRefreshTokenCookie);
+  } else if (adminUpdate) {
+    request.cookies.set(adminAccessTokenCookie, adminUpdate.access);
+    request.cookies.set(adminRefreshTokenCookie, adminUpdate.refresh);
+  }
+
+  // 2) 공개 세션 — Supabase 공식(@supabase/ssr) 미들웨어 패턴 그대로.
+  // getUser()가 필요 시 토큰을 갱신하고, setAll이 요청/응답 양쪽에 반영한다.
+  // 쿠키 삭제 가드·프리페치 우회 같은 커스텀 로직은 두지 않는다(과거 로그인
+  // 풀림 버그의 원인이 이런 커스텀 배선이었다).
+  let response = NextResponse.next({ request });
+  applyAdminCookies(response, adminUpdate);
+
+  const config = getSupabaseConfig();
+
+  if (config) {
+    const supabase = createServerClient(config.url, config.anonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          response = NextResponse.next({ request });
+          applyAdminCookies(response, adminUpdate);
+          cookiesToSet.forEach(({ name, options, value }) =>
+            response.cookies.set(name, value, options)
+          );
+        }
+      }
+    });
+
+    await supabase.auth.getUser();
+  }
+
+  // 3) 어드민 접근 게이트
+  if (
+    pathname.startsWith("/admin") &&
+    !pathname.startsWith("/admin/login") &&
+    !pathname.startsWith("/admin/logout")
+  ) {
+    // 개발용 어드민 미리보기 스위치. 프로덕션에선 절대 동작하지 않음(NODE_ENV 가드).
+    if (
+      process.env.NODE_ENV !== "production" &&
+      process.env.ADMIN_PREVIEW === "true"
+    ) {
+      return response;
     }
-  });
-  writeResponseCookies(request, response, requestCookies);
-  writeSupabaseResponseCookies(
-    response,
-    publicSessionSync.cookiesToSet,
-    publicSessionSync.headersToSet
-  );
 
-  if (pathname.startsWith("/admin/login") || pathname.startsWith("/admin/logout")) {
-    return response;
+    const hasAdminAccess = request.cookies.get(adminAccessTokenCookie)?.value;
+
+    if (!hasAdminAccess) {
+      const loginUrl = new URL("/admin/login", request.url);
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
-  if (!pathname.startsWith("/admin")) {
-    return response;
-  }
-
-  const hasAdminAccess =
-    response.cookies.get(adminAccessTokenCookie)?.value ||
-    requestCookies.get(adminAccessTokenCookie);
-
-  if (hasAdminAccess) {
-    return response;
-  }
-
-  const loginUrl = new URL("/admin/login", request.url);
-  loginUrl.searchParams.set("next", pathname);
-  return NextResponse.redirect(loginUrl);
+  return response;
 }
 
 export const config = {

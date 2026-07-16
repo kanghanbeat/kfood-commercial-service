@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   clearLegacyPublicAuthCookiesOnResponse,
-  createPublicSupabaseServerClient,
   ensurePublicProfile,
   getSafeNextPath
 } from "@/lib/public-auth";
+import { createSupabaseRouteClient } from "@/lib/supabase/route-client";
 
 function redirectWithError(request: NextRequest, message: string, nextPath: string) {
   const joinUrl = new URL("/auth/join", request.url);
   joinUrl.searchParams.set("next", nextPath);
   joinUrl.searchParams.set("error", message);
-  return NextResponse.redirect(joinUrl);
+  return NextResponse.redirect(joinUrl, { status: 303 });
 }
 
 export async function POST(request: NextRequest) {
@@ -41,13 +41,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = await createPublicSupabaseServerClient();
+  const routeClient = createSupabaseRouteClient(request);
 
-  if (!supabase) {
+  if (!routeClient) {
     return redirectWithError(request, "Supabase Auth is not configured.", nextPath);
   }
 
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await routeClient.supabase.auth.signUp({
     email,
     options: {
       data: {
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       "notice",
       "Account created. Check your email before signing in."
     );
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(loginUrl, { status: 303 });
   }
 
   await ensurePublicProfile({
@@ -88,7 +88,11 @@ export async function POST(request: NextRequest) {
     userId: data.user.id
   });
 
-  const response = NextResponse.redirect(new URL(nextPath, request.url));
+  // 세션 쿠키를 "반환하는 응답"에 직접 실어 브라우저 전달을 보장한다.
+  const response = NextResponse.redirect(new URL(nextPath, request.url), {
+    status: 303
+  });
+  routeClient.applyCookies(response);
   clearLegacyPublicAuthCookiesOnResponse(response);
   return response;
 }

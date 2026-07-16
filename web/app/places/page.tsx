@@ -2,40 +2,47 @@ import Link from "next/link";
 
 import { getPublishedPlaces, getPublishedRegions } from "@kfood/data";
 
+import { CardPhoto } from "@/components/card-photo";
+import { FoodTabs } from "@/components/food-tabs";
+import { getDict } from "@/lib/i18n";
+
 export const metadata = {
   title: "K-food Places"
 };
 
 export default async function PlacesPage() {
-  const [places, regions] = await Promise.all([
+  const [places, regions, dict] = await Promise.all([
     getPublishedPlaces(),
-    getPublishedRegions()
+    getPublishedRegions(),
+    getDict()
   ]);
 
   return (
-    <main className="page-shell">
-      <header className="detail-header">
-        <p className="eyebrow">Places</p>
-        <h1>Editorial place directions</h1>
-        <p className="detail-intro">
-          MVP place pages start as curated directions and trust notes before
-          adding live map data or reservations.
-        </p>
+    <div className="food-v2">
+      <FoodTabs active="places" />
+      <header className="food-v2-header">
+        <span className="food-v2-eyebrow">{dict.lists.placesEyebrow}</span>
+        <div className="food-v2-names">
+          <span className="food-v2-name-en">{dict.lists.placesTitle}</span>
+        </div>
+        <p className="food-v2-summary">{dict.lists.placesSummary}</p>
       </header>
-      <ul className="content-list">
+      <div className="card-grid-v2">
         {places.map((place) => {
           const region = regions.find((item) => item.slug === place.regionSlug);
           return (
-            <li key={place.slug}>
-              <Link href={`/places/${place.slug}`}>
-                <span className="meta-label">{region?.nameEn ?? "Seoul"}</span>
-                <strong>{place.nameEn}</strong>
-                <p>{place.editorialNote}</p>
-              </Link>
-            </li>
+            <Link className="card-v2" href={`/places/${place.slug}`} key={place.slug}>
+              <CardPhoto label={place.nameEn} variant="place" />
+              <div className="card-v2-body">
+                <span className="food-chip">{region?.nameEn ?? "Seoul"}</span>
+                <span className="card-v2-title">{place.nameEn}</span>
+                <span className="card-v2-meta">{place.editorialNote}</span>
+                <span className="card-v2-link">{dict.common.view} →</span>
+              </div>
+            </Link>
           );
         })}
-      </ul>
-    </main>
+      </div>
+    </div>
   );
 }

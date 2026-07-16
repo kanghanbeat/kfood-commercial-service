@@ -48,6 +48,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${siteConfig.url}/foods/${food.slug}`,
       lastModified: now
     })),
+    // 음식×지역 조합 페이지 — 롱테일 검색 유입구 (기획정렬 §1-3)
+    ...foods.flatMap((food) =>
+      food.regionSlugs.map((regionSlug) => ({
+        url: `${siteConfig.url}/foods/${food.slug}/${regionSlug}`,
+        lastModified: now
+      }))
+    ),
     ...places.map((place) => ({
       url: `${siteConfig.url}/places/${place.slug}`,
       lastModified: now

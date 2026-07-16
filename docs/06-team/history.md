@@ -875,3 +875,348 @@ Next action:
 After Hanbit confirms production public auth persistence, discuss and apply the
 design-only subset from PR `#1` separately. Do not merge PR `#1` wholesale before
 auth is stable.
+
+## 2026-07-09 Hanbit Approval For Main Redesign Week 1 And Planning §5
+
+Date:
+
+2026-07-09
+
+Request:
+
+Hanbit asked to approve the current direction and update Markdown records after
+reviewing Session 6 changes, planning documents, and PR `#1` merge readiness.
+
+Action:
+
+- Pulled latest `feature/design-tokens-v2`.
+- Read:
+  - `docs/06-team/session-handoff.md`
+  - `docs/06-team/기획정렬-한빛대조.md`
+  - `docs/06-team/메인개편-작업계획.md`
+- Checked Session 6 diffs separately from the full PR diff.
+- Confirmed Session 6 did not change `supabase/`, `.env.example`,
+  `web/proxy.ts`, `web/app/auth/**`, `web/lib/public-auth.ts`, or
+  `web/lib/admin-auth.ts`.
+- Confirmed `platform_settings` key expansion is a string-key use of the
+  existing `platform_settings(key, enabled)` table, not a schema or RLS change.
+- Confirmed `web/lib/i18n/` is cookie-based UI copy only and does not change
+  schema, RLS, environment variables, or URLs.
+- Confirmed PR `#1` is `MERGEABLE` and `CLEAN` on GitHub.
+- Recorded approval in the three planning/handoff docs.
+
+Verification:
+
+```text
+git pull
+gh pr view 1 --json number,headRefName,baseRefName,mergeStateStatus,mergeable,url
+npm run check
+npm run web:build
+```
+
+Results:
+
+- PR `#1`: `mergeable: MERGEABLE`, `mergeStateStatus: CLEAN`.
+- `npm run check`: passed.
+- `npm run web:build`: passed. Supabase DNS fetch warnings occurred because of
+  the restricted local network, but the build completed through fallback.
+- `git diff --check` found trailing whitespace in
+  `docs/04-quality/code-analysis-2026-07-08.md`; this is a cleanup item before
+  merge, not a functional blocker.
+
+Issue or misjudgment:
+
+The correct approval boundary must distinguish Session 6 from PR `#1` as a
+whole. Session 6 has no schema/RLS/env/auth-file change, but PR `#1` as a whole
+still contains earlier high-risk work such as migrations `008` to `011`,
+auth/session hardening, and `.env.example` updates.
+
+Decision rule for next time:
+
+When approving a broad PR with multiple sessions, always separate:
+
+```text
+latest session diff
+full PR diff against main
+```
+
+Do not describe the whole PR as "schema unchanged" just because the latest
+session is schema unchanged.
+
+Hanbit decision:
+
+- §5 agenda 1, 3-month content-site focus: O.
+- §5 agenda 2, 3-category IA + 4-section home + SVG map: O.
+- Province-to-region mapping for Week 2 map work: **Option A**,
+  code mapping table with no schema change.
+- §5 agenda 3, Sol-led development and Hanbit security/maintenance/review: O.
+- §5 agenda 4, weekly loop: O.
+- §5 agenda 5, Vercel Pro at AdSense timing: O / acknowledged.
+
+Next action:
+
+Start Main Redesign Week 2 map work using Option A. Do not change DB schema,
+RLS, or production environment variables for this step.
+
+## 2026-07-13 Team Briefing Document And Git State Explanation
+
+Date:
+
+2026-07-13
+
+Request:
+
+Hanbit asked for the current GitHub/project state to be turned into a team
+distribution file, then asked what `untracked` means and what it means that four
+older Markdown edits are still uncommitted.
+
+Action:
+
+- Created a team briefing document:
+
+```text
+docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+- The new document summarizes:
+  - current branch and PR state,
+  - detailed change/new-item table,
+  - Hanbit approval/check responsibilities,
+  - remaining work order,
+  - existing direction vs changed development direction,
+  - priority tiers from P0 to P3,
+  - code files that future collaborators must understand.
+- Explained that `untracked` means the file exists locally but Git is not yet
+  tracking it and it will not be included in a commit until explicitly staged
+  with `git add`.
+- Explained that there are five local changes at this point:
+  - four previously modified Markdown files,
+  - one newly created untracked briefing document.
+- Explained that the new briefing document can be committed alone, or all five
+  local document changes can be committed together.
+
+Current local Git state observed:
+
+```text
+M docs/06-team/history.md
+M docs/06-team/session-handoff.md
+M docs/06-team/기획정렬-한빛대조.md
+M docs/06-team/메인개편-작업계획.md
+?? docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+Important context:
+
+- The local branch is `feature/design-tokens-v2`.
+- Earlier in the session, remote `origin/feature/design-tokens-v2` was observed
+  to be 14 commits ahead of local.
+- The latest remote work includes the Main Redesign Week 2 SVG map work.
+- The local worktree has not yet been reconciled with those remote commits
+  because local Markdown edits should not be overwritten casually.
+
+Verification:
+
+```text
+git diff --check -- docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+Result:
+
+- The new briefing document passed `git diff --check`.
+
+Issue or misjudgment:
+
+No code issue was introduced. The main operational risk is Git state confusion:
+new files, modified files, local-only changes, remote-only changes, commits, and
+pushes are easy to conflate.
+
+Decision rule for next time:
+
+Before telling a teammate that something is available on GitHub, confirm it is:
+
+```text
+created locally
+staged
+committed
+pushed
+```
+
+These are four different states. A local untracked file is not visible to other
+teammates through GitHub.
+
+Hanbit check items:
+
+- Decide whether to commit only:
+
+```text
+docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+- Or commit the full local document batch:
+
+```text
+docs/06-team/history.md
+docs/06-team/session-handoff.md
+docs/06-team/기획정렬-한빛대조.md
+docs/06-team/메인개편-작업계획.md
+docs/06-team/팀-현재상태-개발방향-브리핑.md
+```
+
+Next action:
+
+If Hanbit wants the briefing distributed through GitHub, stage, commit, and push
+the chosen file set. Because the local branch is behind the remote branch, fetch
+and reconcile remote changes before pushing if necessary.
+
+## 2026-07-13 Local/Remote Reconciliation And History Rule Update
+
+Date:
+
+2026-07-13
+
+Request:
+
+Hanbit approved the recommended cleanup flow and then asked what to do next.
+After the cleanup was completed, Hanbit asked that the current state be recorded
+in this file and that future command-driven work automatically update
+`history.md` before reporting.
+
+Action:
+
+- Committed the local document batch before pulling remote work:
+
+```text
+80cbd86 docs(team): preserve local planning handoff notes
+```
+
+- Rebased the local document commit on top of the latest
+  `origin/feature/design-tokens-v2`.
+- Resolved document conflicts in:
+
+```text
+docs/06-team/session-handoff.md
+docs/06-team/메인개편-작업계획.md
+```
+
+- Kept the remote Main Redesign Week 2 map completion records as the current
+  source of truth.
+- Preserved Hanbit's 2026-07-09 approval details inside
+  `docs/06-team/session-handoff.md`.
+- Confirmed the new briefing document has a unique filename and does not collide
+  with the remote-added team documents:
+
+```text
+docs/06-team/팀-현재상태-개발방향-브리핑.md
+docs/06-team/벤치마크-레퍼런스.md
+docs/06-team/업무-플로우.md
+docs/06-team/협업-가이드.md
+```
+
+- Pushed the reconciled branch to GitHub after Hanbit refreshed GitHub
+  authentication.
+
+Current GitHub state:
+
+```text
+Repository: https://github.com/kanghanbeat/kfood-commercial-service
+Branch: feature/design-tokens-v2
+Latest commit: 80cbd86 docs(team): preserve local planning handoff notes
+Local state: matches origin/feature/design-tokens-v2
+```
+
+Verification:
+
+```text
+git diff --check
+npm run check
+npm run web:build
+git ls-remote origin refs/heads/feature/design-tokens-v2
+```
+
+Results:
+
+- `git diff --check`: passed.
+- `npm run check`: passed.
+- `npm run web:build`: passed.
+- Build logs included Supabase DNS warnings caused by restricted local network
+  access, but the build completed successfully through fallback behavior.
+- GitHub server branch was confirmed at:
+
+```text
+80cbd86b22d9940d344951b4bf2c05a0c2703199
+```
+
+Issue or misjudgment:
+
+- `gh auth status` inside the Codex environment still reported an invalid token
+  at one point even after Git push/server branch checks were possible. Do not
+  conflate GitHub CLI auth state, Git remote credential state, and actual remote
+  branch state.
+- Earlier "ahead 1" was only true before the successful push. After Hanbit's
+  push, local and remote matched.
+
+Decision rule for next time:
+
+For this project, after any command-driven work that changes state or informs a
+project decision, Codex should update `docs/06-team/history.md` before final
+reporting when the work affects any of the following:
+
+```text
+git state
+GitHub branch/PR state
+auth or GitHub authentication
+Supabase, Vercel, env, RLS, migrations
+public behavior
+admin behavior
+UGC/community behavior
+team process or handoff rules
+next-action decisions
+```
+
+Minimum automatic history entry shape:
+
+```text
+Date
+Request
+Action
+Verification
+Issue or misjudgment
+Decision rule for next time
+Hanbit check items
+Next action
+```
+
+If the work is purely read-only exploration and does not change the repo or a
+decision, Codex may summarize without editing `history.md`. If the exploration
+changes the recommended next action, record it.
+
+Current next-action assessment:
+
+- P0 local/remote reconciliation is complete.
+- Remaining P0 is PR `#1` merge/hold strategy.
+- If continuing development before merge, the recommended next implementation
+  item is:
+
+```text
+Food detail place list grouping by region
+```
+
+Reason:
+
+- It does not require DB schema, RLS, auth, env, or external Google Maps link
+  preparation.
+- It strengthens the SEO path between food detail pages and
+  `/foods/[foodSlug]/[regionSlug]` combination pages.
+- It is lower-risk than merging the full PR immediately and more structurally
+  useful than a hero-only copy/theme update.
+
+Hanbit check items:
+
+- Decide whether PR `#1` should stay held while Main Redesign Week 3 continues.
+- Decide whether Codex should start the low-risk food detail grouping task next.
+
+Next action:
+
+Unless Hanbit chooses to review/merge PR `#1` first, start Main Redesign Week 3
+with food detail place grouping by region. Keep the change schema-free and
+update this history file again before reporting completion.

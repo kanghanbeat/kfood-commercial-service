@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 import {
   clearLegacyPublicAuthCookiesOnResponse,
-  createPublicSupabaseServerClient,
   ensurePublicProfile,
   getSafeNextPath
 } from "@/lib/public-auth";
 import { isTransientAuthError, signInWithPasswordResilient } from "@/lib/sign-in-retry";
+import { createSupabaseRouteClient } from "@/lib/supabase/route-client";
 
 function redirectWithError(request: NextRequest, message: string, nextPath: string) {
   const loginUrl = new URL("/auth/login", request.url);
   loginUrl.searchParams.set("next", nextPath);
   loginUrl.searchParams.set("error", message);
-  return NextResponse.redirect(loginUrl);
+  return NextResponse.redirect(loginUrl, { status: 303 });
 }
 
 export async function POST(request: NextRequest) {
@@ -25,13 +25,17 @@ export async function POST(request: NextRequest) {
     return redirectWithError(request, "Enter your email and password.", nextPath);
   }
 
-  const supabase = await createPublicSupabaseServerClient();
+  const routeClient = createSupabaseRouteClient(request);
 
-  if (!supabase) {
+  if (!routeClient) {
     return redirectWithError(request, "Supabase Auth is not configured.", nextPath);
   }
 
-  const { data, error } = await signInWithPasswordResilient(supabase, email, password);
+  const { data, error } = await signInWithPasswordResilient(
+    routeClient.supabase,
+    email,
+    password
+  );
 
   if (error || !data.session || !data.user) {
     if (isTransientAuthError(error)) {
@@ -66,7 +70,11 @@ export async function POST(request: NextRequest) {
     userId: data.user.id
   });
 
-  const response = NextResponse.redirect(new URL(nextPath, request.url));
+  // 세션 쿠키를 "반환하는 응답"에 직접 실어 브라우저 전달을 보장한다.
+  const response = NextResponse.redirect(new URL(nextPath, request.url), {
+    status: 303
+  });
+  routeClient.applyCookies(response);
   clearLegacyPublicAuthCookiesOnResponse(response);
   return response;
 }

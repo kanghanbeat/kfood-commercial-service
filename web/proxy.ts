@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 
 const adminAccessTokenCookie = "kfood_admin_access_token";
 const adminRefreshTokenCookie = "kfood_admin_refresh_token";
@@ -14,12 +14,9 @@ type RefreshResult = {
   refresh_token: string;
 };
 
-type RequestCookieJar = Map<string, string>;
-type ResponseCookie = {
-  name: string;
-  options: CookieOptions;
-  value: string;
-};
+// 어드민 세션 쿠키를 이번 응답에서 어떻게 처리할지.
+// null = 건드리지 않음, "clear" = 만료돼서 삭제, 객체 = 갱신된 토큰으로 교체.
+type AdminCookieUpdate = { access: string; refresh: string } | "clear" | null;
 
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -104,300 +101,127 @@ async function refreshSession(refreshToken: string | undefined) {
   return (await response.json()) as RefreshResult;
 }
 
-function setSessionCookies(
-  requestCookies: RequestCookieJar,
-  session: RefreshResult
-) {
-  requestCookies.set(adminAccessTokenCookie, session.access_token);
-  requestCookies.set(adminRefreshTokenCookie, session.refresh_token);
-}
-
-function clearSessionCookies(requestCookies: RequestCookieJar) {
-  requestCookies.delete(adminAccessTokenCookie);
-  requestCookies.delete(adminRefreshTokenCookie);
-}
-
-async function refreshAdminScopeIfNeeded(
-  request: NextRequest,
-  requestCookies: RequestCookieJar
-) {
+// 어드민 세션(경로 /admin 한정 커스텀 쿠키)은 공개 세션과 완전히 분리해서 관리한다.
+async function computeAdminUpdate(
+  request: NextRequest
+): Promise<AdminCookieUpdate> {
   const accessToken = request.cookies.get(adminAccessTokenCookie)?.value;
   const refreshToken = request.cookies.get(adminRefreshTokenCookie)?.value;
 
   if (!shouldRefresh(accessToken)) {
-    return;
+    return null;
   }
 
   const refreshedSession = await refreshSession(refreshToken);
 
   if (!refreshedSession) {
     // 갱신 요청 자체가 실패해도, 지금 가진 토큰이 아직 만료 전이면 그대로 둔다.
-    // (일시적 네트워크 문제로 멀쩡한 세션을 지우는 것을 방지 — 다음 요청에서 다시 시도됨)
-    if (isExpired(accessToken)) {
-      clearSessionCookies(requestCookies);
-    }
+    return isExpired(accessToken) ? "clear" : null;
+  }
+
+  return {
+    access: refreshedSession.access_token,
+    refresh: refreshedSession.refresh_token
+  };
+}
+
+function applyAdminCookies(response: NextResponse, update: AdminCookieUpdate) {
+  if (!update) {
     return;
   }
 
-  setSessionCookies(requestCookies, refreshedSession);
-}
+  const base = {
+    httpOnly: true,
+    path: "/admin",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production"
+  };
 
-function updateRequestCookieJar(
-  requestCookies: RequestCookieJar,
-  cookie: ResponseCookie
-) {
-  if (cookie.options.maxAge === 0 || cookie.value === "") {
-    // 공개 세션 쿠키는 지우지 않는다(위 writeSupabaseResponseCookies와 동일 이유).
-    // 미들웨어가 현재 요청의 다운스트림 페이지에 넘길 쿠키에서 세션을 빼버리면
-    // 그 페이지(mypage 등)가 즉시 로그인으로 튕긴다.
-    if (isSupabaseAuthCookieName(cookie.name)) {
-      return;
-    }
-    requestCookies.delete(cookie.name);
+  if (update === "clear") {
+    response.cookies.set(adminAccessTokenCookie, "", { ...base, maxAge: 0 });
+    response.cookies.set(adminRefreshTokenCookie, "", { ...base, maxAge: 0 });
     return;
   }
 
-  requestCookies.set(cookie.name, cookie.value);
-}
-
-async function syncPublicSupabaseSession(requestCookies: RequestCookieJar) {
-  const config = getSupabaseConfig();
-  const cookiesToSet: ResponseCookie[] = [];
-  const headersToSet: Record<string, string> = {};
-  // TEMP DIAG — remove after login-bug diagnosis.
-  const debug: Record<string, unknown> = {
-    inSb: Array.from(requestCookies.keys()).filter(isSupabaseAuthCookieName),
-    ops: [] as Array<{ name: string; empty: boolean; maxAge: unknown }>,
-    getUserError: null as string | null
-  };
-
-  if (!config) {
-    return { cookiesToSet, headersToSet, debug };
-  }
-
-  const supabase = createServerClient(config.url, config.anonKey, {
-    cookies: {
-      getAll() {
-        return Array.from(requestCookies.entries()).map(([name, value]) => ({
-          name,
-          value
-        }));
-      },
-      setAll(nextCookies, nextHeaders) {
-        nextCookies.forEach((cookie) => {
-          (debug.ops as Array<unknown>).push({
-            name: cookie.name,
-            empty: cookie.value === "",
-            maxAge: cookie.options.maxAge
-          });
-          updateRequestCookieJar(requestCookies, cookie);
-          cookiesToSet.push(cookie);
-        });
-        Object.assign(headersToSet, nextHeaders);
-      }
-    }
+  response.cookies.set(adminAccessTokenCookie, update.access, {
+    ...base,
+    maxAge: adminSessionMaxAge
   });
-
-  const { error } = await supabase.auth.getUser();
-  if (error) {
-    debug.getUserError = `${error.name}:${(error as { status?: number }).status ?? "?"}:${error.message}`;
-  }
-
-  return { cookiesToSet, headersToSet, debug };
-}
-
-function getRequestCookieJar(request: NextRequest): RequestCookieJar {
-  return new Map(
-    request.cookies.getAll().map((cookie) => [cookie.name, cookie.value])
-  );
-}
-
-function serializeCookieHeader(cookies: RequestCookieJar) {
-  return Array.from(cookies.entries())
-    .map(([name, value]) => `${name}=${value}`)
-    .join("; ");
-}
-
-function writeResponseCookies(
-  request: NextRequest,
-  response: NextResponse,
-  requestCookies: RequestCookieJar
-) {
-  const secure = process.env.NODE_ENV === "production";
-
-  const writeHttpOnlyCookie = (
-    name: string,
-    path: string,
-    maxAge: number,
-    fallbackValue?: string
-  ) => {
-    const originalValue = request.cookies.get(name)?.value;
-    const nextValue = requestCookies.get(name);
-
-    if (nextValue && nextValue !== originalValue) {
-      response.cookies.set(name, nextValue, {
-        httpOnly: true,
-        maxAge,
-        path,
-        sameSite: "lax",
-        secure
-      });
-      return;
-    }
-
-    if (!nextValue && originalValue) {
-      response.cookies.set(name, "", {
-        httpOnly: true,
-        maxAge: 0,
-        path,
-        sameSite: "lax",
-        secure
-      });
-      return;
-    }
-
-    if (fallbackValue && !originalValue && nextValue === fallbackValue) {
-      response.cookies.set(name, fallbackValue, {
-        httpOnly: true,
-        maxAge,
-        path,
-        sameSite: "lax",
-        secure
-      });
-    }
-  };
-
-  writeHttpOnlyCookie(
-    adminAccessTokenCookie,
-    "/admin",
-    adminSessionMaxAge
-  );
-  writeHttpOnlyCookie(
-    adminRefreshTokenCookie,
-    "/admin",
-    adminSessionMaxAge
-  );
-}
-
-function isSupabaseAuthCookieName(name: string) {
-  return name.startsWith("sb-") && name.includes("auth-token");
-}
-
-function writeSupabaseResponseCookies(
-  response: NextResponse,
-  cookiesToSet: ResponseCookie[],
-  headersToSet: Record<string, string>
-) {
-  cookiesToSet.forEach(({ name, options, value }) => {
-    // 미들웨어는 공개 세션 쿠키를 "삭제"하지 않는다.
-    // getUser()가 일시적 이유(네트워크 hiccup, refresh rotation 타이밍)로
-    // 세션을 무효 판단하면 setAll이 빈 값/maxAge 0으로 삭제를 지시하는데,
-    // 그대로 반영하면 방금 로그인한 멀쩡한 세션까지 날아간다
-    // (로그인 직후 두 번째 요청에서 로그아웃되는 버그의 원인).
-    // 실제 로그아웃은 /auth/logout이 담당하므로 미들웨어는 삭제를 건너뛴다.
-    const isAuthDeletion =
-      isSupabaseAuthCookieName(name) && (options.maxAge === 0 || value === "");
-
-    if (isAuthDeletion) {
-      return;
-    }
-
-    response.cookies.set(name, value, {
-      ...options,
-      secure: process.env.NODE_ENV === "production"
-    });
+  response.cookies.set(adminRefreshTokenCookie, update.refresh, {
+    ...base,
+    maxAge: adminSessionMaxAge
   });
-
-  Object.entries(headersToSet).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-}
-
-// Next.js가 화면의 링크를 미리 당겨오는 프리페치 요청인지 판별한다.
-// mypage처럼 링크가 많은 페이지는 진입 순간 수십 개의 프리페치가 동시에
-// 미들웨어를 때리는데, 그 요청마다 세션 토큰을 갱신(회전)하면 회전 충돌로
-// 방금 로그인한 세션이 폐기된다. 프리페치는 화면에 실제로 반영되지 않는
-// 사변적 요청이므로 세션 쿠키를 건드리지 않고 통과시킨다.
-function isPrefetchRequest(request: NextRequest) {
-  if (request.headers.get("next-router-prefetch") === "1") {
-    return true;
-  }
-  const purpose =
-    request.headers.get("sec-purpose") ?? request.headers.get("purpose") ?? "";
-  return purpose.includes("prefetch");
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const requestCookies = getRequestCookieJar(request);
-  const requestHeaders = new Headers(request.headers);
 
-  // 프리페치 요청은 세션을 갱신/삭제하지 않고 그대로 통과시킨다
-  // (동시 프리페치의 토큰 회전 충돌로 세션이 날아가는 것을 막는다).
-  if (isPrefetchRequest(request)) {
-    const passthrough = NextResponse.next({ request: { headers: requestHeaders } });
-    if (!pathname.startsWith("/admin") || pathname.startsWith("/admin/login")) {
-      return passthrough;
-    }
-    const hasAdminAccessToken = requestCookies.get(adminAccessTokenCookie);
-    if (hasAdminAccessToken) {
-      return passthrough;
-    }
-    const loginUrl = new URL("/admin/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+  // 1) 어드민 세션 갱신 — 다운스트림 페이지가 새 토큰을 읽도록 요청 쿠키에 반영
+  const adminUpdate = await computeAdminUpdate(request);
+
+  if (adminUpdate === "clear") {
+    request.cookies.delete(adminAccessTokenCookie);
+    request.cookies.delete(adminRefreshTokenCookie);
+  } else if (adminUpdate) {
+    request.cookies.set(adminAccessTokenCookie, adminUpdate.access);
+    request.cookies.set(adminRefreshTokenCookie, adminUpdate.refresh);
   }
 
-  const publicSessionSync = await syncPublicSupabaseSession(requestCookies);
-  await refreshAdminScopeIfNeeded(request, requestCookies);
+  // 2) 공개 세션 — Supabase 공식(@supabase/ssr) 미들웨어 패턴 그대로.
+  // getUser()가 필요 시 토큰을 갱신하고, setAll이 요청/응답 양쪽에 반영한다.
+  // 쿠키 삭제 가드·프리페치 우회 같은 커스텀 로직은 두지 않는다(과거 로그인
+  // 풀림 버그의 원인이 이런 커스텀 배선이었다).
+  let response = NextResponse.next({ request });
+  applyAdminCookies(response, adminUpdate);
 
-  requestHeaders.set("cookie", serializeCookieHeader(requestCookies));
-  const response = NextResponse.next({
-    request: {
-      headers: requestHeaders
-    }
-  });
-  writeResponseCookies(request, response, requestCookies);
-  writeSupabaseResponseCookies(
-    response,
-    publicSessionSync.cookiesToSet,
-    publicSessionSync.headersToSet
-  );
-  // TEMP DIAG — remove after login-bug diagnosis.
-  response.headers.set("x-dbg-sync", JSON.stringify(publicSessionSync.debug));
-  response.headers.set(
-    "access-control-expose-headers",
-    "x-dbg-sync"
-  );
+  const config = getSupabaseConfig();
 
-  if (pathname.startsWith("/admin/login") || pathname.startsWith("/admin/logout")) {
-    return response;
+  if (config) {
+    const supabase = createServerClient(config.url, config.anonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          response = NextResponse.next({ request });
+          applyAdminCookies(response, adminUpdate);
+          cookiesToSet.forEach(({ name, options, value }) =>
+            response.cookies.set(name, value, options)
+          );
+        }
+      }
+    });
+
+    await supabase.auth.getUser();
   }
 
-  if (!pathname.startsWith("/admin")) {
-    return response;
-  }
-
-  // 개발용 어드민 미리보기 스위치. 프로덕션에선 절대 동작하지 않음(NODE_ENV 가드).
-  // .env.local 에 ADMIN_PREVIEW=true 일 때만 로컬에서 로그인 없이 어드민 열람.
+  // 3) 어드민 접근 게이트
   if (
-    process.env.NODE_ENV !== "production" &&
-    process.env.ADMIN_PREVIEW === "true"
+    pathname.startsWith("/admin") &&
+    !pathname.startsWith("/admin/login") &&
+    !pathname.startsWith("/admin/logout")
   ) {
-    return response;
+    // 개발용 어드민 미리보기 스위치. 프로덕션에선 절대 동작하지 않음(NODE_ENV 가드).
+    if (
+      process.env.NODE_ENV !== "production" &&
+      process.env.ADMIN_PREVIEW === "true"
+    ) {
+      return response;
+    }
+
+    const hasAdminAccess = request.cookies.get(adminAccessTokenCookie)?.value;
+
+    if (!hasAdminAccess) {
+      const loginUrl = new URL("/admin/login", request.url);
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
-  const hasAdminAccess =
-    response.cookies.get(adminAccessTokenCookie)?.value ||
-    requestCookies.get(adminAccessTokenCookie);
-
-  if (hasAdminAccess) {
-    return response;
-  }
-
-  const loginUrl = new URL("/admin/login", request.url);
-  loginUrl.searchParams.set("next", pathname);
-  return NextResponse.redirect(loginUrl);
+  return response;
 }
 
 export const config = {

@@ -74,12 +74,26 @@ export default async function PublicLoginPage({
           </Link>
         </div>
       </section>
-      <section className="form-panel" aria-labelledby="social-login-later">
-        <h2 id="social-login-later">Social login</h2>
+      <section className="form-panel" aria-labelledby="social-login">
+        <h2 id="social-login">Social login</h2>
         <p className="muted-copy">
-          Google and Kakao login will reopen after the free email flow is stable
-          and each OAuth provider is enabled in Supabase.
+          Continue with your Google or Kakao account. Your email stays with the
+          provider; we only receive your basic profile.
         </p>
+        <div className="action-row">
+          <a
+            className="button secondary"
+            href={`/auth/oauth?provider=google&next=${encodeURIComponent(nextPath)}`}
+          >
+            Continue with Google
+          </a>
+          <a
+            className="button secondary"
+            href={`/auth/oauth?provider=kakao&next=${encodeURIComponent(nextPath)}`}
+          >
+            Continue with Kakao
+          </a>
+        </div>
       </section>
     </main>
   );

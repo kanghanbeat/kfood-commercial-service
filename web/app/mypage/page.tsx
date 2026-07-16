@@ -90,9 +90,11 @@ export default async function MypagePage({
               Open feed
             </Link>
           ) : null}
-          <Link className="button secondary" href="/auth/logout">
-            Sign out
-          </Link>
+          <form action="/auth/logout" method="post">
+            <button className="button secondary" type="submit">
+              Sign out
+            </button>
+          </form>
         </div>
       </section>
       <section className="form-panel">

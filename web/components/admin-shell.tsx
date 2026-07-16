@@ -76,9 +76,11 @@ export function AdminShell({
           <span className="admin-sidebar-footer-value">
             {session.email ?? session.userId} · {session.role} 활성 계정 · RLS 적용
           </span>
-          <Link className="admin-sidebar-signout" href="/admin/logout">
-            로그아웃
-          </Link>
+          <form action="/admin/logout" method="post">
+            <button className="admin-sidebar-signout" type="submit">
+              로그아웃
+            </button>
+          </form>
         </div>
       </aside>
       <main className="admin-main">{children}</main>

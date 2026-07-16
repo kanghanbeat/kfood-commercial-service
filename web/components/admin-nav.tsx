@@ -21,9 +21,11 @@ export function AdminNav() {
           {link.label}
         </Link>
       ))}
-      <Link className="admin-nav-signout" href="/admin/logout">
-        Sign out
-      </Link>
+      <form action="/admin/logout" method="post">
+        <button className="admin-nav-signout" type="submit">
+          Sign out
+        </button>
+      </form>
     </nav>
   );
 }

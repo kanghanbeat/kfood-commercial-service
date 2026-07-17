@@ -35,9 +35,9 @@ export default async function PublicLoginPage({
       {params?.error ? <p className="status-message error">{params.error}</p> : null}
       <section className="form-panel" aria-labelledby="email-login">
         <h2 id="email-login">Sign in with email</h2>
+        {/* 내부 사정(알파·제공자 설정)을 사용자에게 노출하지 않는다 */}
         <p className="muted-copy">
-          Email login keeps alpha testing free while Google and Kakao provider
-          setup remains closed.
+          Use the email and password you signed up with.
         </p>
         <form action="/auth/login/email" className="profile-form" method="post">
           <input name="next" type="hidden" value={nextPath} />

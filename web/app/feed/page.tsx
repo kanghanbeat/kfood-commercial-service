@@ -9,8 +9,6 @@ export const metadata = {
   title: "Feed"
 };
 
-const feedTabs = ["All", "Following", "Popular"];
-
 export default async function FeedPage() {
   if (!(await isCommunityEnabled())) {
     notFound();
@@ -33,29 +31,12 @@ export default async function FeedPage() {
           moderation controls.
         </p>
       </header>
-      <section className="utility-bar feed-utility" aria-label="Feed controls">
-        <label>
-          Language
-          <select defaultValue="en" aria-label="Feed language">
-            <option value="en">English</option>
-            <option value="ko">한국어</option>
-            <option value="zh">中文</option>
-            <option value="ja">日本語</option>
-          </select>
-        </label>
-        <div className="search-preview-input" aria-label="Feed search preview">
-          Search records by food, area, or user
-        </div>
+      {/* 동작하지 않는 언어 선택·검색창·필터 탭은 신뢰를 깎아 제거 —
+          검색·필터가 실제 구현될 때 기능과 함께 되살린다 */}
+      <section className="action-row" aria-label="Feed actions">
         <Link className="button primary" href={writeHref}>
           Write record
         </Link>
-      </section>
-      <section className="tab-row" aria-label="Feed filters">
-        {feedTabs.map((tab) => (
-          <span className={tab === "All" ? "active-tab" : ""} key={tab}>
-            {tab}
-          </span>
-        ))}
       </section>
       <ul className="content-list">
         {posts.length === 0 ? (

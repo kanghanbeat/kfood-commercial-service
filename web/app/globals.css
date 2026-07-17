@@ -198,15 +198,16 @@ p {
 }
 
 h1 {
-  font-size: clamp(44px, 7vw, 86px);
+  /* 구버전 86px 상한이 로그인·피드·상세 제목을 과대하게 만들어 v2 톤으로 축소 */
+  font-size: clamp(34px, 4.5vw, 52px);
   letter-spacing: 0;
-  line-height: 0.98;
+  line-height: 1.08;
 }
 
 h2 {
-  font-size: clamp(30px, 4vw, 48px);
+  font-size: clamp(24px, 3vw, 34px);
   letter-spacing: 0;
-  line-height: 1.05;
+  line-height: 1.15;
 }
 
 h3 {
@@ -227,6 +228,8 @@ h3 {
 .action-row {
   display: flex;
   flex-wrap: wrap;
+  /* 그리드 셀 안에서 버튼이 세로로 늘어나지 않게 */
+  align-items: center;
   gap: 12px;
 }
 
@@ -933,8 +936,9 @@ h3 {
   border-radius: 8px;
 }
 
+/* :not(.button) — 목록 안 버튼 링크까지 카드처럼 늘어나던 문제 방지 */
 .directory-card a,
-.content-list a,
+.content-list a:not(.button),
 .content-list .list-item-body {
   display: grid;
   gap: 10px;

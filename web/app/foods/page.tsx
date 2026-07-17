@@ -33,8 +33,11 @@ export default async function FoodsPage() {
           <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
             <CardPhoto label={food.nameEn} variant="food" />
             <div className="card-v2-body">
-              <span className="food-chip spicy">
-                {dict.common.spicy} {food.spicyLevel}/4
+              {/* 0/4는 정보가 아니라 소음 — 안 매운 음식은 중립 칩으로 "Not spicy" */}
+              <span className={food.spicyLevel > 0 ? "food-chip spicy" : "food-chip"}>
+                {food.spicyLevel > 0
+                  ? `${dict.common.spicy} ${food.spicyLevel}/4`
+                  : dict.foodDetail.spicyLabels[0]}
               </span>
               <span className="card-v2-title">{food.nameEn}</span>
               <span className="card-v2-meta">{food.summary}</span>

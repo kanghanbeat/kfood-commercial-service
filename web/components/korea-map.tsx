@@ -56,6 +56,9 @@ export function KoreaMap({
 }) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // 터치 기기에서 "준비 중" 권역을 탭하면 mouseleave가 없어 툴팁이 남는다 —
+  // 잠시 보여주고 자동으로 닫기 위한 타이머.
+  const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   // 호버 중인 권역은 확대 + 그 권역 마커 표시. SVG는 나중에 그린 요소가
   // 위에 오므로 확대된 권역이 이웃에 가려지지 않게 렌더 순서도 맨 뒤로.
@@ -148,6 +151,29 @@ export function KoreaMap({
     }
   }
 
+  function handleGroupClick(
+    event: React.MouseEvent,
+    group: (typeof groups)[number]
+  ) {
+    if (tooltipTimer.current) {
+      clearTimeout(tooltipTimer.current);
+    }
+    if (group.hasContent) {
+      // 이동 직전 확대·툴팁 정리 (터치에선 mouseleave가 안 오므로 여기서)
+      setHoveredGroup(null);
+      setTooltip(null);
+      openGroup(group);
+      return;
+    }
+    // 콘텐츠 없는 권역 탭: "준비 중" 툴팁을 잠깐 보여주고 자동으로 닫는다
+    showGroupTooltip(event, group);
+    setHoveredGroup(group.key);
+    tooltipTimer.current = setTimeout(() => {
+      setHoveredGroup(null);
+      setTooltip(null);
+    }, 1600);
+  }
+
   const hovered = groups.find((group) => group.key === hoveredGroup);
   const orderedGroups = hovered
     ? [...groups.filter((group) => group.key !== hoveredGroup), hovered]
@@ -182,7 +208,7 @@ export function KoreaMap({
             }}
             onFocus={() => setHoveredGroup(group.key)}
             onBlur={() => setHoveredGroup(null)}
-            onClick={() => openGroup(group)}
+            onClick={(event) => handleGroupClick(event, group)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();

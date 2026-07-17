@@ -23,9 +23,10 @@ export default async function JoinPage({
       <header className="detail-header">
         <p className="eyebrow">Join</p>
         <h1>Create your K-food account.</h1>
+        {/* 아직 열리지 않은 기능(기록·댓글) 언급 대신 지금 가능한 것 기준으로 */}
         <p className="detail-intro">
-          Start with a free email account for profile settings, records, and
-          comments. Social login can be connected later.
+          Create a free account to set up your profile and track your K-food
+          tasting journey. Social login can be connected later.
         </p>
       </header>
       {params?.error ? <p className="status-message error">{params.error}</p> : null}

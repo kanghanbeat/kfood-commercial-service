@@ -307,36 +307,55 @@ Supabase 팀 초대 대기 중에 fallback 데이터로 검증 가능한 프론�
 
 ---
 
+## 다음 할 일 (우선순위 순, 2026-07-17 기준)
+
+> 결정: **UI/UX 개선을 3주차 기능보다 먼저** 한다. 3주차 기능(계절 히어로·지도 저장 버튼·맛집 그룹핑)은 전부 홈·목록 레이아웃 위에 얹는 것들이라, 토대를 먼저 다듬어야 재작업이 없음.
+
+1. **홈페이지 레이아웃·UI/UX 개선** ← 다음 세션 (아래 프롬프트)
+2. **구글·카카오 로그인 활성화** — 코드 완성(`/auth/oauth` + 로그인 페이지 버튼), Supabase 대시보드 > Authentication > Providers에 키 등록만 남음 (구글 클라우드 콘솔·카카오 디벨로퍼스에서 발급). UI 작업과 독립적이라 중간에 15~20분으로 끼워 넣기 가능
+3. **메인 개편 3주차 — 큐레이션 연결**
+   - 히어로 계절 테마 1호 (예: Summer Naengmyeon Guide — 콘텐츠+배너)
+   - 지역 페이지 "Save this list to your Google Maps" 버튼 (구글맵 저장 리스트는 솔이 별도 준비)
+   - 음식 페이지 맛집 섹션 지역별 그룹핑
+4. **SEO 콘텐츠 확장** — 3개월 집중 방향(SNS→홈페이지→애드센스). 메타태그·구조화 데이터 점검 포함
+5. **정리 작업** — 진단용 테스트 계정 `kfood.cctest.20260717@gmail.com` 삭제, 한빛에게 인증 재작성·로그아웃 POST 변경 슬랙 공유
+
+---
+
 ## 다음 세션 시작 프롬프트 (복붙용)
 
 ```
-kfood-commercial-service/docs/06-team/work-history.md 를 읽고 이어가줘.
-브랜치 feature/design-tokens-v2. 작업 전 git pull.
+kfood-commercial-service/docs/06-team/work-history.md 를 먼저 읽고 이어가줘.
+(참고: 이 파일은 session-handoff.md에서 이름이 바뀐 팀 공용 히스토리 파일이야)
 
-그다음 같은 폴더의 기획 기준 문서 두 개를 읽어줘 (2026-07-09 저장소로 이동):
-- 기획정렬-한빛대조.md  (방향 기준)
-- 메인개편-작업계획.md  (작업 순서)
+브랜치: main에서 새 브랜치 feature/home-uiux 를 만들어서 작업해. 작업 전 git pull.
 
-지난 세션(2026-07-10, 세션7) 완료: 메인 개편 2주차 — SVG 한국 지도.
-korea-map.tsx(호버 툴팁·클릭 이동·키보드 접근) + korea-map-paths.ts(자동 생성)
-+ provinces.ts(A안 매핑표) + /regions?province= 필터 + 4개 국어 지도 문구.
-공개 데이터 경로 as unknown as 캐스팅 제거(.returns<T>)도 완료.
+## 이번 세션 목표: 홈페이지 레이아웃·UI/UX 개선
 
-이번 세션: 메인 개편 3주차 — 큐레이션 연결.
-1. 히어로 계절 테마 1호 (예: Summer Naengmyeon Guide — 콘텐츠+배너)
-2. 지역 페이지 "Save this list to your Google Maps" 버튼
-   — 솔이 만든 구글맵 저장 리스트 링크 연결 (리스트는 솔이 별도 준비)
-3. 음식 페이지 맛집 섹션 지역별 그룹핑
+기능 추가(메인 개편 3주차)보다 UI/UX 개선을 먼저 하기로 결정했어.
 
-주의: 새 지역을 DB에 추가하면 web/lib/provinces.ts 매핑표에도 slug 등록
-(안 하면 지도에서 연결 안 됨).
+### 진행 순서
+1. 정식 배포 화면(https://kfood-commercial-service-web.vercel.app)을
+   데스크톱·모바일 양쪽으로 훑어서 개선 포인트 목록을 먼저 만들어 보여줘
+   — 레이아웃, 가독성, 시각 위계, 모바일 경험 중심.
+2. 내가 목록에서 할 것/뺄 것을 고르면 그것만 반영해.
+3. 반영 후 프리뷰 배포로 검증하고, 내가 확인한 뒤 main 머지.
 
-규칙:
-- DB 스키마·RLS·환경변수 변경 금지 (한빛 승인 필요 영역)
-- 디자인 토큰은 docs/02-design/DESIGN.md v2 (#8500FF), 사용자향 카피는 영어
+### 지켜야 할 규칙
+- 디자인 토큰: docs/02-design/DESIGN.md v2 기준 (brand #8500FF / accent #FF5E00 / 배경 흰색)
+- 폰트: Pretendard 로컬 woff2 (CDN 금지), 사용자향 카피는 영어 우선
+- 요청한 것만 수정 (무관한 코드 건드리지 않기)
+- ⚠️ 부작용 있는 라우트(로그아웃·삭제 등)는 절대 GET 금지 — POST + form만
+  (Link 프리페치가 GET을 실제 실행해서 생긴 로그인 버그를 막 해결했음, 세션10 참고)
+- DB 스키마·RLS 변경 없음 (이번 작업 범위 아님)
 - 유료 지도 API 금지 (SVG + 구글맵 임베드·딥링크만)
-- 끝나면 npm run check + next build + 로컬 화면 확인 + work-history.md 갱신 + push
+- 끝나면 lint + tsc 확인 → 커밋 → push → work-history.md 갱신
 - web/next-env.d.ts 변경분은 커밋하지 말 것
+
+### 참고 맥락
+- 인증은 전면 재작성돼 main에 머지됨 (세션10 — 로그인 버그 해결 완료)
+- 구글·카카오 로그인은 코드 완성, Supabase 대시보드 키 등록만 남음
+  — UI 작업 중간에 솔이 요청하면 그때 안내
 ```
 
 ---

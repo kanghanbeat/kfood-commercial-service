@@ -22,11 +22,6 @@ export default async function FoodsPage() {
           <span className="food-v2-name-en">{dict.lists.foodsTitle}</span>
         </div>
         <p className="food-v2-summary">{dict.lists.foodsSummary}</p>
-        <div className="food-v2-actions">
-          <Link className="button secondary" href="/photo-sources">
-            Review photo sources
-          </Link>
-        </div>
       </header>
       <div className="card-grid-v2">
         {foods.map((food) => (
@@ -45,6 +40,12 @@ export default async function FoodsPage() {
             </div>
           </Link>
         ))}
+      </div>
+      {/* 운영·투명성용 링크라 방문자 동선을 막지 않게 목록 아래로 내림 */}
+      <div className="food-v2-actions">
+        <Link className="button secondary" href="/photo-sources">
+          Review photo sources
+        </Link>
       </div>
     </div>
   );

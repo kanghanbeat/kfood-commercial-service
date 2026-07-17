@@ -803,6 +803,7 @@ h3 {
 .home-map-placeholder-links {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   justify-content: center;
 }
@@ -948,7 +949,8 @@ h3 {
 .directory-card span,
 .tag,
 .meta-label {
-  color: var(--leaf);
+  /* 구버전 초록 라벨 → v2 브랜드 보라로 통일 (상세·커뮤니티·로그인 화면) */
+  color: var(--brand);
   font-size: 13px;
   font-weight: 800;
 }
@@ -1094,7 +1096,7 @@ h3 {
 }
 
 .tag {
-  background: var(--success-soft);
+  background: var(--brand-soft);
   border-radius: 999px;
   padding: 7px 10px;
 }
@@ -1838,6 +1840,68 @@ h3 {
   align-self: flex-start;
 }
 
+/* From our channels — 텍스트만 있어 미완성처럼 보이던 카드에
+   다른 섹션과 같은 이름 기반 그라데이션 썸네일을 붙인다 */
+.channel-card {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 18px;
+}
+
+.channel-card-thumb {
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  user-select: none;
+}
+
+.channel-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.channel-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.channel-card-kind {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--brand);
+  text-transform: uppercase;
+}
+
+.channel-card-summary {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-body);
+}
+
+/* 지도 아래 지역 바로가기 — 칩이 목적 없이 떠 있지 않게 소제목으로 묶는다 */
+.home-map-links-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-body);
+}
+
 .section-v2.alt {
   background: var(--ivory);
 }
@@ -1845,9 +1909,35 @@ h3 {
 .footer-v2 {
   background: var(--sidebar-dark);
   color: var(--sidebar-muted);
-  padding: 32px 48px;
+  padding: 40px 48px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* 푸터 브랜드 영역 — 정책 링크만 나열되고 갑자기 끝나는 느낌 방지 */
+.footer-v2-brand {
+  width: 100%;
+  max-width: 1264px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.footer-v2-wordmark {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.footer-v2-tagline {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--sidebar-muted);
+  max-width: 520px;
 }
 
 .footer-v2-nav {
@@ -1919,6 +2009,33 @@ h3 {
 
   .hero-v2-headline {
     font-size: 36px;
+  }
+
+  /* 모바일: 인기 칩이 3줄로 감기지 않게 한 줄 가로 스크롤 */
+  .hero-v2-quick {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .hero-v2-quick-label,
+  .hero-v2-quick-chip {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* 모바일: 섹션 제목이 3줄로 감기며 화면을 압도하지 않게 축소 */
+  .section-v2-title {
+    font-size: 26px;
+  }
+
+  .channel-card-thumb {
+    width: 72px;
+    height: 72px;
+    font-size: 30px;
   }
 
   /* 모바일: SVG가 줄어들면 라벨도 같이 줄어 판독 불가 →

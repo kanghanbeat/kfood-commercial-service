@@ -9,7 +9,8 @@ import {
   getPublishedFoods,
   getPublishedPlaces,
   getPublishedProductionsFor,
-  getPublishedRegions
+  getPublishedRegions,
+  humanizeTag
 } from "@kfood/data";
 
 import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
@@ -92,12 +93,14 @@ export default async function FoodDetailPage({
           ) : null}
         </div>
         <div className="food-v2-tags">
-          <span className="food-chip spicy">
-            {dict.common.spicy} {food.spicyLevel}/4 · {t.spicyLabels[food.spicyLevel]}
+          {/* "Spicy 3/4 · Spicy"처럼 라벨이 중복되지 않게 라벨 + 수치만 */}
+          <span className={food.spicyLevel > 0 ? "food-chip spicy" : "food-chip"}>
+            {t.spicyLabels[food.spicyLevel]}
+            {food.spicyLevel > 0 ? ` · ${food.spicyLevel}/4` : ""}
           </span>
           {tasteTags.map((tag) => (
             <span className="food-chip" key={tag}>
-              {tag}
+              {humanizeTag(tag)}
             </span>
           ))}
         </div>

@@ -17,6 +17,7 @@ const en = {
     switchLanguage: "Language"
   },
   footer: {
+    tagline: "Discover Korea through its food — iconic dishes, the regions they come from, and the places to try them.",
     reportIssue: "Report an issue",
     contact: "Contact",
     editorialPolicy: "Editorial Policy",
@@ -60,6 +61,7 @@ const en = {
     mapDishes: "dishes",
     mapComingSoon: "Guide coming soon",
     mapHint: "Tap a province to explore its top food areas.",
+    popularAreas: "Popular areas",
     eatEyebrow: "Eat",
     trendingTitle: "Trending K-Food",
     trendingSubtitle: "The most talked-about dishes travelers are loving right now",
@@ -135,6 +137,7 @@ const ko: Dictionary = {
     switchLanguage: "언어"
   },
   footer: {
+    tagline: "음식으로 발견하는 한국 — 대표 음식, 그 음식의 동네, 맛볼 수 있는 장소까지.",
     reportIssue: "문제 신고",
     contact: "문의하기",
     editorialPolicy: "편집 정책",
@@ -176,6 +179,7 @@ const ko: Dictionary = {
     mapDishes: "개 음식",
     mapComingSoon: "가이드 준비 중",
     mapHint: "지역을 누르면 주요 음식 동네로 이동해요.",
+    popularAreas: "인기 지역",
     eatEyebrow: "먹기",
     trendingTitle: "지금 뜨는 K-푸드",
     trendingSubtitle: "여행자들이 지금 가장 많이 이야기하는 음식",
@@ -245,6 +249,7 @@ const ja: Dictionary = {
     switchLanguage: "言語"
   },
   footer: {
+    tagline: "食で発見する韓国 — 代表的な料理、その料理のまち、味わえる場所まで。",
     reportIssue: "問題を報告",
     contact: "お問い合わせ",
     editorialPolicy: "編集ポリシー",
@@ -286,6 +291,7 @@ const ja: Dictionary = {
     mapDishes: "料理",
     mapComingSoon: "ガイド準備中",
     mapHint: "地域をタップすると人気グルメエリアに移動します。",
+    popularAreas: "人気エリア",
     eatEyebrow: "食べる",
     trendingTitle: "話題のKフード",
     trendingSubtitle: "旅行者がいま最も注目している料理",
@@ -355,6 +361,7 @@ const zh: Dictionary = {
     switchLanguage: "语言"
   },
   footer: {
+    tagline: "以美食发现韩国 — 代表美食、美食街区，以及品尝它们的好去处。",
     reportIssue: "问题反馈",
     contact: "联系我们",
     editorialPolicy: "编辑政策",
@@ -396,6 +403,7 @@ const zh: Dictionary = {
     mapDishes: "道美食",
     mapComingSoon: "指南即将上线",
     mapHint: "点击省市即可前往热门美食街区。",
+    popularAreas: "热门地区",
     eatEyebrow: "吃",
     trendingTitle: "热门韩国美食",
     trendingSubtitle: "旅行者们当下讨论最多的美食",

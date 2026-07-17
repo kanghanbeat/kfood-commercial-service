@@ -2030,6 +2030,22 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  /* 홈 트렌딩·루트: 모바일에선 세로 나열 대신 가로 스와이프 카루셀 —
+     스크롤 길이를 줄이고 "옆으로 더 있다"는 탐색 신호를 준다 */
+  .card-grid-v2.mobile-carousel {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: min(78%, 320px);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+
+  .card-grid-v2.mobile-carousel .card-v2 {
+    scroll-snap-align: start;
+  }
+
   /* 모바일: 카드 한 장이 화면 한 장을 차지하지 않게 이미지·본문을 압축 */
   .card-v2-photo {
     height: 132px;

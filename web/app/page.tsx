@@ -162,7 +162,8 @@ export default async function HomePage() {
               {dict.common.viewAll} <ArrowRightIcon />
             </Link>
           </div>
-          <div className="card-grid-v2">
+          {/* mobile-carousel: 모바일에선 세로 6장 대신 가로 스와이프 */}
+          <div className="card-grid-v2 mobile-carousel">
             {trendingFoods.map((food) => (
               <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
                 <CardPhoto label={food.nameEn} variant="food" />
@@ -192,7 +193,7 @@ export default async function HomePage() {
               {t.viewAllRoutes} <ArrowRightIcon />
             </Link>
           </div>
-          <div className="card-grid-v2">
+          <div className="card-grid-v2 mobile-carousel">
             {editorPicks.map((route) => (
               <Link className="card-v2" href={`/routes/${route.slug}`} key={route.slug}>
                 <CardPhoto label={route.title} variant="route" />

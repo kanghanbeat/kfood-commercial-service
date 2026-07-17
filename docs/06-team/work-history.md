@@ -1,7 +1,7 @@
 # 세션 히스토리 — 솔 ↔ 한빛 공용 인수인계
 
 > 솔(Claude Code)과 한빛(Codex) 둘 다 쓰는 **공용** 히스토리 문서. 어느 쪽이 다음 작업을 이어받든 여기부터 읽는다.
-> 이 파일은 저장소 안(`docs/06-team/session-handoff.md`)에 있어 PR로 공유된다 — 개인 로컬 메모가 아니다.
+> 이 파일은 저장소 안(`docs/06-team/work-history.md`)에 있어 PR로 공유된다 — 개인 로컬 메모가 아니다.
 > 맨 아래 "세션 마무리 체크리스트"는 매 작업 세션 끝에 반드시 실행한다.
 
 ---
@@ -310,7 +310,7 @@ Supabase 팀 초대 대기 중에 fallback 데이터로 검증 가능한 프론�
 ## 다음 세션 시작 프롬프트 (복붙용)
 
 ```
-kfood-commercial-service/docs/06-team/session-handoff.md 를 읽고 이어가줘.
+kfood-commercial-service/docs/06-team/work-history.md 를 읽고 이어가줘.
 브랜치 feature/design-tokens-v2. 작업 전 git pull.
 
 그다음 같은 폴더의 기획 기준 문서 두 개를 읽어줘 (2026-07-09 저장소로 이동):
@@ -335,7 +335,7 @@ korea-map.tsx(호버 툴팁·클릭 이동·키보드 접근) + korea-map-paths.
 - DB 스키마·RLS·환경변수 변경 금지 (한빛 승인 필요 영역)
 - 디자인 토큰은 docs/02-design/DESIGN.md v2 (#8500FF), 사용자향 카피는 영어
 - 유료 지도 API 금지 (SVG + 구글맵 임베드·딥링크만)
-- 끝나면 npm run check + next build + 로컬 화면 확인 + session-handoff.md 갱신 + push
+- 끝나면 npm run check + next build + 로컬 화면 확인 + work-history.md 갱신 + push
 - web/next-env.d.ts 변경분은 커밋하지 말 것
 ```
 
@@ -348,5 +348,5 @@ korea-map.tsx(호버 툴팁·클릭 이동·키보드 접근) + korea-map-paths.
 1. **깃허브 다운로드** — 작업 시작 전 최신 상태 받기 (`git pull` / 다른 사람 변경사항 확인)
 2. **변경 내용 확인 및 적용하기** — 받은 변경사항 검토, 로컬에 반영
 3. **내용 수정** — 실제 작업 진행
-4. **인수인계 파일에 업데이트한 내용 전부 저장** — 이 파일(`session-handoff.md`)에 무엇을·왜·어떻게 검증했는지 기록
+4. **인수인계 파일에 업데이트한 내용 전부 저장** — 이 파일(`work-history.md`)에 무엇을·왜·어떻게 검증했는지 기록
 5. **다음 사람이 이어받기 위한 프롬프트 작성** — 위 "다음 세션 시작 프롬프트" 갱신

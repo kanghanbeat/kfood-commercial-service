@@ -162,9 +162,15 @@ a {
 
 .page-shell {
   display: grid;
-  gap: 48px;
+  gap: 44px;
   padding: 40px clamp(20px, 5vw, 64px) 72px;
+  /* 초광폭 모니터에서 본문이 흩어지지 않게 중앙 정렬 폭 제한 (v2 정리) */
+  max-width: 1140px;
+  margin: 0 auto;
+  width: 100%;
 }
+
+/* 타이포 축소는 전역 h1/h2 규칙(위)에서 이미 v2 톤으로 캡됨 — 여기선 중복 정의하지 않는다 */
 
 .hero-grid {
   align-items: stretch;
@@ -278,13 +284,15 @@ h3 {
 }
 
 .button {
-  border: 1px solid var(--ink);
-  border-radius: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
   display: inline-flex;
-  font-weight: 800;
+  align-items: center;
+  font-weight: 700;
   justify-content: center;
   min-width: 148px;
-  padding: 12px 16px;
+  padding: 12px 18px;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
 .button.primary {
@@ -299,7 +307,13 @@ h3 {
 }
 
 .button.secondary {
-  background: transparent;
+  background: var(--surface);
+  color: var(--text-heading);
+}
+
+.button.secondary:hover {
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 .button.full-width {
@@ -316,7 +330,7 @@ h3 {
 .search-panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--card-radius);
   display: grid;
   gap: 12px;
   padding: 18px;
@@ -933,7 +947,14 @@ h3 {
 .content-list li {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--card-radius);
+  transition: border-color 0.15s ease;
+}
+
+/* 링크를 품은 카드는 호버로 이동 가능함을 알린다 */
+.directory-card:hover,
+.content-list li:has(> a):hover {
+  border-color: var(--brand);
 }
 
 /* :not(.button) — 목록 안 버튼 링크까지 카드처럼 늘어나던 문제 방지 */
@@ -942,8 +963,8 @@ h3 {
 .content-list .list-item-body {
   display: grid;
   gap: 10px;
-  min-height: 170px;
-  padding: 18px;
+  min-height: 0;
+  padding: 20px;
 }
 
 .content-list .compact-list-item {
@@ -961,7 +982,7 @@ h3 {
 
 .directory-card strong,
 .content-list strong {
-  font-size: 24px;
+  font-size: 19px;
 }
 
 .content-list {
@@ -1178,11 +1199,20 @@ h3 {
 .form-panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--card-radius);
   display: grid;
-  gap: 16px;
-  max-width: 780px;
-  padding: 18px;
+  gap: 18px;
+  max-width: 640px;
+  padding: 28px;
+}
+
+.form-panel h2 {
+  font-size: 22px;
+}
+
+/* 폼 패널 안 버튼 줄은 패널 폭을 채워 정렬 (소셜 로그인 버튼 강조 포함) */
+.form-panel .action-row .button {
+  flex: 1 1 auto;
 }
 
 .form-panel label {
@@ -1212,13 +1242,25 @@ h3 {
 .profile-form input,
 .profile-form select,
 .profile-form textarea {
-  background: #fffaf4;
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--control-radius);
   color: var(--ink);
   font: inherit;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-panel input:focus,
+.form-panel select:focus,
+.form-panel textarea:focus,
+.profile-form input:focus,
+.profile-form select:focus,
+.profile-form textarea:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+  outline: none;
 }
 
 .form-panel textarea,
@@ -1281,7 +1323,7 @@ h3 {
 }
 
 .definition-list dd {
-  font-weight: 800;
+  font-weight: 600;
   margin: 0;
   overflow-wrap: anywhere;
 }

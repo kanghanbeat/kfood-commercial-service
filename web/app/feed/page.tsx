@@ -32,12 +32,15 @@ export default async function FeedPage() {
         </p>
       </header>
       {/* 동작하지 않는 언어 선택·검색창·필터 탭은 신뢰를 깎아 제거 —
-          검색·필터가 실제 구현될 때 기능과 함께 되살린다 */}
-      <section className="action-row" aria-label="Feed actions">
-        <Link className="button primary" href={writeHref}>
-          Write record
-        </Link>
-      </section>
+          검색·필터가 실제 구현될 때 기능과 함께 되살린다.
+          비어 있을 땐 아래 안내 카드가 같은 CTA를 품고 있어 중복 노출하지 않는다 */}
+      {posts.length > 0 ? (
+        <section className="action-row" aria-label="Feed actions">
+          <Link className="button primary" href={writeHref}>
+            Write record
+          </Link>
+        </section>
+      ) : null}
       <ul className="content-list">
         {posts.length === 0 ? (
           <li>
@@ -80,16 +83,19 @@ export default async function FeedPage() {
             </Link>
           </li>
         ))}
-        <li>
-          <div className="list-item-body">
-            <span className="meta-label">Guest mode</span>
-            <strong>Browse first, log in when you want to interact</strong>
-            <p>
-              Guests can preview public records. Creating records, liking, and
-              following will require a public account.
-            </p>
-          </div>
-        </li>
+        {/* 게스트 안내는 로그인 전에만 — 로그인한 사용자에겐 무의미한 소음 */}
+        {!session ? (
+          <li>
+            <div className="list-item-body">
+              <span className="meta-label">Guest mode</span>
+              <strong>Browse first, log in when you want to interact</strong>
+              <p>
+                Guests can preview public records. Creating records, liking, and
+                following will require a public account.
+              </p>
+            </div>
+          </li>
+        ) : null}
       </ul>
     </main>
   );

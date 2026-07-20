@@ -116,9 +116,10 @@ export default async function FoodRegionPage({
           ) : null}
         </div>
         <div className="food-v2-tags">
-          <span className="food-chip spicy">
-            {dict.common.spicy} {food.spicyLevel}/4 ·{" "}
+          {/* "Spicy 3/4 · Spicy"처럼 라벨이 중복되지 않게 라벨 + 수치만 */}
+          <span className={food.spicyLevel > 0 ? "food-chip spicy" : "food-chip"}>
             {dict.foodDetail.spicyLabels[food.spicyLevel]}
+            {food.spicyLevel > 0 ? ` · ${food.spicyLevel}/4` : ""}
           </span>
           <span className="food-chip">{region.nameEn}</span>
         </div>

@@ -21,6 +21,7 @@ export type SiteHeaderLabels = {
 };
 
 export type SiteFooterLabels = {
+  tagline: string;
   reportIssue: string;
   contact: string;
   editorialPolicy: string;
@@ -73,6 +74,10 @@ export function SiteFooter({ labels }: { labels: SiteFooterLabels }) {
 
   return (
     <footer className="footer-v2">
+      <div className="footer-v2-brand">
+        <span className="footer-v2-wordmark">K-Food</span>
+        <p className="footer-v2-tagline">{labels.tagline}</p>
+      </div>
       <nav className="footer-v2-nav" aria-label="Trust and policy navigation">
         <Link href="/report">{labels.reportIssue}</Link>
         <Link href="/contact">{labels.contact}</Link>

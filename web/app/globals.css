@@ -162,9 +162,15 @@ a {
 
 .page-shell {
   display: grid;
-  gap: 48px;
+  gap: 44px;
   padding: 40px clamp(20px, 5vw, 64px) 72px;
+  /* 초광폭 모니터에서 본문이 흩어지지 않게 중앙 정렬 폭 제한 (v2 정리) */
+  max-width: 1140px;
+  margin: 0 auto;
+  width: 100%;
 }
+
+/* 타이포 축소는 전역 h1/h2 규칙(위)에서 이미 v2 톤으로 캡됨 — 여기선 중복 정의하지 않는다 */
 
 .hero-grid {
   align-items: stretch;
@@ -198,15 +204,16 @@ p {
 }
 
 h1 {
-  font-size: clamp(44px, 7vw, 86px);
+  /* 구버전 86px 상한이 로그인·피드·상세 제목을 과대하게 만들어 v2 톤으로 축소 */
+  font-size: clamp(34px, 4.5vw, 52px);
   letter-spacing: 0;
-  line-height: 0.98;
+  line-height: 1.08;
 }
 
 h2 {
-  font-size: clamp(30px, 4vw, 48px);
+  font-size: clamp(24px, 3vw, 34px);
   letter-spacing: 0;
-  line-height: 1.05;
+  line-height: 1.15;
 }
 
 h3 {
@@ -227,6 +234,8 @@ h3 {
 .action-row {
   display: flex;
   flex-wrap: wrap;
+  /* 그리드 셀 안에서 버튼이 세로로 늘어나지 않게 */
+  align-items: center;
   gap: 12px;
 }
 
@@ -275,13 +284,15 @@ h3 {
 }
 
 .button {
-  border: 1px solid var(--ink);
-  border-radius: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
   display: inline-flex;
-  font-weight: 800;
+  align-items: center;
+  font-weight: 700;
   justify-content: center;
   min-width: 148px;
-  padding: 12px 16px;
+  padding: 12px 18px;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
 .button.primary {
@@ -296,7 +307,13 @@ h3 {
 }
 
 .button.secondary {
-  background: transparent;
+  background: var(--surface);
+  color: var(--text-heading);
+}
+
+.button.secondary:hover {
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 .button.full-width {
@@ -313,7 +330,7 @@ h3 {
 .search-panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--card-radius);
   display: grid;
   gap: 12px;
   padding: 18px;
@@ -383,12 +400,18 @@ h3 {
   color: #fffaf4;
 }
 
-/* 음식 카테고리 하위 탭 (Dishes/Regions/Places/Routes) — 각 탭은 실제 URL 링크 */
+/* 음식 카테고리 하위 탭 (Dishes/Regions/Places/Routes) — 각 탭은 실제 URL 링크.
+   "카테고리 전환"임이 보이도록 밑줄형 탭 바 — 모바일에서도 한 줄 유지(가로 스크롤).
+   ⚠️ .food-subnav-tab 기본 스타일(칩)은 홈 지도 아래 지역 바로가기에서도 쓰므로,
+   탭 바 전용 모양은 .food-subnav 스코프 안에서만 덮어쓴다. */
 .food-subnav {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-default);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .food-subnav-tab {
@@ -410,6 +433,27 @@ h3 {
   background: var(--brand);
   border-color: var(--brand);
   color: #ffffff;
+}
+
+.food-subnav .food-subnav-tab {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 14px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.food-subnav .food-subnav-tab:hover {
+  color: var(--brand);
+}
+
+.food-subnav .food-subnav-tab.active {
+  color: var(--brand);
+  font-weight: 700;
+  border-bottom-color: var(--brand);
 }
 
 /* 헤더 지구본 언어 선택기 (byFood 패턴 — 쿠키 저장, URL 무변경) */
@@ -491,7 +535,8 @@ h3 {
 
 .korea-map-svg {
   width: 100%;
-  max-width: 560px;
+  /* 카드 여백만 크고 지도가 작게 뜨지 않도록 데스크톱 최대폭 확대 */
+  max-width: 720px;
   height: auto;
 }
 
@@ -775,6 +820,7 @@ h3 {
 .home-map-placeholder-links {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   justify-content: center;
 }
@@ -901,16 +947,24 @@ h3 {
 .content-list li {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--card-radius);
+  transition: border-color 0.15s ease;
 }
 
+/* 링크를 품은 카드는 호버로 이동 가능함을 알린다 */
+.directory-card:hover,
+.content-list li:has(> a):hover {
+  border-color: var(--brand);
+}
+
+/* :not(.button) — 목록 안 버튼 링크까지 카드처럼 늘어나던 문제 방지 */
 .directory-card a,
-.content-list a,
+.content-list a:not(.button),
 .content-list .list-item-body {
   display: grid;
   gap: 10px;
-  min-height: 170px;
-  padding: 18px;
+  min-height: 0;
+  padding: 20px;
 }
 
 .content-list .compact-list-item {
@@ -920,14 +974,15 @@ h3 {
 .directory-card span,
 .tag,
 .meta-label {
-  color: var(--leaf);
+  /* 구버전 초록 라벨 → v2 브랜드 보라로 통일 (상세·커뮤니티·로그인 화면) */
+  color: var(--brand);
   font-size: 13px;
   font-weight: 800;
 }
 
 .directory-card strong,
 .content-list strong {
-  font-size: 24px;
+  font-size: 19px;
 }
 
 .content-list {
@@ -1066,7 +1121,7 @@ h3 {
 }
 
 .tag {
-  background: var(--success-soft);
+  background: var(--brand-soft);
   border-radius: 999px;
   padding: 7px 10px;
 }
@@ -1144,11 +1199,20 @@ h3 {
 .form-panel {
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--card-radius);
   display: grid;
-  gap: 16px;
-  max-width: 780px;
-  padding: 18px;
+  gap: 18px;
+  max-width: 640px;
+  padding: 28px;
+}
+
+.form-panel h2 {
+  font-size: 22px;
+}
+
+/* 폼 패널 안 버튼 줄은 패널 폭을 채워 정렬 (소셜 로그인 버튼 강조 포함) */
+.form-panel .action-row .button {
+  flex: 1 1 auto;
 }
 
 .form-panel label {
@@ -1178,13 +1242,25 @@ h3 {
 .profile-form input,
 .profile-form select,
 .profile-form textarea {
-  background: #fffaf4;
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--control-radius);
   color: var(--ink);
   font: inherit;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-panel input:focus,
+.form-panel select:focus,
+.form-panel textarea:focus,
+.profile-form input:focus,
+.profile-form select:focus,
+.profile-form textarea:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+  outline: none;
 }
 
 .form-panel textarea,
@@ -1247,7 +1323,7 @@ h3 {
 }
 
 .definition-list dd {
-  font-weight: 800;
+  font-weight: 600;
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -1376,8 +1452,9 @@ h3 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
-  padding: 96px 48px;
+  gap: 24px;
+  /* 다음 섹션(지도)이 첫 화면에 걸리도록 히어로 상하 여백을 줄인다 */
+  padding: 56px 48px;
   text-align: center;
 }
 
@@ -1803,6 +1880,74 @@ h3 {
   color: var(--brand);
 }
 
+/* 카드 본문 안의 칩은 내용 폭만큼만 — flex column의 stretch로
+   가로 전체 배너처럼 늘어나 제목보다 먼저 읽히는 문제 방지 */
+.card-v2-body .food-chip {
+  align-self: flex-start;
+}
+
+/* From our channels — 텍스트만 있어 미완성처럼 보이던 카드에
+   다른 섹션과 같은 이름 기반 그라데이션 썸네일을 붙인다 */
+.channel-card {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: var(--card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--card-radius);
+  padding: 18px;
+}
+
+.channel-card-thumb {
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  user-select: none;
+}
+
+.channel-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.channel-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.channel-card-kind {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--brand);
+  text-transform: uppercase;
+}
+
+.channel-card-summary {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-body);
+}
+
+/* 지도 아래 지역 바로가기 — 칩이 목적 없이 떠 있지 않게 소제목으로 묶는다 */
+.home-map-links-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-body);
+}
+
 .section-v2.alt {
   background: var(--ivory);
 }
@@ -1810,9 +1955,35 @@ h3 {
 .footer-v2 {
   background: var(--sidebar-dark);
   color: var(--sidebar-muted);
-  padding: 32px 48px;
+  padding: 40px 48px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* 푸터 브랜드 영역 — 정책 링크만 나열되고 갑자기 끝나는 느낌 방지 */
+.footer-v2-brand {
+  width: 100%;
+  max-width: 1264px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.footer-v2-wordmark {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.footer-v2-tagline {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--sidebar-muted);
+  max-width: 520px;
 }
 
 .footer-v2-nav {
@@ -1859,8 +2030,88 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  /* 홈 트렌딩·루트: 모바일에선 세로 나열 대신 가로 스와이프 카루셀 —
+     스크롤 길이를 줄이고 "옆으로 더 있다"는 탐색 신호를 준다 */
+  .card-grid-v2.mobile-carousel {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: min(78%, 320px);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+
+  .card-grid-v2.mobile-carousel .card-v2 {
+    scroll-snap-align: start;
+  }
+
+  /* 모바일: 카드 한 장이 화면 한 장을 차지하지 않게 이미지·본문을 압축 */
+  .card-v2-photo {
+    height: 132px;
+  }
+
+  .card-v2-photo-mono {
+    font-size: 56px;
+  }
+
+  .card-v2-body {
+    padding: 18px;
+    gap: 10px;
+  }
+
+  .card-v2-title {
+    font-size: 20px;
+  }
+
+  .hero-v2 {
+    padding: 44px 24px 52px;
+    gap: 20px;
+  }
+
   .hero-v2-headline {
     font-size: 36px;
+  }
+
+  /* 모바일: 인기 칩이 3줄로 감기지 않게 한 줄 가로 스크롤 */
+  .hero-v2-quick {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .hero-v2-quick-label,
+  .hero-v2-quick-chip {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* 모바일: 섹션 제목이 3줄로 감기며 화면을 압도하지 않게 축소 */
+  .section-v2-title {
+    font-size: 26px;
+  }
+
+  .channel-card-thumb {
+    width: 72px;
+    height: 72px;
+    font-size: 30px;
+  }
+
+  /* 모바일: SVG가 줄어들면 라벨도 같이 줄어 판독 불가 →
+     viewBox 단위 기준 폰트를 키워 화면상 크기를 보정 */
+  .korea-map-label {
+    font-size: 20px;
+  }
+
+  .korea-map-sublabel {
+    font-size: 15px;
+  }
+
+  .korea-map-marker-name {
+    font-size: 13px;
   }
 
   .home-stats {

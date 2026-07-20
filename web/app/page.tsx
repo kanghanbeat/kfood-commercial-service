@@ -7,7 +7,7 @@ import {
   getPublishedRoutes
 } from "@kfood/data";
 
-import { CardPhoto } from "@/components/card-photo";
+import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
 import {
   KoreaMap,
   type MapMarker,
@@ -135,6 +135,7 @@ export default async function HomePage() {
           />
           {/* 지도는 클라이언트 렌더라, 검색엔진·키보드용 지역 바로가기는 링크로도 유지 */}
           <div className="home-map-placeholder-links">
+            <span className="home-map-links-label">{t.popularAreas}</span>
             {mapQuickRegions.map((region) => (
               <Link
                 className="food-subnav-tab"
@@ -161,12 +162,18 @@ export default async function HomePage() {
               {dict.common.viewAll} <ArrowRightIcon />
             </Link>
           </div>
-          <div className="card-grid-v2">
+          {/* mobile-carousel: 모바일에선 세로 6장 대신 가로 스와이프 */}
+          <div className="card-grid-v2 mobile-carousel">
             {trendingFoods.map((food) => (
               <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
                 <CardPhoto label={food.nameEn} variant="food" />
                 <div className="card-v2-body">
-                  <span className="food-chip spicy">{dict.common.spicy} {food.spicyLevel}/4</span>
+                  {/* 0/4는 정보가 아니라 소음 — 안 매운 음식은 중립 칩으로 "Not spicy" */}
+                  <span className={food.spicyLevel > 0 ? "food-chip spicy" : "food-chip"}>
+                    {food.spicyLevel > 0
+                      ? `${dict.common.spicy} ${food.spicyLevel}/4`
+                      : dict.foodDetail.spicyLabels[0]}
+                  </span>
                   <span className="card-v2-title">{food.nameEn}</span>
                   <span className="card-v2-meta">{food.summary}</span>
                   <span className="card-v2-link">
@@ -186,7 +193,7 @@ export default async function HomePage() {
               {t.viewAllRoutes} <ArrowRightIcon />
             </Link>
           </div>
-          <div className="card-grid-v2">
+          <div className="card-grid-v2 mobile-carousel">
             {editorPicks.map((route) => (
               <Link className="card-v2" href={`/routes/${route.slug}`} key={route.slug}>
                 <CardPhoto label={route.title} variant="route" />
@@ -220,33 +227,45 @@ export default async function HomePage() {
             </div>
           ) : (
             <div className="food-info-grid">
-              {productions.map((production) =>
-                production.externalUrl ? (
+              {productions.map((production) => {
+                const thumb = resolveCardPhoto(production.title);
+                const body = (
+                  <>
+                    <span
+                      className="channel-card-thumb"
+                      style={{ background: thumb.gradient, color: thumb.glyph }}
+                      aria-hidden="true"
+                    >
+                      {thumb.letter}
+                    </span>
+                    <span className="channel-card-body">
+                      <span className="channel-card-title">{production.title}</span>
+                      <span className="channel-card-kind">
+                        {production.type.toUpperCase()}
+                        {production.channel ? ` · ${production.channel}` : ""}
+                      </span>
+                      {production.summary ? (
+                        <span className="channel-card-summary">{production.summary}</span>
+                      ) : null}
+                    </span>
+                  </>
+                );
+                return production.externalUrl ? (
                   <a
-                    className="food-info-card"
+                    className="channel-card"
                     href={production.externalUrl}
                     key={production.slug}
                     rel="noreferrer"
                     target="_blank"
                   >
-                    <h3>{production.title}</h3>
-                    <p style={{ color: "var(--brand)" }}>
-                      {production.type.toUpperCase()}
-                      {production.channel ? ` · ${production.channel}` : ""}
-                    </p>
-                    {production.summary ? <p>{production.summary}</p> : null}
+                    {body}
                   </a>
                 ) : (
-                  <div className="food-info-card" key={production.slug}>
-                    <h3>{production.title}</h3>
-                    <p style={{ color: "var(--brand)" }}>
-                      {production.type.toUpperCase()}
-                      {production.channel ? ` · ${production.channel}` : ""}
-                    </p>
-                    {production.summary ? <p>{production.summary}</p> : null}
+                  <div className="channel-card" key={production.slug}>
+                    {body}
                   </div>
-                )
-              )}
+                );
+              })}
             </div>
           )}
         </div>

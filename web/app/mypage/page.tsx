@@ -56,10 +56,10 @@ export default async function MypagePage({
       <header className="detail-header">
         <p className="eyebrow">Mypage</p>
         <h1>Your K-food activity hub.</h1>
+        {/* 내부 개발 단계 설명 대신 사용자 기준 안내로 */}
         <p className="detail-intro">
-          Mypage will manage your profile, records, likes, follows, and language
-          settings. The first version keeps account identity visible while the
-          community data model is prepared.
+          Manage your profile, preferred language, and your K-food tasting
+          journey in one place.
         </p>
       </header>
       {params?.updated ? (
@@ -79,10 +79,8 @@ export default async function MypagePage({
             <dt>Provider</dt>
             <dd>{session.provider ?? "OAuth"}</dd>
           </div>
-          <div>
-            <dt>User ID</dt>
-            <dd>{session.userId}</dd>
-          </div>
+          {/* User ID(내부 식별자 원문)는 사용자에게 의미가 없어 노출하지 않는다 —
+              운영 조회는 Supabase 대시보드에서 */}
         </dl>
         <div className="action-row">
           {communityEnabled ? (
@@ -155,16 +153,8 @@ export default async function MypagePage({
             </span>
             <span className="admin-metric-sub">First tasting goal</span>
           </div>
-          <div className="admin-metric-card">
-            <span className="admin-metric-label">Verified</span>
-            <span className="admin-metric-value">0</span>
-            <span className="admin-metric-sub">Visits confirmed</span>
-          </div>
-          <div className="admin-metric-card">
-            <span className="admin-metric-label">Challenges</span>
-            <span className="admin-metric-value">0</span>
-            <span className="admin-metric-sub">Missions completed</span>
-          </div>
+          {/* Verified·Challenges는 기능 미구현이라 항상 0으로 떠 소음 —
+              기능이 실제로 붙을 때 카드와 함께 복원 */}
           <div className="admin-metric-card">
             <span className="admin-metric-label">Collection</span>
             <span className="admin-metric-value">
@@ -206,17 +196,8 @@ export default async function MypagePage({
       </section>
       ) : null}
 
-      <section className="section-block" aria-labelledby="mypage-next">
-        <div className="section-heading">
-          <p className="eyebrow">UGC foundation</p>
-          <h2 id="mypage-next">Records and comments are being prepared</h2>
-          <p>
-            Profile fields now support future records and comments. The next
-            implementation slice will connect Feed to published user posts, then
-            add post detail and comment forms.
-          </p>
-        </div>
-      </section>
+      {/* 내부 로드맵 안내(UGC foundation) 섹션은 사용자에게 무의미해 제거 —
+          기록·댓글 기능이 실제로 열릴 때 사용자 기준 안내로 다시 넣는다 */}
     </main>
   );
 }

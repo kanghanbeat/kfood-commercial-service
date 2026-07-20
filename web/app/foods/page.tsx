@@ -22,19 +22,17 @@ export default async function FoodsPage() {
           <span className="food-v2-name-en">{dict.lists.foodsTitle}</span>
         </div>
         <p className="food-v2-summary">{dict.lists.foodsSummary}</p>
-        <div className="food-v2-actions">
-          <Link className="button secondary" href="/photo-sources">
-            Review photo sources
-          </Link>
-        </div>
       </header>
       <div className="card-grid-v2">
         {foods.map((food) => (
           <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
             <CardPhoto label={food.nameEn} variant="food" />
             <div className="card-v2-body">
-              <span className="food-chip spicy">
-                {dict.common.spicy} {food.spicyLevel}/4
+              {/* 0/4는 정보가 아니라 소음 — 안 매운 음식은 중립 칩으로 "Not spicy" */}
+              <span className={food.spicyLevel > 0 ? "food-chip spicy" : "food-chip"}>
+                {food.spicyLevel > 0
+                  ? `${dict.common.spicy} ${food.spicyLevel}/4`
+                  : dict.foodDetail.spicyLabels[0]}
               </span>
               <span className="card-v2-title">{food.nameEn}</span>
               <span className="card-v2-meta">{food.summary}</span>
@@ -42,6 +40,12 @@ export default async function FoodsPage() {
             </div>
           </Link>
         ))}
+      </div>
+      {/* 운영·투명성용 링크라 방문자 동선을 막지 않게 목록 아래로 내림 */}
+      <div className="food-v2-actions">
+        <Link className="button secondary" href="/photo-sources">
+          Review photo sources
+        </Link>
       </div>
     </div>
   );

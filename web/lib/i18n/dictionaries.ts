@@ -43,7 +43,8 @@ const en = {
   },
   home: {
     heroBadge: "For travelers in Korea",
-    heroHeadline: "Discover Korea through its food",
+    heroTitleTop: "Discover Korea",
+    heroTitleAccent: "through its food.",
     heroSubtitle:
       "Find iconic dishes, the regions they come from, and the best places to taste them.",
     searchPlaceholder: "Search foods, regions, or places...",
@@ -163,7 +164,8 @@ const ko: Dictionary = {
   },
   home: {
     heroBadge: "한국을 여행하는 당신에게",
-    heroHeadline: "음식으로 한국을 발견하세요",
+    heroTitleTop: "음식으로 발견하는",
+    heroTitleAccent: "한국.",
     heroSubtitle: "대표 음식과 그 음식이 나고 자란 지역, 맛볼 수 있는 최고의 장소를 찾아보세요.",
     searchPlaceholder: "음식, 지역, 장소 검색...",
     searchButton: "검색",
@@ -275,7 +277,8 @@ const ja: Dictionary = {
   },
   home: {
     heroBadge: "韓国を旅するあなたへ",
-    heroHeadline: "食で韓国を発見しよう",
+    heroTitleTop: "食で発見する",
+    heroTitleAccent: "韓国。",
     heroSubtitle: "定番料理、その料理が生まれたエリア、味わえるベストなお店を見つけましょう。",
     searchPlaceholder: "料理・エリア・スポットを検索...",
     searchButton: "検索",
@@ -387,7 +390,8 @@ const zh: Dictionary = {
   },
   home: {
     heroBadge: "写给来韩国旅行的你",
-    heroHeadline: "通过美食发现韩国",
+    heroTitleTop: "以美食发现",
+    heroTitleAccent: "韩国。",
     heroSubtitle: "找到经典韩餐、它们的发源地区，以及品尝它们的最佳去处。",
     searchPlaceholder: "搜索美食、地区或店铺...",
     searchButton: "搜索",

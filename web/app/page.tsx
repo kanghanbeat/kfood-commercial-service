@@ -79,7 +79,11 @@ export default async function HomePage() {
       {/* ① 히어로 */}
       <section className="hero-v2">
         <span className="hero-v2-badge">{t.heroBadge}</span>
-        <h1 className="hero-v2-headline">{t.heroHeadline}</h1>
+        {/* 매거진 히어로: 두 줄 디스플레이 타이포 — 강조 줄만 브랜드 보라 */}
+        <h1 className="hero-v2-headline">
+          {t.heroTitleTop}
+          <span className="hero-v2-headline-accent">{t.heroTitleAccent}</span>
+        </h1>
         <p className="hero-v2-subtitle">{t.heroSubtitle}</p>
         <form className="hero-v2-search-form" action="/search" method="get" role="search">
           <input
@@ -106,16 +110,41 @@ export default async function HomePage() {
           ))}
         </div>
         <Link className="hero-v2-cta" href="/foods">
-          {t.heroCta}
+          {t.heroCta} →
         </Link>
       </section>
+
+      {/* 음식 이름 티커 — 매거진 스트립. 트랙 안에 목록을 두 번 넣어 끊김 없이 순환 */}
+      <div className="food-ticker" aria-label="Popular dishes">
+        <div className="food-ticker-track">
+          {[0, 1].map((copy) => (
+            <span key={copy} aria-hidden={copy === 1}>
+              {trendingFoods.map((food) => (
+                <span key={`${copy}-${food.slug}`}>
+                  <Link
+                    className="food-ticker-item"
+                    href={`/foods/${food.slug}`}
+                    tabIndex={copy === 1 ? -1 : undefined}
+                  >
+                    {food.nameEn}
+                  </Link>
+                  <span className="food-ticker-dot" aria-hidden="true">●</span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* ② 한국 지도 — 시·도 SVG, 클릭 시 지역 목록 이동 */}
       <section className="section-v2">
         <div className="section-v2-inner">
           <div className="section-v2-header">
             <div className="section-v2-heading">
-              <span className="section-v2-eyebrow">{t.exploreEyebrow}</span>
+              <span className="section-v2-eyebrow">
+                <span className="section-v2-num">01</span>
+                {t.exploreEyebrow}
+              </span>
               <span className="section-v2-title">{t.exploreTitle}</span>
               <span className="section-v2-subtitle">{t.exploreSubtitle}</span>
             </div>
@@ -154,7 +183,10 @@ export default async function HomePage() {
         <div className="section-v2-inner">
           <div className="section-v2-header">
             <div className="section-v2-heading">
-              <span className="section-v2-eyebrow">{t.eatEyebrow}</span>
+              <span className="section-v2-eyebrow">
+                <span className="section-v2-num">02</span>
+                {t.eatEyebrow}
+              </span>
               <span className="section-v2-title">{t.trendingTitle}</span>
               <span className="section-v2-subtitle">{t.trendingSubtitle}</span>
             </div>
@@ -162,8 +194,8 @@ export default async function HomePage() {
               {dict.common.viewAll} <ArrowRightIcon />
             </Link>
           </div>
-          {/* mobile-carousel: 모바일에선 세로 6장 대신 가로 스와이프 */}
-          <div className="card-grid-v2 mobile-carousel">
+          {/* mobile-carousel: 모바일 가로 스와이프 / magazine: 테두리 없는 이미지+캡션 카드 */}
+          <div className="card-grid-v2 mobile-carousel magazine">
             {trendingFoods.map((food) => (
               <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
                 <CardPhoto label={food.nameEn} variant="food" />
@@ -185,6 +217,7 @@ export default async function HomePage() {
           </div>
           <div className="section-v2-header" style={{ marginTop: 40 }}>
             <div className="section-v2-heading">
+              {/* 루트는 02 EAT 섹션 안의 하위 블록이라 번호 없이 소제목만 */}
               <span className="section-v2-eyebrow">{t.editorEyebrow}</span>
               <span className="section-v2-title">{t.routesTitle}</span>
               <span className="section-v2-subtitle">{t.routesSubtitle}</span>
@@ -193,7 +226,7 @@ export default async function HomePage() {
               {t.viewAllRoutes} <ArrowRightIcon />
             </Link>
           </div>
-          <div className="card-grid-v2 mobile-carousel">
+          <div className="card-grid-v2 mobile-carousel magazine">
             {editorPicks.map((route) => (
               <Link className="card-v2" href={`/routes/${route.slug}`} key={route.slug}>
                 <CardPhoto label={route.title} variant="route" />
@@ -216,7 +249,10 @@ export default async function HomePage() {
         <div className="section-v2-inner">
           <div className="section-v2-header">
             <div className="section-v2-heading">
-              <span className="section-v2-eyebrow">{t.watchEyebrow}</span>
+              <span className="section-v2-eyebrow">
+                <span className="section-v2-num">03</span>
+                {t.watchEyebrow}
+              </span>
               <span className="section-v2-title">{t.channelsTitle}</span>
               <span className="section-v2-subtitle">{t.channelsSubtitle}</span>
             </div>

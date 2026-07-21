@@ -114,28 +114,6 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      {/* 음식 이름 티커 — 매거진 스트립. 트랙 안에 목록을 두 번 넣어 끊김 없이 순환 */}
-      <div className="food-ticker" aria-label="Popular dishes">
-        <div className="food-ticker-track">
-          {[0, 1].map((copy) => (
-            <span key={copy} aria-hidden={copy === 1}>
-              {trendingFoods.map((food) => (
-                <span key={`${copy}-${food.slug}`}>
-                  <Link
-                    className="food-ticker-item"
-                    href={`/foods/${food.slug}`}
-                    tabIndex={copy === 1 ? -1 : undefined}
-                  >
-                    {food.nameEn}
-                  </Link>
-                  <span className="food-ticker-dot" aria-hidden="true">●</span>
-                </span>
-              ))}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* ② 한국 지도 — 시·도 SVG, 클릭 시 지역 목록 이동 */}
       <section className="section-v2">
         <div className="section-v2-inner">

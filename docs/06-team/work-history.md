@@ -38,7 +38,11 @@
 
 **검증:** 프리뷰 배포(`feature/admin-list-controls`)에서 솔이 로그인 → 메뉴 이동 반복 → 로그아웃 안 됨 확인.
 
-**⚠️ 남은 것 (한빛 확인 필요):** 같은 회귀가 **공개 세션 쪽(`web/lib/public-auth.ts`)에도 그대로 있다.** `createPublicSupabaseServerClient`·`createPublicSupabaseUserClient` 둘 다 `autoRefreshToken` 설정이 없다. 이번엔 요청 범위(어드민)를 넘어서 손대지 않았다. 공개 로그인에서 같은 증상이 재발할 수 있으니 별도로 처리할 것.
+**공개 세션 점검 결과 (같은 세션에서 확인):** 처음엔 "공개 세션에도 같은 회귀가 있다"고 판단했으나 **틀렸다.** `@supabase/ssr` 0.12.0의 `createServerClient`는 내부에서 `autoRefreshToken: false`를 강제한다(사용자 옵션보다 뒤에 병합돼 덮어씀). 세션10에서 이 설정을 코드에서 뺀 것은 유실이 아니라 **라이브러리가 보장하게 됐기 때문**이었다. 공개 세션 읽기 경로(`getPublicSession`)에도 명시적 `refreshSession()` 호출이 없다.
+
+다만 `createPublicSupabaseUserClient`는 `@supabase/ssr`가 아니라 supabase-js `createClient`를 직접 써서 기본값이 true였으므로, 어드민과 일관되게 `autoRefreshToken: false`를 명시했다(세션을 저장하지 않아 실질 위험은 낮았음 — 방어적 조치).
+
+**어드민에서 실제로 증상을 만든 것은 `autoRefreshToken`이 아니라 `getAdminSession()`의 명시적 `refreshSession()` 호출이었다.**
 
 **진행 중 사고 기록:** 작업 도중 Next.js 16에서 미들웨어 파일 이름이 `middleware.ts` → `proxy.ts`로 바뀐 걸 놓치고 `middleware.ts`를 새로 만들어, "둘 다 있으면 안 된다" 에러로 로컬 개발서버가 15분쯤 전면 404 상태였다(삭제 후 복구). **이 저장소의 미들웨어는 `web/proxy.ts` 하나뿐이다.**
 

@@ -132,6 +132,7 @@ export default async function AdminManagePage({
       {tab === "places" ? (
         <PlacesPanel
           accessToken={session.accessToken}
+          add={add}
           message={message}
           params={listParams}
         />

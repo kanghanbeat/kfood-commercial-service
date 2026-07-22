@@ -666,6 +666,24 @@ export type UpdateAdminPlaceInput = {
   trustTags?: string[];
 };
 
+export type CreateAdminPlaceInput = {
+  actorId: string;
+  addressEn?: string | null;
+  addressKo?: string | null;
+  businessHoursNote?: string | null;
+  businessInfoNote?: string | null;
+  cautionTags?: string[];
+  editorialNote: string;
+  googleMapsUrl?: string | null;
+  nameEn: string;
+  nameKo?: string | null;
+  naverMapsUrl?: string | null;
+  regionId: string;
+  slug: string;
+  status: PublicationStatus;
+  trustTags?: string[];
+};
+
 export type AdminAuditLog = {
   id: string;
   actorId: string | null;
@@ -2445,6 +2463,73 @@ export async function updateAdminReportStatus(
 
   if (auditError) {
     return { ok: false, message: "Report updated, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
+// 장소 생성. updateAdminPlace 패턴을 그대로 따름(감사 로그 포함).
+// RLS의 places_editor_manage(for all)가 editor/admin 삽입을 허용한다.
+export async function createAdminPlace(
+  accessToken: string,
+  input: CreateAdminPlaceInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (!input.slug.trim()) {
+    return { ok: false, message: "Slug is required." };
+  }
+  if (!input.nameEn.trim()) {
+    return { ok: false, message: "English name is required." };
+  }
+  if (!input.regionId) {
+    return { ok: false, message: "Region is required." };
+  }
+  if (!input.editorialNote.trim()) {
+    return { ok: false, message: "Editorial note is required." };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("places")
+    .insert({
+      address_en: input.addressEn?.trim() || null,
+      address_ko: input.addressKo?.trim() || null,
+      business_hours_note: input.businessHoursNote?.trim() || null,
+      business_info_note: input.businessInfoNote?.trim() || null,
+      caution_tags: input.cautionTags ?? [],
+      editorial_note: input.editorialNote.trim(),
+      google_maps_url: input.googleMapsUrl?.trim() || null,
+      name_en: input.nameEn.trim(),
+      name_ko: input.nameKo?.trim() || null,
+      naver_maps_url: input.naverMapsUrl?.trim() || null,
+      region_id: input.regionId,
+      slug: input.slug.trim(),
+      status: input.status,
+      trust_tags: input.trustTags ?? [],
+      updated_at: new Date().toISOString()
+    })
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Place could not be created." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "place.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "place"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Place created, but audit log failed." };
   }
 
   return { ok: true };

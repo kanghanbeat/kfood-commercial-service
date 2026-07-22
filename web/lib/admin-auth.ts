@@ -6,6 +6,8 @@ import { createClient } from "@supabase/supabase-js";
 
 const adminAccessTokenCookie = "kfood_admin_access_token";
 const adminRefreshTokenCookie = "kfood_admin_refresh_token";
+// proxy.ts의 adminSessionMaxAge와 같은 값이어야 한다. 토큰 갱신 때마다
+// proxy.ts가 쿠키를 다시 발급하므로 실제로는 "마지막 활동 기준 1시간".
 const adminSessionMaxAge = 60 * 60;
 
 export type AdminSession = {
@@ -65,37 +67,6 @@ export function createSupabaseUserClient(accessToken: string) {
   });
 }
 
-function createSupabaseRefreshClient() {
-  const config = getSupabaseConfig();
-
-  if (!config) {
-    return null;
-  }
-
-  return createClient(config.url, config.anonKey, {
-    auth: {
-      persistSession: false
-    }
-  });
-}
-
-export async function setAdminAuthCookies(
-  accessToken: string,
-  refreshToken: string
-) {
-  const cookieStore = await cookies();
-  const cookieOptions = {
-    httpOnly: true,
-    maxAge: adminSessionMaxAge,
-    path: "/admin",
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production"
-  };
-
-  cookieStore.set(adminAccessTokenCookie, accessToken, cookieOptions);
-  cookieStore.set(adminRefreshTokenCookie, refreshToken, cookieOptions);
-}
-
 export function setAdminAuthCookiesOnResponse(
   response: NextResponse,
   accessToken: string,
@@ -113,20 +84,6 @@ export function setAdminAuthCookiesOnResponse(
   response.cookies.set(adminRefreshTokenCookie, refreshToken, cookieOptions);
 }
 
-export async function clearAdminAuthCookies() {
-  const cookieStore = await cookies();
-  const expiredCookieOptions = {
-    httpOnly: true,
-    maxAge: 0,
-    path: "/admin",
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production"
-  };
-
-  cookieStore.set(adminAccessTokenCookie, "", expiredCookieOptions);
-  cookieStore.set(adminRefreshTokenCookie, "", expiredCookieOptions);
-}
-
 export function clearAdminAuthCookiesOnResponse(response: NextResponse) {
   const expiredCookieOptions = {
     httpOnly: true,
@@ -140,57 +97,22 @@ export function clearAdminAuthCookiesOnResponse(response: NextResponse) {
   response.cookies.set(adminRefreshTokenCookie, "", expiredCookieOptions);
 }
 
+// 읽기 전용. 여기서 토큰을 갱신하거나 쿠키를 지우면 안 된다.
+// 화면 렌더 중에는 쿠키를 쓸 수 없어서, 갱신하면 Supabase가 새로 발급한
+// 리프레시 토큰이 브라우저에 저장되지 못한 채 옛 토큰만 폐기된다
+// (= 다음 페이지 이동에서 로그아웃). 갱신은 proxy.ts가 담당한다.
 export async function getAdminSession(): Promise<AdminSession | null> {
   const cookieStore = await cookies();
-  let accessToken = cookieStore.get(adminAccessTokenCookie)?.value;
-  const refreshToken = cookieStore.get(adminRefreshTokenCookie)?.value;
+  const accessToken = cookieStore.get(adminAccessTokenCookie)?.value;
 
-  if (!accessToken && !refreshToken) {
+  if (!accessToken) {
     return null;
   }
 
-  let supabase = accessToken ? createSupabaseUserClient(accessToken) : null;
+  const supabase = createSupabaseUserClient(accessToken);
+  const userResult = supabase ? await supabase.auth.getUser(accessToken) : null;
 
-  let userResult = supabase && accessToken
-    ? await supabase.auth.getUser(accessToken)
-    : null;
-
-  if ((!userResult || userResult.error || !userResult.data.user) && refreshToken) {
-    const refreshClient = createSupabaseRefreshClient();
-
-    if (!refreshClient) {
-      return null;
-    }
-
-    const { data, error } = await refreshClient.auth.refreshSession({
-      refresh_token: refreshToken
-    });
-
-    if (error || !data.session || !data.user) {
-      await clearAdminAuthCookies();
-      return null;
-    }
-
-    accessToken = data.session.access_token;
-    supabase = createSupabaseUserClient(accessToken);
-
-    try {
-      await setAdminAuthCookies(
-        data.session.access_token,
-        data.session.refresh_token
-      );
-    } catch {
-      // Server components cannot always mutate cookies, but the refreshed
-      // access token can still be used for the current request.
-    }
-
-    userResult = {
-      data: { user: data.user },
-      error: null
-    };
-  }
-
-  if (!supabase || !accessToken || !userResult || userResult.error || !userResult.data.user) {
+  if (!supabase || !userResult || userResult.error || !userResult.data.user) {
     return null;
   }
 

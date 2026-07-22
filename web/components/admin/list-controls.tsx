@@ -124,7 +124,7 @@ export function AdminListToolbar({
         검색
       </button>
       {filtered ? (
-        <Link className="admin-list-reset" href={`${basePath}?tab=${tab}`}>
+        <Link className="admin-list-reset" href={`${basePath}?tab=${tab}`} prefetch={false}>
           초기화
         </Link>
       ) : null}
@@ -153,7 +153,11 @@ export function AdminPager({
   return (
     <nav aria-label="페이지 이동" className="admin-pager">
       {page > 1 ? (
-        <Link className="admin-btn" href={pageHref(basePath, tab, params, page - 1)}>
+        <Link
+          className="admin-btn"
+          href={pageHref(basePath, tab, params, page - 1)}
+          prefetch={false}
+        >
           이전
         </Link>
       ) : (
@@ -163,7 +167,11 @@ export function AdminPager({
         {page} / {pageCount}
       </span>
       {page < pageCount ? (
-        <Link className="admin-btn" href={pageHref(basePath, tab, params, page + 1)}>
+        <Link
+          className="admin-btn"
+          href={pageHref(basePath, tab, params, page + 1)}
+          prefetch={false}
+        >
           다음
         </Link>
       ) : (

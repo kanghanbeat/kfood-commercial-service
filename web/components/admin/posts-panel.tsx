@@ -92,7 +92,7 @@ export async function PostsPanel({
         </p>
       </div>
       <div className="action-row">
-        <Link className="button primary" href="/admin/user-posts/new">
+        <Link className="button primary" href="/admin/user-posts/new" prefetch={false}>
           관리자 게시물 작성
         </Link>
       </div>

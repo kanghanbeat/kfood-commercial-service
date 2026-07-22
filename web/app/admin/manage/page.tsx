@@ -90,6 +90,7 @@ export default async function AdminManagePage({
                   className="admin-add-menu-item"
                   href={`/admin/manage?tab=${type.key}&add=1`}
                   key={type.key}
+                  prefetch={false}
                 >
                   <span className="admin-add-menu-label">{type.label}</span>
                   <span className="admin-add-menu-desc">{type.desc}</span>

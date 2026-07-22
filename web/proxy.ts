@@ -159,6 +159,19 @@ export async function proxy(request: NextRequest) {
   // 1) 어드민 세션 갱신 — 다운스트림 페이지가 새 토큰을 읽도록 요청 쿠키에 반영
   const adminUpdate = await computeAdminUpdate(request);
 
+  // [임시 진단] 로그인 풀림 추적용. 원인 확인 후 제거할 것.
+  if (pathname.startsWith("/admin")) {
+    const at = request.cookies.get(adminAccessTokenCookie)?.value;
+    const exp = getJwtExpiresAt(at);
+    console.log(
+      `[admin-diag] proxy ${request.method} ${pathname}` +
+        ` access=${at ? "있음" : "없음"}` +
+        ` refresh=${request.cookies.get(adminRefreshTokenCookie)?.value ? "있음" : "없음"}` +
+        ` 남은시간=${exp ? exp - Math.floor(Date.now() / 1000) + "초" : "-"}` +
+        ` update=${adminUpdate === "clear" ? "쿠키삭제" : adminUpdate ? "갱신" : "없음"}`
+    );
+  }
+
   if (adminUpdate === "clear") {
     request.cookies.delete(adminAccessTokenCookie);
     request.cookies.delete(adminRefreshTokenCookie);
@@ -215,6 +228,8 @@ export async function proxy(request: NextRequest) {
     const hasAdminAccess = request.cookies.get(adminAccessTokenCookie)?.value;
 
     if (!hasAdminAccess) {
+      // [임시 진단]
+      console.log(`[admin-diag] proxy 게이트가 로그인으로 보냄: ${pathname}`);
       const loginUrl = new URL("/admin/login", request.url);
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);

@@ -43,6 +43,10 @@ export function createSupabaseAuthClient() {
 
   return createClient(config.url, config.anonKey, {
     auth: {
+      // 자동 갱신 금지. 화면 렌더 중에 갱신되면 새 리프레시 토큰을 쿠키에
+      // 저장할 수 없어 옛 토큰만 폐기되고, 다음 요청에서 세션이 통째로 끊긴다.
+      // (work-history.md 세션9 근본 원인 — 갱신은 proxy.ts만 담당)
+      autoRefreshToken: false,
       persistSession: false
     }
   });
@@ -57,6 +61,8 @@ export function createSupabaseUserClient(accessToken: string) {
 
   return createClient(config.url, config.anonKey, {
     auth: {
+      // 자동 갱신 금지 — createSupabaseAuthClient의 주석 참고.
+      autoRefreshToken: false,
       persistSession: false
     },
     global: {
@@ -113,6 +119,10 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   const userResult = supabase ? await supabase.auth.getUser(accessToken) : null;
 
   if (!supabase || !userResult || userResult.error || !userResult.data.user) {
+    // [임시 진단] 로그인 풀림 추적용. 원인 확인 후 제거할 것.
+    console.log(
+      `[admin-diag] getUser 실패 → 로그인으로: ${userResult?.error?.message ?? "응답 없음"}`
+    );
     return null;
   }
 
@@ -128,6 +138,12 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     !profile.is_active ||
     (profile.role !== "admin" && profile.role !== "editor")
   ) {
+    // [임시 진단] 로그인 풀림 추적용. 원인 확인 후 제거할 것.
+    console.log(
+      `[admin-diag] profiles 조회 실패 → 로그인으로:` +
+        ` error=${profileError?.message ?? "없음"}` +
+        ` profile=${profile ? `role=${profile.role} active=${profile.is_active}` : "없음"}`
+    );
     return null;
   }
 

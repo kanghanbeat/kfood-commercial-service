@@ -10,6 +10,7 @@ import {
 import type { AdminRegion, AdminRoute, PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { AdminEntityActions } from "@/components/admin/entity-actions";
 import {
   AdminItem,
   AdminListToolbar,
@@ -190,7 +191,13 @@ export async function RoutesPanel({
 }: {
   accessToken: string;
   add?: boolean;
-  message?: { error?: string; updated?: string; created?: string };
+  message?: {
+    error?: string;
+    updated?: string;
+    created?: string;
+    archived?: string;
+    deleted?: string;
+  };
   params?: ListParams;
 }) {
   const [routes, regions] = await Promise.all([
@@ -214,6 +221,12 @@ export async function RoutesPanel({
       ) : null}
       {message?.updated ? (
         <p className="status-message success">루트가 수정되었습니다.</p>
+      ) : null}
+      {message?.archived ? (
+        <p className="status-message success">루트을(를) 보관했습니다. 공개 사이트에서 빠집니다.</p>
+      ) : null}
+      {message?.deleted ? (
+        <p className="status-message success">루트을(를) 완전히 삭제했습니다.</p>
       ) : null}
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
@@ -275,6 +288,13 @@ export async function RoutesPanel({
               <RouteFields regions={regions} route={route} />
               <button className="admin-btn primary" type="submit">루트 저장</button>
             </form>
+            <AdminEntityActions
+              entity="route"
+              id={route.id}
+              isArchived={route.status === "archived"}
+              name={route.title}
+              returnQuery={ret}
+            />
           </AdminItem>
         ))}
       </div>

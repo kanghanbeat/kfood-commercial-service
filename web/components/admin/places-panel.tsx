@@ -10,6 +10,7 @@ import {
 import type { AdminRegion, PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { AdminEntityActions } from "@/components/admin/entity-actions";
 import {
   AdminItem,
   AdminListToolbar,
@@ -203,7 +204,13 @@ export async function PlacesPanel({
 }: {
   accessToken: string;
   add?: boolean;
-  message?: { error?: string; updated?: string; created?: string };
+  message?: {
+    error?: string;
+    updated?: string;
+    created?: string;
+    archived?: string;
+    deleted?: string;
+  };
   params?: ListParams;
 }) {
   const [places, regions] = await Promise.all([
@@ -228,6 +235,12 @@ export async function PlacesPanel({
       ) : null}
       {message?.updated ? (
         <p className="status-message success">장소가 수정되고 감사 로그가 기록되었습니다.</p>
+      ) : null}
+      {message?.archived ? (
+        <p className="status-message success">장소을(를) 보관했습니다. 공개 사이트에서 빠집니다.</p>
+      ) : null}
+      {message?.deleted ? (
+        <p className="status-message success">장소을(를) 완전히 삭제했습니다.</p>
       ) : null}
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
@@ -356,6 +369,13 @@ export async function PlacesPanel({
               장소 저장
             </button>
           </form>
+          <AdminEntityActions
+            entity="place"
+            id={place.id}
+            isArchived={place.status === "archived"}
+            name={place.nameEn}
+            returnQuery={ret}
+          />
           </AdminItem>
         ))}
       </div>

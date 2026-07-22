@@ -5,6 +5,7 @@ import { createAdminFood, getAdminFoods, updateAdminFood } from "@kfood/data";
 import type { PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { AdminEntityActions } from "@/components/admin/entity-actions";
 import {
   AdminItem,
   AdminListToolbar,
@@ -211,7 +212,13 @@ export async function FoodsPanel({
 }: {
   accessToken: string;
   add?: boolean;
-  message?: { error?: string; updated?: string; created?: string };
+  message?: {
+    error?: string;
+    updated?: string;
+    created?: string;
+    archived?: string;
+    deleted?: string;
+  };
   params?: ListParams;
 }) {
   const foods = await getAdminFoods(accessToken);
@@ -232,6 +239,12 @@ export async function FoodsPanel({
       ) : null}
       {message?.updated ? (
         <p className="status-message success">음식이 수정되었습니다.</p>
+      ) : null}
+      {message?.archived ? (
+        <p className="status-message success">음식을(를) 보관했습니다. 공개 사이트에서 빠집니다.</p>
+      ) : null}
+      {message?.deleted ? (
+        <p className="status-message success">음식을(를) 완전히 삭제했습니다.</p>
       ) : null}
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
@@ -287,6 +300,13 @@ export async function FoodsPanel({
               <FoodFields defaults={food} />
               <button className="admin-btn primary" type="submit">음식 저장</button>
             </form>
+            <AdminEntityActions
+              entity="food"
+              id={food.id}
+              isArchived={food.status === "archived"}
+              name={food.nameEn}
+              returnQuery={ret}
+            />
           </AdminItem>
         ))}
       </div>

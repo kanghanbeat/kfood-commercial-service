@@ -3565,3 +3565,176 @@ export async function submitContentReport(
 
   return { ok: true };
 }
+
+// ── Admin: 보관 · 삭제 ─────────────────────────────────────
+// 보관(archive)은 status를 archived로 바꿔 목록에서 감추는 것이고,
+// 삭제(delete)는 DB에서 실제로 제거하는 것이다. 둘 다 감사 로그를 남긴다.
+//
+// 지역·장소는 다른 데이터가 참조 중이면 DB가 삭제를 막는다(on delete restrict).
+// 그 경우 Postgres가 23503(외래키 위반)을 돌려주므로, 왜 막혔는지 설명해준다.
+// 어드민 화면은 한국어라 이 메시지들만 한국어로 쓴다.
+
+export type AdminDeletableEntity =
+  | "region"
+  | "food"
+  | "place"
+  | "route"
+  | "production";
+
+const adminDeleteTargets: Record<
+  AdminDeletableEntity,
+  { table: string; label: string; blockedMessage: string }
+> = {
+  region: {
+    table: "regions",
+    label: "지역",
+    blockedMessage:
+      "이 지역에 연결된 장소나 루트가 있어 삭제할 수 없습니다. 그것들을 먼저 삭제하거나 다른 지역으로 옮긴 뒤 다시 시도하세요."
+  },
+  food: {
+    table: "foods",
+    label: "음식",
+    blockedMessage:
+      "이 음식에 연결된 데이터가 있어 삭제할 수 없습니다. 연결을 먼저 정리한 뒤 다시 시도하세요."
+  },
+  place: {
+    table: "places",
+    label: "장소",
+    blockedMessage:
+      "이 장소가 포함된 루트가 있어 삭제할 수 없습니다. 루트에서 이 장소를 먼저 빼낸 뒤 다시 시도하세요."
+  },
+  route: {
+    table: "route_guides",
+    label: "루트",
+    blockedMessage:
+      "이 루트에 연결된 데이터가 있어 삭제할 수 없습니다. 연결을 먼저 정리한 뒤 다시 시도하세요."
+  },
+  production: {
+    table: "productions",
+    label: "촬영 콘텐츠",
+    blockedMessage:
+      "이 콘텐츠에 연결된 데이터가 있어 삭제할 수 없습니다. 연결을 먼저 정리한 뒤 다시 시도하세요."
+  }
+};
+
+export type AdminEntityMutationInput = {
+  actorId: string;
+  entity: AdminDeletableEntity;
+  id: string;
+};
+
+/** 보관: status를 archived로. 데이터는 남고 공개 사이트에서만 빠진다. */
+export async function archiveAdminEntity(
+  accessToken: string,
+  input: AdminEntityMutationInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const target = adminDeleteTargets[input.entity];
+
+  if (!target) {
+    return { ok: false, message: "지원하지 않는 콘텐츠 유형입니다." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from(target.table)
+    .select("*")
+    .eq("id", input.id)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: `${target.label}을(를) 찾을 수 없습니다.` };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from(target.table)
+    .update({ status: "archived", updated_at: new Date().toISOString() })
+    .eq("id", input.id)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: `${target.label}을(를) 보관할 수 없습니다.` };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: `${input.entity}.archive`,
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.id,
+    entity_type: input.entity
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: `${target.label}을(를) 보관했지만 감사 로그 기록에 실패했습니다.`
+    };
+  }
+
+  return { ok: true };
+}
+
+/** 완전 삭제: DB에서 제거. 되돌릴 수 없다. 삭제 직전 내용은 감사 로그에 남는다. */
+export async function deleteAdminEntity(
+  accessToken: string,
+  input: AdminEntityMutationInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const target = adminDeleteTargets[input.entity];
+
+  if (!target) {
+    return { ok: false, message: "지원하지 않는 콘텐츠 유형입니다." };
+  }
+
+  // 삭제하면 내용을 다시 읽을 수 없으므로 미리 감사 로그용으로 확보한다.
+  const { data: beforeData, error: beforeError } = await supabase
+    .from(target.table)
+    .select("*")
+    .eq("id", input.id)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: `${target.label}을(를) 찾을 수 없습니다.` };
+  }
+
+  const { error: deleteError } = await supabase
+    .from(target.table)
+    .delete()
+    .eq("id", input.id);
+
+  if (deleteError) {
+    if (deleteError.code === "23503") {
+      return { ok: false, message: target.blockedMessage };
+    }
+    return { ok: false, message: `${target.label}을(를) 삭제할 수 없습니다.` };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: `${input.entity}.delete`,
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: beforeData,
+    entity_id: input.id,
+    entity_type: input.entity
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: `${target.label}을(를) 삭제했지만 감사 로그 기록에 실패했습니다.`
+    };
+  }
+
+  return { ok: true };
+}

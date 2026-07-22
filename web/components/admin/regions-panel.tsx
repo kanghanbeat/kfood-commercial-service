@@ -9,6 +9,7 @@ import {
 import type { PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { AdminEntityActions } from "@/components/admin/entity-actions";
 import {
   AdminItem,
   AdminListToolbar,
@@ -107,7 +108,13 @@ export async function RegionsPanel({
 }: {
   accessToken: string;
   add?: boolean;
-  message?: { error?: string; updated?: string; created?: string };
+  message?: {
+    error?: string;
+    updated?: string;
+    created?: string;
+    archived?: string;
+    deleted?: string;
+  };
   params?: ListParams;
 }) {
   const regions = await getAdminRegions(accessToken);
@@ -128,6 +135,12 @@ export async function RegionsPanel({
       ) : null}
       {message?.updated ? (
         <p className="status-message success">지역이 수정되었습니다.</p>
+      ) : null}
+      {message?.archived ? (
+        <p className="status-message success">지역을(를) 보관했습니다. 공개 사이트에서 빠집니다.</p>
+      ) : null}
+      {message?.deleted ? (
+        <p className="status-message success">지역을(를) 완전히 삭제했습니다.</p>
       ) : null}
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
@@ -253,6 +266,13 @@ export async function RegionsPanel({
             </label>
             <button className="admin-btn primary" type="submit">지역 저장</button>
           </form>
+          <AdminEntityActions
+            entity="region"
+            id={region.id}
+            isArchived={region.status === "archived"}
+            name={region.nameEn}
+            returnQuery={ret}
+          />
           </AdminItem>
         ))}
       </div>

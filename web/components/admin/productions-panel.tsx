@@ -18,6 +18,7 @@ import type {
 } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { AdminEntityActions } from "@/components/admin/entity-actions";
 import {
   AdminItem,
   AdminListToolbar,
@@ -253,7 +254,13 @@ export async function ProductionsPanel({
 }: {
   accessToken: string;
   add?: boolean;
-  message?: { error?: string; updated?: string; created?: string };
+  message?: {
+    error?: string;
+    updated?: string;
+    created?: string;
+    archived?: string;
+    deleted?: string;
+  };
   params?: ListParams;
 }) {
   const [productions, regions, foods, routes] = await Promise.all([
@@ -287,6 +294,12 @@ export async function ProductionsPanel({
       ) : null}
       {message?.updated ? (
         <p className="status-message success">콘텐츠가 수정되었습니다.</p>
+      ) : null}
+      {message?.archived ? (
+        <p className="status-message success">콘텐츠을(를) 보관했습니다. 공개 사이트에서 빠집니다.</p>
+      ) : null}
+      {message?.deleted ? (
+        <p className="status-message success">콘텐츠을(를) 완전히 삭제했습니다.</p>
       ) : null}
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
@@ -344,6 +357,13 @@ export async function ProductionsPanel({
               <ProductionFields options={options} production={production} />
               <button className="admin-btn primary" type="submit">콘텐츠 저장</button>
             </form>
+            <AdminEntityActions
+              entity="production"
+              id={production.id}
+              isArchived={production.status === "archived"}
+              name={production.title}
+              returnQuery={ret}
+            />
           </AdminItem>
         ))}
       </div>

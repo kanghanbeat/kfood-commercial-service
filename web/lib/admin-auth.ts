@@ -119,10 +119,6 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   const userResult = supabase ? await supabase.auth.getUser(accessToken) : null;
 
   if (!supabase || !userResult || userResult.error || !userResult.data.user) {
-    // [임시 진단] 로그인 풀림 추적용. 원인 확인 후 제거할 것.
-    console.log(
-      `[admin-diag] getUser 실패 → 로그인으로: ${userResult?.error?.message ?? "응답 없음"}`
-    );
     return null;
   }
 
@@ -138,12 +134,6 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     !profile.is_active ||
     (profile.role !== "admin" && profile.role !== "editor")
   ) {
-    // [임시 진단] 로그인 풀림 추적용. 원인 확인 후 제거할 것.
-    console.log(
-      `[admin-diag] profiles 조회 실패 → 로그인으로:` +
-        ` error=${profileError?.message ?? "없음"}` +
-        ` profile=${profile ? `role=${profile.role} active=${profile.is_active}` : "없음"}`
-    );
     return null;
   }
 

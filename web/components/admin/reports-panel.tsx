@@ -4,6 +4,15 @@ import { redirect } from "next/navigation";
 import { getAdminReports, updateAdminReportStatus } from "@kfood/data";
 import type { AdminReportStatus } from "@kfood/data";
 
+import {
+  AdminItem,
+  AdminListToolbar,
+  AdminPager,
+  applyListParams,
+  returnQuery,
+  withReturnQuery,
+  type ListParams
+} from "@/components/admin/list-controls";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const reportStatuses: AdminReportStatus[] = [
@@ -13,8 +22,19 @@ const reportStatuses: AdminReportStatus[] = [
   "ignored"
 ];
 
-function redirectWithError(message: string): never {
-  redirect(`/admin/operations?tab=reports&error=${encodeURIComponent(message)}`);
+const reportStatusOptions = reportStatuses.map((status) => ({
+  value: status,
+  label: status
+}));
+
+function redirectWithError(formData: FormData, message: string): never {
+  redirect(
+    withReturnQuery(
+      "/admin/operations?tab=reports",
+      formData,
+      `error=${encodeURIComponent(message)}`
+    )
+  );
 }
 
 async function updateReport(formData: FormData) {
@@ -26,7 +46,7 @@ async function updateReport(formData: FormData) {
   const adminNote = String(formData.get("admin_note") ?? "");
 
   if (!reportStatuses.includes(status)) {
-    redirectWithError("Unsupported report status.");
+    redirectWithError(formData, "Unsupported report status.");
   }
 
   const result = await updateAdminReportStatus(session.accessToken, {
@@ -37,21 +57,28 @@ async function updateReport(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWithError(result.message);
+    redirectWithError(formData, result.message);
   }
 
   revalidatePath("/admin/operations");
-  redirect("/admin/operations?tab=reports&updated=1");
+  redirect(withReturnQuery("/admin/operations?tab=reports", formData, "updated=1"));
 }
 
 export async function ReportsPanel({
   accessToken,
-  message
+  message,
+  params
 }: {
   accessToken: string;
   message?: { error?: string; updated?: string };
+  params?: ListParams;
 }) {
   const reports = await getAdminReports(accessToken);
+  const list = applyListParams(reports, params, {
+    search: (report) => `${report.reportType} ${report.message} ${report.pageUrl}`,
+    status: (report) => report.status
+  });
+  const ret = returnQuery(params);
 
   return (
     <div className="admin-panel">
@@ -70,18 +97,35 @@ export async function ReportsPanel({
       ) : null}
       {reports.length === 0 ? (
         <div className="admin-empty">처리할 신고가 없습니다. 새 공개 신고가 접수되면 여기에 표시됩니다.</div>
+      ) : (
+        <AdminListToolbar
+          basePath="/admin/operations"
+          matched={list.matched}
+          params={params}
+          searchHint="신고 유형·내용·주소 검색"
+          statuses={reportStatusOptions}
+          tab="reports"
+          total={list.total}
+        />
+      )}
+      {reports.length > 0 && list.matched === 0 ? (
+        <div className="admin-empty">조건에 맞는 신고가 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
       ) : null}
       <div className="admin-form-list">
-        {reports.map((report) => (
-          <form action={updateReport} className="form-panel" key={report.id}>
-            <input name="report_id" type="hidden" value={report.id} />
-            <div className="admin-panel-head">
-              <strong>{report.reportType}</strong>
-              <p>
+        {list.rows.map((report) => (
+          <AdminItem
+            key={report.id}
+            meta={
+              <>
                 <span className="admin-badge warning">{report.status}</span>{" "}
                 {new Date(report.createdAt).toLocaleString("en")}
-              </p>
-            </div>
+              </>
+            }
+            title={report.reportType}
+          >
+          <form action={updateReport} className="form-panel">
+            <input name="report_id" type="hidden" value={report.id} />
+            <input name="return_query" type="hidden" value={ret} />
             <p>{report.message}</p>
             <p>
               <a className="inline-link" href={report.pageUrl}>
@@ -112,8 +156,17 @@ export async function ReportsPanel({
               신고 업데이트
             </button>
           </form>
+          </AdminItem>
         ))}
       </div>
+
+      <AdminPager
+        basePath="/admin/operations"
+        page={list.page}
+        pageCount={list.pageCount}
+        params={params}
+        tab="reports"
+      />
     </div>
   );
 }

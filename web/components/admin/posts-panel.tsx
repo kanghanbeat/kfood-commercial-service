@@ -4,6 +4,15 @@ import Link from "next/link";
 
 import { getAdminUserPosts, updateAdminUserPostStatus, type UserPostStatus } from "@kfood/data";
 
+import {
+  AdminItem,
+  AdminListToolbar,
+  AdminPager,
+  applyListParams,
+  returnQuery,
+  withReturnQuery,
+  type ListParams
+} from "@/components/admin/list-controls";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const moderationStatuses: Array<Extract<UserPostStatus, "published" | "hidden" | "removed">> = [
@@ -12,8 +21,19 @@ const moderationStatuses: Array<Extract<UserPostStatus, "published" | "hidden" |
   "removed"
 ];
 
-function redirectWithError(message: string): never {
-  redirect(`/admin/operations?tab=posts&error=${encodeURIComponent(message)}`);
+const postStatusOptions = moderationStatuses.map((status) => ({
+  value: status,
+  label: status
+}));
+
+function redirectWithError(formData: FormData, message: string): never {
+  redirect(
+    withReturnQuery(
+      "/admin/operations?tab=posts",
+      formData,
+      `error=${encodeURIComponent(message)}`
+    )
+  );
 }
 
 async function updatePost(formData: FormData) {
@@ -26,7 +46,7 @@ async function updatePost(formData: FormData) {
   >;
 
   if (!moderationStatuses.includes(status)) {
-    redirectWithError("지원하지 않는 게시물 상태입니다.");
+    redirectWithError(formData, "지원하지 않는 게시물 상태입니다.");
   }
 
   const result = await updateAdminUserPostStatus(session.accessToken, {
@@ -37,22 +57,29 @@ async function updatePost(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWithError(result.message);
+    redirectWithError(formData, result.message);
   }
 
   revalidatePath("/feed");
   revalidatePath("/admin/operations");
-  redirect("/admin/operations?tab=posts&updated=1");
+  redirect(withReturnQuery("/admin/operations?tab=posts", formData, "updated=1"));
 }
 
 export async function PostsPanel({
   accessToken,
-  message
+  message,
+  params
 }: {
   accessToken: string;
   message?: { error?: string; updated?: string; created?: string };
+  params?: ListParams;
 }) {
   const posts = await getAdminUserPosts(accessToken);
+  const list = applyListParams(posts, params, {
+    search: (post) => `${post.authorDisplayName ?? post.authorId} ${post.body}`,
+    status: (post) => post.status
+  });
+  const ret = returnQuery(params);
 
   return (
     <div className="admin-panel">
@@ -82,20 +109,38 @@ export async function PostsPanel({
         <div className="admin-empty">
           아직 게시물이 없습니다. 사용자가 작성하면 여기에 표시됩니다.
         </div>
+      ) : (
+        <AdminListToolbar
+          basePath="/admin/operations"
+          matched={list.matched}
+          params={params}
+          searchHint="작성자·본문 검색"
+          statuses={postStatusOptions}
+          tab="posts"
+          total={list.total}
+        />
+      )}
+      {posts.length > 0 && list.matched === 0 ? (
+        <div className="admin-empty">조건에 맞는 게시물이 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
       ) : null}
       <div className="admin-form-list">
-        {posts.map((post) => (
-          <form action={updatePost} className="form-panel" key={post.id}>
-            <input name="post_id" type="hidden" value={post.id} />
-            <div className="admin-panel-head">
-              <strong>{post.authorDisplayName ?? post.authorId}</strong>
-              <p>
+        {list.rows.map((post) => (
+          <AdminItem
+            key={post.id}
+            meta={
+              <>
                 <span className="admin-badge">
                   {post.status} · {post.visibility}
                 </span>{" "}
                 {new Date(post.createdAt).toLocaleString("en")}
-              </p>
-            </div>
+              </>
+            }
+            previewHref={`/feed/${post.id}`}
+            title={post.authorDisplayName ?? post.authorId}
+          >
+          <form action={updatePost} className="form-panel">
+            <input name="post_id" type="hidden" value={post.id} />
+            <input name="return_query" type="hidden" value={ret} />
             <p>{post.body}</p>
             <label>
               모더레이션 상태
@@ -120,8 +165,17 @@ export async function PostsPanel({
               게시물 저장
             </button>
           </form>
+          </AdminItem>
         ))}
       </div>
+
+      <AdminPager
+        basePath="/admin/operations"
+        page={list.page}
+        pageCount={list.pageCount}
+        params={params}
+        tab="posts"
+      />
     </div>
   );
 }

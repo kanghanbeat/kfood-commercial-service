@@ -5,6 +5,15 @@ import { createAdminFood, getAdminFoods, updateAdminFood } from "@kfood/data";
 import type { PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import {
+  AdminItem,
+  AdminListToolbar,
+  AdminPager,
+  applyListParams,
+  returnQuery,
+  withReturnQuery,
+  type ListParams
+} from "@/components/admin/list-controls";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const publicationStatuses: PublicationStatus[] = [
@@ -14,10 +23,15 @@ const publicationStatuses: PublicationStatus[] = [
   "archived"
 ];
 
+const statusFilterOptions = publicationStatuses.map((status) => ({
+  value: status,
+  label: publicationStatusLabels[status]
+}));
+
 const spicyLevels = [0, 1, 2, 3, 4];
 
-function redirectWith(query: string): never {
-  redirect(`/admin/manage?tab=foods&${query}`);
+function redirectWith(formData: FormData, query: string): never {
+  redirect(withReturnQuery("/admin/manage?tab=foods", formData, query));
 }
 
 function foodInputFromForm(formData: FormData) {
@@ -47,12 +61,12 @@ async function createFood(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWith(`error=${encodeURIComponent(result.message)}`);
+    redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
   revalidatePath("/admin/manage");
   revalidatePath("/foods");
-  redirectWith("created=1");
+  redirectWith(formData, "created=1");
 }
 
 async function updateFood(formData: FormData) {
@@ -66,12 +80,12 @@ async function updateFood(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWith(`error=${encodeURIComponent(result.message)}`);
+    redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
   revalidatePath("/admin/manage");
   revalidatePath("/foods");
-  redirectWith("updated=1");
+  redirectWith(formData, "updated=1");
 }
 
 const statusBadge: Record<PublicationStatus, string> = {
@@ -192,13 +206,20 @@ function FoodFields({
 export async function FoodsPanel({
   accessToken,
   add,
-  message
+  message,
+  params
 }: {
   accessToken: string;
   add?: boolean;
   message?: { error?: string; updated?: string; created?: string };
+  params?: ListParams;
 }) {
   const foods = await getAdminFoods(accessToken);
+  const list = applyListParams(foods, params, {
+    search: (food) => `${food.nameEn} ${food.nameKo} ${food.slug} ${food.romanizedName ?? ""}`,
+    status: (food) => food.status
+  });
+  const ret = returnQuery(params);
 
   return (
     <div className="admin-panel">
@@ -219,6 +240,7 @@ export async function FoodsPanel({
       <details className="form-panel" open={add}>
         <summary style={{ fontWeight: 600, cursor: "pointer" }}>+ 새 음식 추가</summary>
         <form action={createFood} className="admin-form-list" style={{ marginTop: 12 }}>
+          <input name="return_query" type="hidden" value={ret} />
           <FoodFields />
           <button className="admin-btn primary" type="submit">음식 생성</button>
         </form>
@@ -228,26 +250,54 @@ export async function FoodsPanel({
         <div className="admin-empty">
           아직 음식이 없거나 Supabase 연결 전입니다. 위에서 새 음식을 추가하세요.
         </div>
+      ) : (
+        <AdminListToolbar
+          basePath="/admin/manage"
+          matched={list.matched}
+          params={params}
+          searchHint="음식 이름·slug 검색"
+          statuses={statusFilterOptions}
+          tab="foods"
+          total={list.total}
+        />
+      )}
+
+      {foods.length > 0 && list.matched === 0 ? (
+        <div className="admin-empty">조건에 맞는 음식이 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
       ) : null}
 
       <div className="admin-form-list">
-        {foods.map((food) => (
-          <form action={updateFood} className="form-panel" key={food.id}>
-            <input name="food_id" type="hidden" value={food.id} />
-            <div className="admin-panel-head">
-              <strong>{food.nameEn}</strong>
-              <p>
+        {list.rows.map((food) => (
+          <AdminItem
+            key={food.id}
+            meta={
+              <>
                 <span className={`admin-badge ${statusBadge[food.status]}`}>
                   {publicationStatusLabels[food.status]}
                 </span>{" "}
                 매운맛 {food.spicyLevel}/4 · /{food.slug}
-              </p>
-            </div>
-            <FoodFields defaults={food} />
-            <button className="admin-btn primary" type="submit">음식 저장</button>
-          </form>
+              </>
+            }
+            previewHref={`/foods/${food.slug}`}
+            title={food.nameEn}
+          >
+            <form action={updateFood} className="form-panel">
+              <input name="food_id" type="hidden" value={food.id} />
+              <input name="return_query" type="hidden" value={ret} />
+              <FoodFields defaults={food} />
+              <button className="admin-btn primary" type="submit">음식 저장</button>
+            </form>
+          </AdminItem>
         ))}
       </div>
+
+      <AdminPager
+        basePath="/admin/manage"
+        page={list.page}
+        pageCount={list.pageCount}
+        params={params}
+        tab="foods"
+      />
     </div>
   );
 }

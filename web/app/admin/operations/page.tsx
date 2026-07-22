@@ -36,6 +36,9 @@ export default async function AdminOperationsPage({
     error?: string;
     updated?: string;
     created?: string;
+    q?: string;
+    status?: string;
+    page?: string;
   }>;
 }) {
   const [session, params] = await Promise.all([
@@ -43,6 +46,8 @@ export default async function AdminOperationsPage({
     searchParams
   ]);
   const tab = params?.tab ?? "reports";
+  // 검색·상태 필터·페이지는 탭 하나만 렌더되므로 공통 파라미터로 넘긴다.
+  const listParams = { q: params?.q, status: params?.status, page: params?.page };
 
   return (
     <AdminShell active="operations" session={session}>
@@ -81,6 +86,7 @@ export default async function AdminOperationsPage({
         <ReportsPanel
           accessToken={session.accessToken}
           message={{ error: params?.error, updated: params?.updated }}
+          params={listParams}
         />
       ) : null}
       {tab === "audit" ? <AuditPanel accessToken={session.accessToken} /> : null}
@@ -100,12 +106,14 @@ export default async function AdminOperationsPage({
             error: params?.error,
             updated: params?.updated
           }}
+          params={listParams}
         />
       ) : null}
       {tab === "comments" ? (
         <CommentsPanel
           accessToken={session.accessToken}
           message={{ error: params?.error, updated: params?.updated }}
+          params={listParams}
         />
       ) : null}
       {tab === "settings" ? (

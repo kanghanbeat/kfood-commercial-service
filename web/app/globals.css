@@ -2624,6 +2624,128 @@ h3 {
   gap: 16px;
 }
 
+/* 목록 도구 모음 — 검색 · 상태 필터 · 결과 수 */
+.admin-list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+}
+
+.admin-list-search {
+  flex: 1 1 220px;
+  min-width: 180px;
+  padding: 9px 12px;
+  border-radius: var(--control-radius);
+  border: 1px solid var(--border-default);
+  background: var(--card);
+  color: var(--text-heading);
+  font-size: 14px;
+}
+
+.admin-list-toolbar select {
+  padding: 9px 12px;
+  border-radius: var(--control-radius);
+  border: 1px solid var(--border-default);
+  background: var(--card);
+  color: var(--text-heading);
+  font-size: 14px;
+}
+
+.admin-list-reset {
+  font-size: 13px;
+  color: var(--text-body);
+  text-decoration: underline;
+}
+
+.admin-list-count {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+/* 목록 항목 — 기본은 접힘, 제목 줄을 누르면 편집 폼이 열린다 */
+.admin-item {
+  border: 1px solid var(--border-default);
+  border-radius: var(--control-radius);
+  background: var(--card);
+}
+
+.admin-item[open] {
+  border-color: var(--brand);
+}
+
+.admin-item-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-item-summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-item-summary::before {
+  content: "▸";
+  color: var(--text-body);
+  font-size: 12px;
+}
+
+.admin-item[open] > .admin-item-summary::before {
+  content: "▾";
+}
+
+.admin-item-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.admin-item-meta {
+  font-size: 12px;
+  color: var(--text-body);
+}
+
+.admin-item-preview {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+.admin-item[open] > .admin-item-summary {
+  border-bottom: 1px solid var(--border-default);
+}
+
+.admin-item > .form-panel {
+  border: 0;
+  border-radius: 0;
+}
+
+/* 페이지 이동 */
+.admin-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px 0 4px;
+}
+
+.admin-pager-status {
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.admin-pager-disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 @media (max-width: 1024px) {
   .admin-shell {
     grid-template-columns: 1fr;

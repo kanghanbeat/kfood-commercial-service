@@ -18,6 +18,15 @@ import type {
 } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import {
+  AdminItem,
+  AdminListToolbar,
+  AdminPager,
+  applyListParams,
+  returnQuery,
+  withReturnQuery,
+  type ListParams
+} from "@/components/admin/list-controls";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const publicationStatuses: PublicationStatus[] = [
@@ -37,8 +46,13 @@ const productionTypes: ProductionType[] = [
 
 type TagOption = { entityType: ProductionEntityType; id: string; label: string };
 
-function redirectWith(query: string): never {
-  redirect(`/admin/manage?tab=productions&${query}`);
+const statusFilterOptions = publicationStatuses.map((status) => ({
+  value: status,
+  label: publicationStatusLabels[status]
+}));
+
+function redirectWith(formData: FormData, query: string): never {
+  redirect(withReturnQuery("/admin/manage?tab=productions", formData, query));
 }
 
 function collectTags(formData: FormData): ProductionTag[] {
@@ -77,11 +91,11 @@ async function createProduction(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWith(`error=${encodeURIComponent(result.message)}`);
+    redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
   revalidatePath("/admin/manage");
-  redirectWith("created=1");
+  redirectWith(formData, "created=1");
 }
 
 async function updateProduction(formData: FormData) {
@@ -95,11 +109,11 @@ async function updateProduction(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWith(`error=${encodeURIComponent(result.message)}`);
+    redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
   revalidatePath("/admin/manage");
-  redirectWith("updated=1");
+  redirectWith(formData, "updated=1");
 }
 
 const statusBadge: Record<PublicationStatus, string> = {
@@ -234,11 +248,13 @@ function ProductionFields({
 export async function ProductionsPanel({
   accessToken,
   add,
-  message
+  message,
+  params
 }: {
   accessToken: string;
   add?: boolean;
   message?: { error?: string; updated?: string; created?: string };
+  params?: ListParams;
 }) {
   const [productions, regions, foods, routes] = await Promise.all([
     getAdminProductions(accessToken),
@@ -246,6 +262,13 @@ export async function ProductionsPanel({
     getAdminFoods(accessToken),
     getAdminRoutes(accessToken)
   ]);
+
+  const list = applyListParams(productions, params, {
+    search: (production) =>
+      `${production.title} ${production.slug} ${production.channel ?? ""} ${production.type}`,
+    status: (production) => production.status
+  });
+  const ret = returnQuery(params);
 
   const options: TagOption[] = [
     ...regions.map((r) => ({ entityType: "region" as const, id: r.id, label: r.nameEn })),
@@ -272,6 +295,7 @@ export async function ProductionsPanel({
       <details className="form-panel" open={add}>
         <summary style={{ fontWeight: 600, cursor: "pointer" }}>+ 새 촬영 콘텐츠 추가</summary>
         <form action={createProduction} className="admin-form-list" style={{ marginTop: 12 }}>
+          <input name="return_query" type="hidden" value={ret} />
           <ProductionFields options={options} />
           <button className="admin-btn primary" type="submit">콘텐츠 생성</button>
         </form>
@@ -281,26 +305,56 @@ export async function ProductionsPanel({
         <div className="admin-empty">
           아직 촬영 콘텐츠가 없거나 Supabase 연결 전입니다. 위에서 새 콘텐츠를 추가하세요.
         </div>
+      ) : (
+        <AdminListToolbar
+          basePath="/admin/manage"
+          matched={list.matched}
+          params={params}
+          searchHint="제목·slug·채널 검색"
+          statuses={statusFilterOptions}
+          tab="productions"
+          total={list.total}
+        />
+      )}
+
+      {productions.length > 0 && list.matched === 0 ? (
+        <div className="admin-empty">
+          조건에 맞는 콘텐츠가 없습니다. 검색어나 상태 필터를 바꿔보세요.
+        </div>
       ) : null}
 
       <div className="admin-form-list">
-        {productions.map((production) => (
-          <form action={updateProduction} className="form-panel" key={production.id}>
-            <input name="production_id" type="hidden" value={production.id} />
-            <div className="admin-panel-head">
-              <strong>{production.title}</strong>
-              <p>
+        {list.rows.map((production) => (
+          <AdminItem
+            key={production.id}
+            meta={
+              <>
                 <span className={`admin-badge ${statusBadge[production.status]}`}>
                   {publicationStatusLabels[production.status]}
                 </span>{" "}
                 {production.type} · {production.channel ?? "—"} · 태그 {production.tags.length}
-              </p>
-            </div>
-            <ProductionFields options={options} production={production} />
-            <button className="admin-btn primary" type="submit">콘텐츠 저장</button>
-          </form>
+              </>
+            }
+            previewHref={production.externalUrl ?? undefined}
+            title={production.title}
+          >
+            <form action={updateProduction} className="form-panel">
+              <input name="production_id" type="hidden" value={production.id} />
+              <input name="return_query" type="hidden" value={ret} />
+              <ProductionFields options={options} production={production} />
+              <button className="admin-btn primary" type="submit">콘텐츠 저장</button>
+            </form>
+          </AdminItem>
         ))}
       </div>
+
+      <AdminPager
+        basePath="/admin/manage"
+        page={list.page}
+        pageCount={list.pageCount}
+        params={params}
+        tab="productions"
+      />
     </div>
   );
 }

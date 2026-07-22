@@ -5,6 +5,15 @@ import { getAdminPlaces, updateAdminPlace } from "@kfood/data";
 import type { PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import {
+  AdminItem,
+  AdminListToolbar,
+  AdminPager,
+  applyListParams,
+  returnQuery,
+  withReturnQuery,
+  type ListParams
+} from "@/components/admin/list-controls";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const publicationStatuses: PublicationStatus[] = [
@@ -14,6 +23,11 @@ const publicationStatuses: PublicationStatus[] = [
   "archived"
 ];
 
+const statusFilterOptions = publicationStatuses.map((status) => ({
+  value: status,
+  label: publicationStatusLabels[status]
+}));
+
 function parseTags(value: FormDataEntryValue | null) {
   return String(value ?? "")
     .split(",")
@@ -21,8 +35,10 @@ function parseTags(value: FormDataEntryValue | null) {
     .filter(Boolean);
 }
 
-function redirectWithError(message: string): never {
-  redirect(`/admin/manage?tab=places&error=${encodeURIComponent(message)}`);
+function redirectWithError(formData: FormData, message: string): never {
+  redirect(
+    withReturnQuery("/admin/manage?tab=places", formData, `error=${encodeURIComponent(message)}`)
+  );
 }
 
 async function updatePlace(formData: FormData) {
@@ -32,7 +48,7 @@ async function updatePlace(formData: FormData) {
   const status = String(formData.get("status") ?? "") as PublicationStatus;
 
   if (!publicationStatuses.includes(status)) {
-    redirectWithError("Unsupported publication status.");
+    redirectWithError(formData, "Unsupported publication status.");
   }
 
   const result = await updateAdminPlace(session.accessToken, {
@@ -50,22 +66,30 @@ async function updatePlace(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWithError(result.message);
+    redirectWithError(formData, result.message);
   }
 
   revalidatePath("/places");
   revalidatePath("/admin/manage");
-  redirect("/admin/manage?tab=places&updated=1");
+  redirect(withReturnQuery("/admin/manage?tab=places", formData, "updated=1"));
 }
 
 export async function PlacesPanel({
   accessToken,
-  message
+  message,
+  params
 }: {
   accessToken: string;
   message?: { error?: string; updated?: string };
+  params?: ListParams;
 }) {
   const places = await getAdminPlaces(accessToken);
+  const list = applyListParams(places, params, {
+    search: (place) =>
+      `${place.nameEn} ${place.nameKo ?? ""} ${place.slug} ${place.regionSlug ?? ""}`,
+    status: (place) => place.status
+  });
+  const ret = returnQuery(params);
 
   return (
     <div className="admin-panel">
@@ -79,17 +103,42 @@ export async function PlacesPanel({
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
       ) : null}
+      {places.length === 0 ? (
+        <div className="admin-empty">
+          아직 장소가 없거나 Supabase 연결 전입니다.
+        </div>
+      ) : (
+        <AdminListToolbar
+          basePath="/admin/manage"
+          matched={list.matched}
+          params={params}
+          searchHint="장소 이름·slug·지역 검색"
+          statuses={statusFilterOptions}
+          tab="places"
+          total={list.total}
+        />
+      )}
+
+      {places.length > 0 && list.matched === 0 ? (
+        <div className="admin-empty">조건에 맞는 장소가 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
+      ) : null}
+
       <div className="admin-form-list">
-        {places.map((place) => (
-          <form action={updatePlace} className="form-panel" key={place.id}>
-            <input name="place_id" type="hidden" value={place.id} />
-            <div className="admin-panel-head">
-              <strong>{place.nameEn}</strong>
-              <p>
+        {list.rows.map((place) => (
+          <AdminItem
+            key={place.id}
+            meta={
+              <>
                 <span className="admin-badge brand">{publicationStatusLabels[place.status]}</span>{" "}
                 {place.regionSlug} · verified {place.lastVerifiedAt ?? "pending"}
-              </p>
-            </div>
+              </>
+            }
+            previewHref={`/places/${place.slug}`}
+            title={place.nameEn}
+          >
+          <form action={updatePlace} className="form-panel">
+            <input name="place_id" type="hidden" value={place.id} />
+            <input name="return_query" type="hidden" value={ret} />
             <label>
               발행 상태
               <select defaultValue={place.status} name="status">
@@ -160,8 +209,17 @@ export async function PlacesPanel({
               장소 저장
             </button>
           </form>
+          </AdminItem>
         ))}
       </div>
+
+      <AdminPager
+        basePath="/admin/manage"
+        page={list.page}
+        pageCount={list.pageCount}
+        params={params}
+        tab="places"
+      />
     </div>
   );
 }

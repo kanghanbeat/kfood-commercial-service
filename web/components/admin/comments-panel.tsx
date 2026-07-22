@@ -3,12 +3,32 @@ import { redirect } from "next/navigation";
 
 import { getAdminComments, updateAdminCommentStatus, type UserPostCommentStatus } from "@kfood/data";
 
+import {
+  AdminItem,
+  AdminListToolbar,
+  AdminPager,
+  applyListParams,
+  returnQuery,
+  withReturnQuery,
+  type ListParams
+} from "@/components/admin/list-controls";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const commentStatuses: UserPostCommentStatus[] = ["published", "hidden", "removed"];
 
-function redirectWithError(message: string): never {
-  redirect(`/admin/operations?tab=comments&error=${encodeURIComponent(message)}`);
+const commentStatusOptions = commentStatuses.map((status) => ({
+  value: status,
+  label: status
+}));
+
+function redirectWithError(formData: FormData, message: string): never {
+  redirect(
+    withReturnQuery(
+      "/admin/operations?tab=comments",
+      formData,
+      `error=${encodeURIComponent(message)}`
+    )
+  );
 }
 
 async function updateComment(formData: FormData) {
@@ -18,7 +38,7 @@ async function updateComment(formData: FormData) {
   const status = String(formData.get("status") ?? "") as UserPostCommentStatus;
 
   if (!commentStatuses.includes(status)) {
-    redirectWithError("지원하지 않는 댓글 상태입니다.");
+    redirectWithError(formData, "지원하지 않는 댓글 상태입니다.");
   }
 
   const result = await updateAdminCommentStatus(session.accessToken, {
@@ -29,22 +49,29 @@ async function updateComment(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWithError(result.message);
+    redirectWithError(formData, result.message);
   }
 
   revalidatePath("/feed");
   revalidatePath("/admin/operations");
-  redirect("/admin/operations?tab=comments&updated=1");
+  redirect(withReturnQuery("/admin/operations?tab=comments", formData, "updated=1"));
 }
 
 export async function CommentsPanel({
   accessToken,
-  message
+  message,
+  params
 }: {
   accessToken: string;
   message?: { error?: string; updated?: string };
+  params?: ListParams;
 }) {
   const comments = await getAdminComments(accessToken);
+  const list = applyListParams(comments, params, {
+    search: (comment) => `${comment.authorDisplayName ?? comment.authorId} ${comment.body}`,
+    status: (comment) => comment.status
+  });
+  const ret = returnQuery(params);
 
   return (
     <div className="admin-panel">
@@ -63,24 +90,37 @@ export async function CommentsPanel({
       ) : null}
       {comments.length === 0 ? (
         <div className="admin-empty">아직 댓글이 없습니다. 사용자가 작성하면 여기에 표시됩니다.</div>
+      ) : (
+        <AdminListToolbar
+          basePath="/admin/operations"
+          matched={list.matched}
+          params={params}
+          searchHint="작성자·본문 검색"
+          statuses={commentStatusOptions}
+          tab="comments"
+          total={list.total}
+        />
+      )}
+      {comments.length > 0 && list.matched === 0 ? (
+        <div className="admin-empty">조건에 맞는 댓글이 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
       ) : null}
       <div className="admin-form-list">
-        {comments.map((comment) => (
-          <form action={updateComment} className="form-panel" key={comment.id}>
-            <input name="comment_id" type="hidden" value={comment.id} />
-            <div className="admin-panel-head">
-              <strong>{comment.authorDisplayName ?? comment.authorId}</strong>
-              <p>
+        {list.rows.map((comment) => (
+          <AdminItem
+            key={comment.id}
+            meta={
+              <>
                 <span className="admin-badge">{comment.status}</span>{" "}
                 {new Date(comment.createdAt).toLocaleString("en")}
-              </p>
-            </div>
+              </>
+            }
+            previewHref={`/feed/${comment.postId}`}
+            title={comment.authorDisplayName ?? comment.authorId}
+          >
+          <form action={updateComment} className="form-panel">
+            <input name="comment_id" type="hidden" value={comment.id} />
+            <input name="return_query" type="hidden" value={ret} />
             <p>{comment.body}</p>
-            <p>
-              <a className="inline-link" href={`/feed/${comment.postId}`}>
-                원 게시물 열기
-              </a>
-            </p>
             <label>
               모더레이션 상태
               <select defaultValue={comment.status} name="status">
@@ -104,8 +144,17 @@ export async function CommentsPanel({
               댓글 저장
             </button>
           </form>
+          </AdminItem>
         ))}
       </div>
+
+      <AdminPager
+        basePath="/admin/operations"
+        page={list.page}
+        pageCount={list.pageCount}
+        params={params}
+        tab="comments"
+      />
     </div>
   );
 }

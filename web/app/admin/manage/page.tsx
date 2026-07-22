@@ -46,6 +46,9 @@ export default async function AdminManagePage({
     error?: string;
     updated?: string;
     created?: string;
+    q?: string;
+    status?: string;
+    page?: string;
   }>;
 }) {
   const [session, params] = await Promise.all([
@@ -59,6 +62,8 @@ export default async function AdminManagePage({
     updated: params?.updated,
     created: params?.created
   };
+  // 검색·상태 필터·페이지는 탭 하나만 렌더되므로 공통 파라미터로 넘긴다.
+  const listParams = { q: params?.q, status: params?.status, page: params?.page };
 
   return (
     <AdminShell active="manage" session={session}>
@@ -108,19 +113,43 @@ export default async function AdminManagePage({
       <AdminTabs basePath="/admin/manage" current={tab} tabs={manageTabs} />
 
       {tab === "regions" ? (
-        <RegionsPanel accessToken={session.accessToken} add={add} message={message} />
+        <RegionsPanel
+          accessToken={session.accessToken}
+          add={add}
+          message={message}
+          params={listParams}
+        />
       ) : null}
       {tab === "foods" ? (
-        <FoodsPanel accessToken={session.accessToken} add={add} message={message} />
+        <FoodsPanel
+          accessToken={session.accessToken}
+          add={add}
+          message={message}
+          params={listParams}
+        />
       ) : null}
       {tab === "places" ? (
-        <PlacesPanel accessToken={session.accessToken} message={message} />
+        <PlacesPanel
+          accessToken={session.accessToken}
+          message={message}
+          params={listParams}
+        />
       ) : null}
       {tab === "routes" ? (
-        <RoutesPanel accessToken={session.accessToken} add={add} message={message} />
+        <RoutesPanel
+          accessToken={session.accessToken}
+          add={add}
+          message={message}
+          params={listParams}
+        />
       ) : null}
       {tab === "productions" ? (
-        <ProductionsPanel accessToken={session.accessToken} add={add} message={message} />
+        <ProductionsPanel
+          accessToken={session.accessToken}
+          add={add}
+          message={message}
+          params={listParams}
+        />
       ) : null}
     </AdminShell>
   );

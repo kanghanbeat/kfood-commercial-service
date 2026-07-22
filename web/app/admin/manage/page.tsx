@@ -3,7 +3,6 @@ import Link from "next/link";
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
 import { FoodsPanel } from "@/components/admin/foods-panel";
 import { PlacesPanel } from "@/components/admin/places-panel";
-import { ProductionsPanel } from "@/components/admin/productions-panel";
 import { RegionsPanel } from "@/components/admin/regions-panel";
 import { RoutesPanel } from "@/components/admin/routes-panel";
 import { requireAdminSession } from "@/lib/admin-auth";
@@ -16,8 +15,7 @@ const manageTabs = [
   { key: "regions", label: "지역" },
   { key: "foods", label: "음식" },
   { key: "places", label: "장소" },
-  { key: "routes", label: "루트" },
-  { key: "productions", label: "촬영" }
+  { key: "routes", label: "루트" }
 ];
 
 // 통합 "콘텐츠 추가" 입구: 유형을 고르면 해당 탭의 추가 폼이 열린 채로 이동.
@@ -26,8 +24,7 @@ const addTypes = [
   { key: "regions", label: "지역", desc: "타깃·소개" },
   { key: "foods", label: "음식", desc: "매운맛·맛" },
   { key: "places", label: "장소", desc: "지도·신뢰" },
-  { key: "routes", label: "루트", desc: "경유지·시간" },
-  { key: "productions", label: "촬영 콘텐츠", desc: "영상·블로그 + 태그" }
+  { key: "routes", label: "루트", desc: "경유지·시간" }
 ];
 
 const summaryMetrics = [
@@ -76,9 +73,9 @@ export default async function AdminManagePage({
           <span className="admin-eyebrow">콘텐츠 관리</span>
           <h1>공개 콘텐츠 데이터 관리</h1>
           <p>
-            관리자·에디터가 직접 작성하는 공식 여행 가이드 콘텐츠입니다. 지역·음식·
-            장소·루트·촬영 콘텐츠의 검수 상태와 공개 여부를 한 화면에서 조정합니다.
-            (고객이 쓰는 글은 운영 &gt; 게시물 관리에서 별도로 검수합니다.)
+            공개 사이트의 기준 데이터입니다. 지역·음식·장소·루트의 검수 상태와 공개
+            여부를 조정합니다. (우리가 만들어 올리는 영상·블로그는 콘텐츠 제작 &gt;
+            제작 목록에, 고객이 쓰는 글은 운영 &gt; 게시물 관리에 있습니다.)
           </p>
         </div>
         <div className="admin-topbar-actions">
@@ -143,14 +140,6 @@ export default async function AdminManagePage({
       ) : null}
       {tab === "routes" ? (
         <RoutesPanel
-          accessToken={session.accessToken}
-          add={add}
-          message={message}
-          params={listParams}
-        />
-      ) : null}
-      {tab === "productions" ? (
-        <ProductionsPanel
           accessToken={session.accessToken}
           add={add}
           message={message}

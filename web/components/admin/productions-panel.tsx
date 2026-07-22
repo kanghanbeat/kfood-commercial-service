@@ -53,7 +53,7 @@ const statusFilterOptions = publicationStatuses.map((status) => ({
 }));
 
 function redirectWith(formData: FormData, query: string): never {
-  redirect(withReturnQuery("/admin/manage?tab=productions", formData, query));
+  redirect(withReturnQuery("/admin/content?tab=productions", formData, query));
 }
 
 function collectTags(formData: FormData): ProductionTag[] {
@@ -95,7 +95,7 @@ async function createProduction(formData: FormData) {
     redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
-  revalidatePath("/admin/manage");
+  revalidatePath("/admin/content");
   redirectWith(formData, "created=1");
 }
 
@@ -113,7 +113,7 @@ async function updateProduction(formData: FormData) {
     redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
-  revalidatePath("/admin/manage");
+  revalidatePath("/admin/content");
   redirectWith(formData, "updated=1");
 }
 
@@ -320,7 +320,7 @@ export async function ProductionsPanel({
         </div>
       ) : (
         <AdminListToolbar
-          basePath="/admin/manage"
+          basePath="/admin/content"
           matched={list.matched}
           params={params}
           searchHint="제목·slug·채널 검색"
@@ -369,7 +369,7 @@ export async function ProductionsPanel({
       </div>
 
       <AdminPager
-        basePath="/admin/manage"
+        basePath="/admin/content"
         page={list.page}
         pageCount={list.pageCount}
         params={params}

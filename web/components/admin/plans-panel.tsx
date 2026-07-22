@@ -249,8 +249,9 @@ export async function PlansPanel({
       <div className="admin-panel-head">
         <h2>기획 목록</h2>
         <p>
-          인사이트에서 발견한 주제와 제작 우선순위입니다. &ldquo;제작 시작&rdquo;을
-          누르면 촬영·제작 콘텐츠가 만들어져 이 기획에 연결됩니다.
+          무엇을 만들지 적어두는 곳입니다. 기획을 펼치면 &ldquo;제작 시작&rdquo;이
+          있고, 누르면 제목·메모가 그대로 옮겨진 제작 콘텐츠가 &ldquo;제작 목록&rdquo;
+          탭에 만들어집니다.
         </p>
       </div>
 
@@ -265,7 +266,7 @@ export async function PlansPanel({
       ) : null}
       {message?.started ? (
         <p className="status-message success">
-          제작 콘텐츠를 만들었습니다. 콘텐츠 관리 &gt; 촬영 탭에서 내용을 채우세요.
+          제작 콘텐츠를 만들었습니다. 위 &ldquo;제작 목록&rdquo; 탭에서 내용을 채우세요.
         </p>
       ) : null}
       {message?.error ? (
@@ -334,14 +335,15 @@ export async function PlansPanel({
               {plan.productionId ? (
                 <p className="admin-danger-text">
                   제작 콘텐츠 <strong>{plan.productionTitle}</strong>에 연결되어
-                  있습니다. 내용은 콘텐츠 관리 &gt; 촬영 탭에서 편집하세요.
+                  있습니다. 내용은 &ldquo;제작 목록&rdquo; 탭에서 편집하세요.
                 </p>
               ) : (
                 <details className="admin-danger-zone">
                   <summary className="admin-danger-summary">제작 시작</summary>
                   <p className="admin-danger-text">
-                    이 기획으로 촬영·제작 콘텐츠를 만듭니다. 주소에 쓸 Slug만 정하면
-                    제목·메모가 옮겨지고, 기획 상태가 &ldquo;진행 중&rdquo;으로 바뀝니다.
+                    이 기획으로 제작 콘텐츠를 만들어 &ldquo;제작 목록&rdquo; 탭에
+                    추가합니다. 주소에 쓸 Slug만 정하면 제목·메모가 그대로 옮겨지고,
+                    기획 상태가 &ldquo;진행 중&rdquo;으로 바뀝니다. 다시 적을 필요가 없습니다.
                   </p>
                   <form action={startProduction}>
                     <input name="plan_id" type="hidden" value={plan.id} />

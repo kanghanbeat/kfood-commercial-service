@@ -22,12 +22,12 @@ const menuItems: {
   desc: string;
 }[] = [
   { key: "insight", href: "/admin", label: "인사이트", desc: "요약 · 트렌드" },
-  { key: "content", href: "/admin/content", label: "콘텐츠 제작", desc: "기획 · 촬영" },
+  { key: "content", href: "/admin/content", label: "콘텐츠 제작", desc: "기획 · 제작" },
   {
     key: "manage",
     href: "/admin/manage",
     label: "콘텐츠 관리",
-    desc: "지역 · 음식 · 장소 · 루트 · 촬영"
+    desc: "지역 · 음식 · 장소 · 루트"
   },
   {
     key: "operations",

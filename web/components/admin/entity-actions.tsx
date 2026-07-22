@@ -31,17 +31,27 @@ const tabByEntity: Record<AdminDeletableEntity, string> = {
   production: "productions"
 };
 
+// 제작 콘텐츠(productions)는 콘텐츠 제작 메뉴에, 나머지는 콘텐츠 관리 메뉴에 있다.
+const adminPathByEntity: Record<AdminDeletableEntity, string> = {
+  region: "/admin/manage",
+  food: "/admin/manage",
+  place: "/admin/manage",
+  route: "/admin/manage",
+  production: "/admin/content"
+};
+
 function entityFromForm(formData: FormData) {
   const entity = String(formData.get("entity") ?? "") as AdminDeletableEntity;
   const id = String(formData.get("entity_id") ?? "");
-  return { entity, id, tab: tabByEntity[entity] ?? "regions" };
+  const adminPath = adminPathByEntity[entity] ?? "/admin/manage";
+  return { entity, id, tab: tabByEntity[entity] ?? "regions", adminPath };
 }
 
 async function archiveEntity(formData: FormData) {
   "use server";
 
   const session = await requireAdminSession();
-  const { entity, id, tab } = entityFromForm(formData);
+  const { entity, id, tab, adminPath } = entityFromForm(formData);
 
   const result = await archiveAdminEntity(session.accessToken, {
     actorId: session.userId,
@@ -49,7 +59,7 @@ async function archiveEntity(formData: FormData) {
     id
   });
 
-  const base = `/admin/manage?tab=${tab}`;
+  const base = `${adminPath}?tab=${tab}`;
 
   if (!result.ok) {
     redirect(withReturnQuery(base, formData, `error=${encodeURIComponent(result.message)}`));
@@ -57,7 +67,7 @@ async function archiveEntity(formData: FormData) {
 
   const publicPath = publicPathByEntity[entity];
   if (publicPath) revalidatePath(publicPath);
-  revalidatePath("/admin/manage");
+  revalidatePath(adminPath);
   redirect(withReturnQuery(base, formData, "archived=1"));
 }
 
@@ -65,7 +75,7 @@ async function deleteEntity(formData: FormData) {
   "use server";
 
   const session = await requireAdminSession();
-  const { entity, id, tab } = entityFromForm(formData);
+  const { entity, id, tab, adminPath } = entityFromForm(formData);
 
   const result = await deleteAdminEntity(session.accessToken, {
     actorId: session.userId,
@@ -73,7 +83,7 @@ async function deleteEntity(formData: FormData) {
     id
   });
 
-  const base = `/admin/manage?tab=${tab}`;
+  const base = `${adminPath}?tab=${tab}`;
 
   if (!result.ok) {
     redirect(withReturnQuery(base, formData, `error=${encodeURIComponent(result.message)}`));
@@ -81,7 +91,7 @@ async function deleteEntity(formData: FormData) {
 
   const publicPath = publicPathByEntity[entity];
   if (publicPath) revalidatePath(publicPath);
-  revalidatePath("/admin/manage");
+  revalidatePath(adminPath);
   redirect(withReturnQuery(base, formData, "deleted=1"));
 }
 

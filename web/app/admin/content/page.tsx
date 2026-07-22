@@ -4,6 +4,7 @@ import { getAdminContentPlans } from "@kfood/data";
 
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
 import { PlansPanel } from "@/components/admin/plans-panel";
+import { ProductionsPanel } from "@/components/admin/productions-panel";
 import { contentData } from "@/lib/dashboard";
 import { requireAdminSession } from "@/lib/admin-auth";
 
@@ -13,6 +14,7 @@ export const metadata = {
 
 const contentTabs = [
   { key: "plans", label: "기획 목록" },
+  { key: "productions", label: "제작 목록" },
   { key: "calendar", label: "기획 캘린더" }
 ];
 
@@ -35,6 +37,7 @@ export default async function AdminContentPage({
     created?: string;
     deleted?: string;
     started?: string;
+    archived?: string;
     q?: string;
     status?: string;
     page?: string;
@@ -66,8 +69,9 @@ export default async function AdminContentPage({
           <span className="admin-eyebrow">콘텐츠 제작</span>
           <h1>콘텐츠 제작</h1>
           <p>
-            인사이트에서 발견한 주제를 기획으로 적어두고, 제작으로 넘깁니다.
-            제작 시작을 누르면 촬영·제작 콘텐츠가 만들어져 이 기획에 연결됩니다.
+            무엇을 만들지 기획하고(기획 목록), 만든 것을 올립니다(제작 목록).
+            기획에서 &ldquo;제작 시작&rdquo;을 누르면 제목·메모가 옮겨진 제작 콘텐츠가
+            옆 탭에 만들어집니다.
           </p>
         </div>
         <div className="admin-topbar-actions">
@@ -122,7 +126,20 @@ export default async function AdminContentPage({
 
       <AdminTabs basePath="/admin/content" current={tab} tabs={contentTabs} />
 
-      {tab === "calendar" ? (
+      {tab === "productions" ? (
+        <ProductionsPanel
+          accessToken={session.accessToken}
+          add={add}
+          message={{
+            archived: params?.archived,
+            created: params?.created,
+            deleted: params?.deleted,
+            error: params?.error,
+            updated: params?.updated
+          }}
+          params={listParams}
+        />
+      ) : tab === "calendar" ? (
         <div className="admin-panel">
           <div className="admin-panel-head">
             <h2>기획 캘린더</h2>

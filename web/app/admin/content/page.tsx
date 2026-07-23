@@ -1,11 +1,15 @@
 import Link from "next/link";
 
-import { getAdminContentPlans } from "@kfood/data";
+import { getAdminContentPlans, getAdminProductions } from "@kfood/data";
 
-import { AdminShell, AdminTabs } from "@/components/admin-shell";
-import { PlansPanel } from "@/components/admin/plans-panel";
+import { AdminShell, publicationStatusLabels, AdminTabs } from "@/components/admin-shell";
+import { PlansPanel, planStatusLabels } from "@/components/admin/plans-panel";
 import { ProductionsPanel } from "@/components/admin/productions-panel";
-import { contentData } from "@/lib/dashboard";
+import {
+  buildCalendarDays,
+  formatIsoWeek,
+  formatPlanDate
+} from "@/lib/content-calendar";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -51,7 +55,10 @@ export default async function AdminContentPage({
   const add = params?.add === "1";
   const listParams = { q: params?.q, status: params?.status, page: params?.page };
 
-  const plans = await getAdminContentPlans(session.accessToken);
+  const [plans, productions] = await Promise.all([
+    getAdminContentPlans(session.accessToken),
+    getAdminProductions(session.accessToken)
+  ]);
   const stats = {
     total: plans.length,
     published: plans.filter((plan) => plan.status === "published").length,
@@ -59,8 +66,16 @@ export default async function AdminContentPage({
     planned: plans.filter((plan) => plan.status === "planned").length
   };
 
-  // 캘린더는 아직 실데이터가 없다(정적 예시). 기획 목록만 DB에 연결된 상태.
-  const { meta, calendar } = contentData;
+  // 기획·제작에 입력한 날짜를 하나로 모아 날짜순으로 정리한다.
+  const calendarDays = buildCalendarDays(
+    plans,
+    productions,
+    planStatusLabels,
+    publicationStatusLabels
+  );
+  const undatedCount =
+    plans.filter((plan) => !plan.targetDate).length +
+    productions.filter((production) => !production.scheduledDate).length;
 
   return (
     <AdminShell active="content" session={session}>
@@ -144,41 +159,68 @@ export default async function AdminContentPage({
           <div className="admin-panel-head">
             <h2>기획 캘린더</h2>
             <p>
-              ⚠️ 아직 예시 데이터입니다({meta.week} 고정). 기획 목록은 실제 저장되지만
-              이 캘린더는 아직 연결 전입니다.
+              기획 목록·제작 목록에서 입력한 일정을 날짜순으로 모아 보여줍니다.
+              날짜를 바꾸려면 각 목록에서 해당 항목을 열어 &ldquo;일정&rdquo;을
+              수정하세요.
             </p>
           </div>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>날짜</th>
-                <th>요일</th>
-                <th>일정</th>
-              </tr>
-            </thead>
-            <tbody>
-              {calendar.map((day) => (
-                <tr key={day.date}>
-                  <td>{day.date}</td>
-                  <td>{day.day}</td>
-                  <td>
-                    {day.items.length === 0 ? (
-                      <span style={{ color: "var(--text-body)" }}>—</span>
-                    ) : (
-                      day.items.map((item, i) => (
-                        <div key={i}>
-                          <span className="admin-badge brand" style={{ marginRight: 8 }}>
-                            {item.channel}
-                          </span>
-                          {item.label}
-                        </div>
-                      ))
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+          {calendarDays.length === 0 ? (
+            <div className="admin-empty">
+              일정이 잡힌 항목이 없습니다. 기획 목록이나 제작 목록에서 항목을 열고
+              &ldquo;일정&rdquo; 날짜를 넣으면 여기에 모입니다.
+              {undatedCount > 0 ? ` (날짜 미정 ${undatedCount}건)` : ""}
+            </div>
+          ) : (
+            <>
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>날짜</th>
+                    <th>주차</th>
+                    <th>일정</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {calendarDays.map((day) => (
+                    <tr key={day.date}>
+                      <td>{formatPlanDate(day.date)}</td>
+                      <td style={{ color: "var(--text-body)" }}>
+                        {formatIsoWeek(day.date)}
+                      </td>
+                      <td>
+                        {day.entries.map((entry) => (
+                          <div key={entry.id} style={{ marginBottom: 4 }}>
+                            <span
+                              className={
+                                entry.kind === "plan"
+                                  ? "admin-badge warning"
+                                  : "admin-badge brand"
+                              }
+                              style={{ marginRight: 8 }}
+                            >
+                              {entry.kind === "plan" ? "기획" : "제작"}
+                            </span>
+                            {entry.title}
+                            <span style={{ color: "var(--text-body)" }}>
+                              {" "}
+                              · {entry.statusLabel}
+                              {entry.detail ? ` · ${entry.detail}` : ""}
+                            </span>
+                          </div>
+                        ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {undatedCount > 0 ? (
+                <p className="admin-metric-sub" style={{ marginTop: 12 }}>
+                  날짜가 없어 이 표에 안 나온 항목이 {undatedCount}건 있습니다.
+                </p>
+              ) : null}
+            </>
+          )}
         </div>
       ) : (
         <PlansPanel

@@ -77,6 +77,7 @@ function productionInputFromForm(formData: FormData) {
     summary: String(formData.get("summary") ?? ""),
     externalUrl: String(formData.get("external_url") ?? ""),
     editorialNote: String(formData.get("editorial_note") ?? ""),
+    scheduledDate: String(formData.get("scheduled_date") ?? ""),
     status: String(formData.get("status") ?? "draft") as PublicationStatus,
     tags: collectTags(formData)
   };
@@ -233,6 +234,14 @@ function ProductionFields({
         />
       </label>
       <label>
+        일정 (이 날짜가 기획 캘린더에 표시됩니다)
+        <input
+          defaultValue={production?.scheduledDate ?? ""}
+          name="scheduled_date"
+          type="date"
+        />
+      </label>
+      <label>
         발행 상태
         <select defaultValue={production?.status ?? "draft"} name="status">
           {publicationStatuses.map((status) => (
@@ -272,7 +281,7 @@ export async function ProductionsPanel({
 
   const list = applyListParams(productions, params, {
     search: (production) =>
-      `${production.title} ${production.slug} ${production.channel ?? ""} ${production.type}`,
+      `${production.title} ${production.slug} ${production.channel ?? ""} ${production.type} ${production.scheduledDate ?? ""}`,
     status: (production) => production.status
   });
   const ret = returnQuery(params);

@@ -21,6 +21,7 @@ import {
   withReturnQuery,
   type ListParams
 } from "@/components/admin/list-controls";
+import { formatPlanDate } from "@/lib/content-calendar";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 // 콘텐츠 기획 패널. 인사이트에서 발견한 주제를 기획으로 적어두고,
@@ -70,7 +71,7 @@ function planInputFromForm(formData: FormData) {
     insightNote: String(formData.get("insight_note") ?? ""),
     priority: String(formData.get("priority") ?? "medium") as ContentPlanPriority,
     status: String(formData.get("status") ?? "planned") as ContentPlanStatus,
-    targetWeek: String(formData.get("target_week") ?? ""),
+    targetDate: String(formData.get("target_date") ?? ""),
     title: String(formData.get("title") ?? ""),
     titleEn: String(formData.get("title_en") ?? "")
   };
@@ -194,12 +195,8 @@ function PlanFields({ plan }: { plan?: AdminContentPlan }) {
         />
       </label>
       <label>
-        목표 주차
-        <input
-          defaultValue={plan?.targetWeek ?? ""}
-          name="target_week"
-          placeholder="2026 W21"
-        />
+        일정 (이 날짜가 기획 캘린더에 표시됩니다)
+        <input defaultValue={plan?.targetDate ?? ""} name="target_date" type="date" />
       </label>
       <label>
         기획 메모 (콘셉트·구성·촬영 준비물)
@@ -239,7 +236,7 @@ export async function PlansPanel({
   const plans = await getAdminContentPlans(accessToken);
   const list = applyListParams(plans, params, {
     search: (plan) =>
-      `${plan.title} ${plan.titleEn ?? ""} ${plan.category ?? ""} ${plan.targetWeek ?? ""}`,
+      `${plan.title} ${plan.titleEn ?? ""} ${plan.category ?? ""} ${plan.targetDate ?? ""}`,
     status: (plan) => plan.status
   });
   const ret = returnQuery(params);
@@ -293,7 +290,7 @@ export async function PlansPanel({
           basePath="/admin/content"
           matched={list.matched}
           params={params}
-          searchHint="주제·카테고리·주차 검색"
+          searchHint="주제·카테고리·날짜 검색"
           statuses={statusFilterOptions}
           tab="plans"
           total={list.total}
@@ -316,7 +313,8 @@ export async function PlansPanel({
                   {priorityLabels[plan.priority]}
                 </span>{" "}
                 <span className="admin-badge">{planStatusLabels[plan.status]}</span>{" "}
-                {plan.category ?? "카테고리 없음"} · {plan.targetWeek ?? "주차 미정"}
+                {plan.category ?? "카테고리 없음"} ·{" "}
+                {plan.targetDate ? formatPlanDate(plan.targetDate) : "일정 미정"}
                 {plan.productionTitle ? ` · 제작: ${plan.productionTitle}` : ""}
               </>
             }

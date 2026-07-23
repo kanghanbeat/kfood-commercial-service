@@ -3248,6 +3248,7 @@ export type AdminProduction = {
   externalUrl: string | null;
   status: PublicationStatus;
   editorialNote: string | null;
+  scheduledDate: string | null;
   tags: ProductionTag[];
   updatedAt: string | null;
 };
@@ -3265,6 +3266,7 @@ type AdminProductionRow = {
   external_url: string | null;
   status: PublicationStatus;
   editorial_note: string | null;
+  scheduled_date: string | null;
   updated_at: string | null;
   production_tags?: ProductionTagRow[] | null;
 };
@@ -3281,6 +3283,7 @@ function mapAdminProduction(row: AdminProductionRow): AdminProduction {
     externalUrl: row.external_url,
     status: row.status,
     editorialNote: row.editorial_note,
+    scheduledDate: row.scheduled_date,
     tags: (row.production_tags ?? []).map((tag) => ({
       entityType: tag.entity_type,
       entityId: tag.entity_id
@@ -3299,6 +3302,7 @@ export type CreateAdminProductionInput = {
   summary?: string;
   externalUrl?: string;
   editorialNote?: string;
+  scheduledDate?: string | null;
   status: PublicationStatus;
   tags: ProductionTag[];
 };
@@ -3308,7 +3312,7 @@ export type UpdateAdminProductionInput = CreateAdminProductionInput & {
 };
 
 const adminProductionColumns =
-  "id, slug, title, title_ko, type, channel, summary, external_url, status, editorial_note, updated_at, production_tags(entity_type, entity_id)";
+  "id, slug, title, title_ko, type, channel, summary, external_url, status, editorial_note, scheduled_date, updated_at, production_tags(entity_type, entity_id)";
 
 export async function getAdminProductions(accessToken: string) {
   const supabase = createAuthenticatedClient(accessToken);
@@ -3345,6 +3349,7 @@ function productionWritePayload(input: CreateAdminProductionInput) {
     summary: input.summary?.trim() || null,
     external_url: input.externalUrl?.trim() || null,
     editorial_note: input.editorialNote?.trim() || null,
+    scheduled_date: input.scheduledDate?.trim() || null,
     status: input.status,
     updated_at: new Date().toISOString()
   };
@@ -3760,6 +3765,7 @@ export type AdminContentPlan = {
   status: ContentPlanStatus;
   insightNote: string | null;
   targetWeek: string | null;
+  targetDate: string | null;
   body: string | null;
   productionId: string | null;
   productionTitle: string | null;
@@ -3775,6 +3781,7 @@ type AdminContentPlanRow = {
   status: ContentPlanStatus;
   insight_note: string | null;
   target_week: string | null;
+  target_date: string | null;
   body: string | null;
   production_id: string | null;
   updated_at: string | null;
@@ -3782,7 +3789,7 @@ type AdminContentPlanRow = {
 };
 
 const adminContentPlanColumns =
-  "id, title, title_en, category, priority, status, insight_note, target_week, body, production_id, updated_at, productions(title)";
+  "id, title, title_en, category, priority, status, insight_note, target_week, target_date, body, production_id, updated_at, productions(title)";
 
 function mapAdminContentPlan(row: AdminContentPlanRow): AdminContentPlan {
   const production = Array.isArray(row.productions)
@@ -3798,6 +3805,7 @@ function mapAdminContentPlan(row: AdminContentPlanRow): AdminContentPlan {
     status: row.status,
     insightNote: row.insight_note,
     targetWeek: row.target_week,
+    targetDate: row.target_date,
     body: row.body,
     productionId: row.production_id,
     productionTitle: production?.title ?? null,
@@ -3815,7 +3823,7 @@ export async function getAdminContentPlans(accessToken: string) {
   const { data, error } = await supabase
     .from("content_plans")
     .select(adminContentPlanColumns)
-    .order("display_order", { ascending: true })
+    .order("target_date", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   if (error || !data) {
@@ -3834,6 +3842,7 @@ export type CreateAdminContentPlanInput = {
   insightNote?: string | null;
   priority: ContentPlanPriority;
   status: ContentPlanStatus;
+  targetDate?: string | null;
   targetWeek?: string | null;
   title: string;
   titleEn?: string | null;
@@ -3851,6 +3860,7 @@ function contentPlanWritePayload(input: CreateAdminContentPlanInput) {
     insight_note: input.insightNote?.trim() || null,
     priority: input.priority,
     status: input.status,
+    target_date: input.targetDate?.trim() || null,
     target_week: input.targetWeek?.trim() || null,
     title: input.title.trim(),
     title_en: input.titleEn?.trim() || null,

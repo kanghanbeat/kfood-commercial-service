@@ -379,7 +379,6 @@ export async function PlacesPanel({
             </button>
           </form>
             <AdminImageField
-              imageUrl={place.imageUrl}
               ownerId={place.id}
               ownerType="place"
               returnQuery={ret}

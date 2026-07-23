@@ -14,6 +14,7 @@ import {
 } from "@kfood/data";
 
 import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
+import { PhotoGallery } from "@/components/photo-gallery";
 import { getDict } from "@/lib/i18n";
 
 export async function generateStaticParams() {
@@ -74,15 +75,27 @@ export default async function FoodDetailPage({
         <span>{food.nameEn}</span>
       </nav>
 
-      <div
-        className="food-hero-photo"
-        style={{ background: heroPhoto.gradient }}
-        aria-hidden="true"
-      >
-        <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
-          {heroPhoto.letter}
-        </span>
-      </div>
+      {food.imageUrl ? (
+        <div className="food-hero-photo has-image">
+          {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt={food.nameEn} className="food-hero-photo-img" src={food.imageUrl} />
+        </div>
+      ) : (
+        <div
+          className="food-hero-photo"
+          style={{ background: heroPhoto.gradient }}
+          aria-hidden="true"
+        >
+          <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
+            {heroPhoto.letter}
+          </span>
+        </div>
+      )}
+
+      {food.id ? (
+        <PhotoGallery ownerId={food.id} ownerType="food" title={food.nameEn} />
+      ) : null}
 
       <header className="food-v2-header">
         <span className="food-v2-eyebrow">{t.eyebrow}</span>

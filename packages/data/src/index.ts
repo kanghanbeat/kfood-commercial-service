@@ -29,6 +29,7 @@ export type PublicRegion = {
   intro: string;
   bestForTags: string[];
   imageUrl?: string | null;
+  id?: string;
 };
 
 export const fallbackRegions: PublicRegion[] = [
@@ -94,6 +95,7 @@ export type PublicFood = {
   spicyLevel: 0 | 1 | 2 | 3 | 4;
   beginnerNote: string;
   imageUrl?: string | null;
+  id?: string;
 };
 
 export type PhotoSourceCandidate = {
@@ -186,6 +188,7 @@ export type PublicPlace = {
   cautionTags: string[];
   lastVerifiedLabel: string;
   imageUrl?: string | null;
+  id?: string;
 };
 
 export const fallbackPlaces: PublicPlace[] = [
@@ -289,6 +292,7 @@ export type PublicRoute = {
   placeSlugs: string[];
   estimatedDuration: string;
   imageUrl?: string | null;
+  id?: string;
 };
 
 export const fallbackRoutes: PublicRoute[] = [
@@ -414,6 +418,7 @@ type RegionRow = {
   intro: string;
   best_for_tags: string[];
   hero_image_url: string | null;
+  id: string;
 };
 
 type FoodRow = {
@@ -425,6 +430,7 @@ type FoodRow = {
   spicy_level: 0 | 1 | 2 | 3 | 4;
   beginner_note: string | null;
   image_url: string | null;
+  id: string;
 };
 
 type PlaceRow = {
@@ -445,6 +451,7 @@ type PlaceRow = {
   sponsorship_note: string | null;
   regions: { slug: string } | null;
   image_url: string | null;
+  id: string;
 };
 
 type RouteGuideRow = {
@@ -454,6 +461,7 @@ type RouteGuideRow = {
   estimated_duration: string | null;
   regions: { slug: string } | null;
   hero_image_url: string | null;
+  id: string;
 };
 
 type RelatedSlugRow = {
@@ -887,6 +895,7 @@ export function humanizeTag(tag: string): string {
 function mapRegion(row: RegionRow): PublicRegion {
   const displayTags = row.best_for_tags.map(humanizeTag);
   return {
+    id: row.id,
     slug: row.slug,
     imageUrl: row.hero_image_url ?? null,
     nameEn: row.name_en,
@@ -900,6 +909,7 @@ function mapRegion(row: RegionRow): PublicRegion {
 
 function mapFood(row: FoodRow): PublicFood {
   return {
+    id: row.id,
     slug: row.slug,
     imageUrl: row.image_url ?? null,
     nameEn: row.name_en,
@@ -1126,6 +1136,7 @@ export function getFoodPhotoSourceCandidates(
 
 function mapPlace(row: PlaceRow): PublicPlace {
   return {
+    id: row.id,
     slug: row.slug,
     imageUrl: row.image_url ?? null,
     nameEn: row.name_en,
@@ -1153,6 +1164,7 @@ function mapPlace(row: PlaceRow): PublicPlace {
 
 function mapRouteGuide(row: RouteGuideRow): PublicRoute {
   return {
+    id: row.id,
     slug: row.slug,
     imageUrl: row.hero_image_url ?? null,
     title: row.title,
@@ -1246,7 +1258,7 @@ export async function getPublishedRegions() {
 
   const { data, error } = await supabase
     .from("regions")
-    .select("slug, name_en, intro, best_for_tags, hero_image_url")
+    .select("id, slug, name_en, intro, best_for_tags, hero_image_url")
     .eq("status", "published")
     .order("display_order", { ascending: true });
 
@@ -1267,7 +1279,7 @@ export async function getPublishedRegion(slug: string) {
 
   const { data, error } = await supabase
     .from("regions")
-    .select("slug, name_en, intro, best_for_tags, hero_image_url")
+    .select("id, slug, name_en, intro, best_for_tags, hero_image_url")
     .eq("status", "published")
     .eq("slug", slug)
     .maybeSingle<RegionRow>();
@@ -1292,7 +1304,7 @@ export async function getPublishedFoods() {
       supabase
         .from("foods")
         .select(
-          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note, image_url"
+          "id, slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note, image_url"
         )
         .eq("status", "published")
         .order("display_order", { ascending: true }),
@@ -1330,7 +1342,7 @@ export async function getPublishedFood(slug: string) {
       supabase
         .from("foods")
         .select(
-          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note, image_url"
+          "id, slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note, image_url"
         )
         .eq("status", "published")
         .eq("slug", slug)
@@ -1373,7 +1385,7 @@ export async function getPublishedPlaces() {
       supabase
         .from("places")
         .select(
-          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, image_url, regions(slug)"
+          "id, slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, image_url, regions(slug)"
         )
         .eq("status", "published")
         .order("display_order", { ascending: true })
@@ -1412,7 +1424,7 @@ export async function getPublishedPlace(slug: string) {
       supabase
         .from("places")
         .select(
-          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, image_url, regions(slug)"
+          "id, slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, image_url, regions(slug)"
         )
         .eq("status", "published")
         .eq("slug", slug)
@@ -1455,7 +1467,7 @@ export async function getPublishedRoutes() {
     await Promise.all([
       supabase
         .from("route_guides")
-        .select("slug, title, summary, estimated_duration, hero_image_url, regions(slug)")
+        .select("id, slug, title, summary, estimated_duration, hero_image_url, regions(slug)")
         .eq("status", "published")
         .order("display_order", { ascending: true })
         .returns<RouteGuideRow[]>(),
@@ -1492,7 +1504,7 @@ export async function getPublishedRoute(slug: string) {
     await Promise.all([
       supabase
         .from("route_guides")
-        .select("slug, title, summary, estimated_duration, hero_image_url, regions(slug)")
+        .select("id, slug, title, summary, estimated_duration, hero_image_url, regions(slug)")
         .eq("status", "published")
         .eq("slug", slug)
         .maybeSingle<RouteGuideRow>(),
@@ -4164,14 +4176,78 @@ function imageExtension(fileType: string) {
   return "jpg";
 }
 
+export type ContentImage = {
+  id: string;
+  url: string;
+  altText: string | null;
+  displayOrder: number;
+};
+
+/** 한 콘텐츠에 붙은 사진 전부(순서대로). */
+export async function getContentImages(
+  ownerType: ImageOwnerType,
+  ownerId: string
+): Promise<ContentImage[]> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("content_images")
+    .select("id, url, alt_text, display_order")
+    .eq("owner_type", ownerType)
+    .eq("owner_id", ownerId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => ({
+    id: row.id as string,
+    url: row.url as string,
+    altText: (row.alt_text as string | null) ?? null,
+    displayOrder: row.display_order as number
+  }));
+}
+
 /**
- * 사진을 올리고 해당 콘텐츠의 사진 주소를 갱신한다.
- * 이미 사진이 있으면 새 파일로 교체하고 옛 파일은 지운다.
+ * 갤러리의 첫 사진을 대표 사진(image_url / hero_image_url)에 반영한다.
+ * 목록 카드는 대표 1장만 읽으므로 갤러리가 바뀔 때마다 맞춰준다.
  */
-export async function uploadContentImage(
+async function syncPrimaryImage(
+  supabase: NonNullable<ReturnType<typeof createAuthenticatedClient>>,
+  ownerType: ImageOwnerType,
+  ownerId: string
+) {
+  const target = imageColumnByOwner[ownerType];
+
+  const { data } = await supabase
+    .from("content_images")
+    .select("url")
+    .eq("owner_type", ownerType)
+    .eq("owner_id", ownerId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: true })
+    .limit(1);
+
+  const firstUrl = (data?.[0]?.url as string | undefined) ?? null;
+
+  await supabase
+    .from(target.table)
+    .update({ [target.column]: firstUrl, updated_at: new Date().toISOString() })
+    .eq("id", ownerId);
+}
+
+/** 사진 한 장을 갤러리에 추가한다. */
+export async function addContentImage(
   accessToken: string,
   input: {
     actorId: string;
+    altText?: string | null;
     file: { name: string; type: string; size: number; bytes: ArrayBuffer };
     ownerId: string;
     ownerType: ImageOwnerType;
@@ -4204,23 +4280,10 @@ export async function uploadContentImage(
     return { ok: false, message: "선택된 파일이 비어 있습니다." };
   }
 
-  const { data: beforeData, error: beforeError } = await supabase
-    .from(target.table)
-    .select("*")
-    .eq("id", input.ownerId)
-    .maybeSingle();
-
-  if (beforeError || !beforeData) {
-    return { ok: false, message: `${target.label}을(를) 찾을 수 없습니다.` };
-  }
-
-  const previousUrl =
-    (beforeData as Record<string, unknown>)[target.column] as string | null;
-
-  // 같은 이름으로 덮어쓰면 브라우저·CDN이 옛 사진을 계속 보여줄 수 있어
-  // 매번 새 파일명을 쓰고 옛 파일은 따로 지운다.
+  // 캐시 때문에 옛 사진이 남지 않도록 매번 새 파일명을 쓴다.
   const stamp = Date.now().toString(36);
-  const path = `${input.ownerType}/${input.ownerId}/${stamp}.${imageExtension(input.file.type)}`;
+  const suffix = Math.floor(Math.random() * 1e6).toString(36);
+  const path = `${input.ownerType}/${input.ownerId}/${stamp}${suffix}.${imageExtension(input.file.type)}`;
 
   const { error: uploadError } = await supabase.storage
     .from(contentImageBucket)
@@ -4241,44 +4304,58 @@ export async function uploadContentImage(
     data: { publicUrl }
   } = supabase.storage.from(contentImageBucket).getPublicUrl(path);
 
-  const { data: afterData, error: updateError } = await supabase
-    .from(target.table)
-    .update({ [target.column]: publicUrl, updated_at: new Date().toISOString() })
-    .eq("id", input.ownerId)
+  // 맨 뒤에 붙인다.
+  const { data: lastRow } = await supabase
+    .from("content_images")
+    .select("display_order")
+    .eq("owner_type", input.ownerType)
+    .eq("owner_id", input.ownerId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = ((lastRow?.[0]?.display_order as number | undefined) ?? 0) + 10;
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("content_images")
+    .insert({
+      alt_text: input.altText?.trim() || null,
+      created_by: input.actorId,
+      display_order: nextOrder,
+      owner_id: input.ownerId,
+      owner_type: input.ownerType,
+      storage_path: path,
+      url: publicUrl
+    })
     .select("*")
     .maybeSingle();
 
-  if (updateError || !afterData) {
-    // 주소를 못 붙였으면 방금 올린 파일은 쓸모가 없으므로 되돌린다.
+  if (insertError || !inserted) {
     await supabase.storage.from(contentImageBucket).remove([path]);
-    return { ok: false, message: `${target.label}에 사진 주소를 저장하지 못했습니다.` };
+    return { ok: false, message: "사진 정보를 저장하지 못했습니다." };
   }
 
-  await removeStoredImage(supabase, previousUrl);
+  await syncPrimaryImage(supabase, input.ownerType, input.ownerId);
 
   const { error: auditError } = await supabase.from("admin_audit_logs").insert({
-    action: `${input.ownerType}.image_upload`,
+    action: `${input.ownerType}.image_add`,
     actor_id: input.actorId,
-    after_data: afterData,
-    before_data: beforeData,
+    after_data: inserted,
+    before_data: null,
     entity_id: input.ownerId,
     entity_type: input.ownerType
   });
 
   if (auditError) {
-    return {
-      ok: false,
-      message: "사진은 올렸지만 감사 로그 기록에 실패했습니다."
-    };
+    return { ok: false, message: "사진은 올렸지만 감사 로그 기록에 실패했습니다." };
   }
 
   return { ok: true };
 }
 
-/** 사진 제거: 주소를 비우고 저장소 파일도 지운다. */
-export async function removeContentImage(
+/** 갤러리에서 사진 한 장을 지운다(저장소 파일도 함께). */
+export async function deleteContentImage(
   accessToken: string,
-  input: { actorId: string; ownerId: string; ownerType: ImageOwnerType }
+  input: { actorId: string; imageId: string }
 ): Promise<AdminMutationResult> {
   const supabase = createAuthenticatedClient(accessToken);
 
@@ -4286,53 +4363,118 @@ export async function removeContentImage(
     return { ok: false, message: "Supabase admin client is not configured." };
   }
 
-  const target = imageColumnByOwner[input.ownerType];
-
-  if (!target) {
-    return { ok: false, message: "지원하지 않는 콘텐츠 유형입니다." };
-  }
-
   const { data: beforeData, error: beforeError } = await supabase
-    .from(target.table)
+    .from("content_images")
     .select("*")
-    .eq("id", input.ownerId)
+    .eq("id", input.imageId)
     .maybeSingle();
 
   if (beforeError || !beforeData) {
-    return { ok: false, message: `${target.label}을(를) 찾을 수 없습니다.` };
+    return { ok: false, message: "사진을 찾을 수 없습니다." };
   }
 
-  const previousUrl =
-    (beforeData as Record<string, unknown>)[target.column] as string | null;
+  const image = beforeData as {
+    owner_type: ImageOwnerType;
+    owner_id: string;
+    storage_path: string;
+  };
 
-  const { data: afterData, error: updateError } = await supabase
-    .from(target.table)
-    .update({ [target.column]: null, updated_at: new Date().toISOString() })
-    .eq("id", input.ownerId)
-    .select("*")
-    .maybeSingle();
+  const { error: deleteError } = await supabase
+    .from("content_images")
+    .delete()
+    .eq("id", input.imageId);
 
-  if (updateError || !afterData) {
-    return { ok: false, message: `${target.label}의 사진을 지우지 못했습니다.` };
+  if (deleteError) {
+    return { ok: false, message: "사진을 지우지 못했습니다." };
   }
 
-  await removeStoredImage(supabase, previousUrl);
+  await supabase.storage.from(contentImageBucket).remove([image.storage_path]);
+  await syncPrimaryImage(supabase, image.owner_type, image.owner_id);
 
   const { error: auditError } = await supabase.from("admin_audit_logs").insert({
-    action: `${input.ownerType}.image_remove`,
+    action: `${image.owner_type}.image_delete`,
     actor_id: input.actorId,
-    after_data: afterData,
+    after_data: null,
     before_data: beforeData,
-    entity_id: input.ownerId,
-    entity_type: input.ownerType
+    entity_id: image.owner_id,
+    entity_type: image.owner_type
   });
 
   if (auditError) {
-    return {
-      ok: false,
-      message: "사진은 지웠지만 감사 로그 기록에 실패했습니다."
-    };
+    return { ok: false, message: "사진은 지웠지만 감사 로그 기록에 실패했습니다." };
   }
+
+  return { ok: true };
+}
+
+/** 사진 순서를 한 칸 옮긴다. 맨 앞 사진이 대표 사진이 된다. */
+export async function moveContentImage(
+  accessToken: string,
+  input: { actorId: string; direction: "up" | "down"; imageId: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: currentData, error: currentError } = await supabase
+    .from("content_images")
+    .select("*")
+    .eq("id", input.imageId)
+    .maybeSingle();
+
+  if (currentError || !currentData) {
+    return { ok: false, message: "사진을 찾을 수 없습니다." };
+  }
+
+  const current = currentData as {
+    id: string;
+    owner_type: ImageOwnerType;
+    owner_id: string;
+    display_order: number;
+  };
+
+  // 옮길 자리에 있는 사진(바로 앞 또는 바로 뒤)을 찾아 순서를 맞바꾼다.
+  const { data: neighbourRows } = await supabase
+    .from("content_images")
+    .select("*")
+    .eq("owner_type", current.owner_type)
+    .eq("owner_id", current.owner_id)
+    .order("display_order", { ascending: input.direction === "down" })
+    .limit(50);
+
+  const ordered = (neighbourRows ?? []) as Array<{
+    id: string;
+    display_order: number;
+  }>;
+  const currentIndex = ordered.findIndex((row) => row.id === current.id);
+  const neighbour = ordered[currentIndex + 1];
+
+  if (!neighbour) {
+    // 이미 맨 끝이면 아무것도 하지 않는다.
+    return { ok: true };
+  }
+
+  await supabase
+    .from("content_images")
+    .update({ display_order: neighbour.display_order })
+    .eq("id", current.id);
+  await supabase
+    .from("content_images")
+    .update({ display_order: current.display_order })
+    .eq("id", neighbour.id);
+
+  await syncPrimaryImage(supabase, current.owner_type, current.owner_id);
+
+  await supabase.from("admin_audit_logs").insert({
+    action: `${current.owner_type}.image_reorder`,
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: currentData,
+    entity_id: current.owner_id,
+    entity_type: current.owner_type
+  });
 
   return { ok: true };
 }

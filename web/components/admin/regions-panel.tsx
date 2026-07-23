@@ -276,7 +276,6 @@ export async function RegionsPanel({
             <button className="admin-btn primary" type="submit">지역 저장</button>
           </form>
             <AdminImageField
-              imageUrl={region.imageUrl}
               ownerId={region.id}
               ownerType="region"
               returnQuery={ret}

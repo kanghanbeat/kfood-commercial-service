@@ -310,7 +310,6 @@ export async function FoodsPanel({
               <button className="admin-btn primary" type="submit">음식 저장</button>
             </form>
             <AdminImageField
-              imageUrl={food.imageUrl}
               ownerId={food.id}
               ownerType="food"
               returnQuery={ret}

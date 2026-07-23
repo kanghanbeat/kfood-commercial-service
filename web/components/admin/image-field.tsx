@@ -2,41 +2,46 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
-  removeContentImage,
-  uploadContentImage,
+  addContentImage,
+  deleteContentImage,
+  getContentImages,
+  moveContentImage,
   type ImageOwnerType
 } from "@kfood/data";
 
 import { withReturnQuery } from "@/components/admin/list-controls";
 import { requireAdminSession } from "@/lib/admin-auth";
 
-// 콘텐츠 사진 올리기·지우기. 파일을 고르면 Supabase Storage에 저장되고
-// 공개 페이지에 그 사진이 나온다(사진이 없으면 기존 색 배경 자리표시).
+// 콘텐츠 사진 갤러리. 한 항목에 사진을 여러 장 붙일 수 있고,
+// 맨 앞 사진이 목록 카드에 쓰이는 대표 사진이 된다.
 //
-// 사진 업로드는 편집 폼과 별개의 form이다 — 사진만 바꾸고 싶을 때
-// 다른 입력값까지 저장되지 않도록 분리했다.
+// 사진 폼은 편집 폼과 별개다 — 사진만 바꿔도 다른 입력값이 저장되지 않도록.
 
-const ownerPath: Record<ImageOwnerType, { admin: string; tab: string; publicPath: string }> = {
+const ownerPath: Record<
+  ImageOwnerType,
+  { admin: string; tab: string; publicPath: string }
+> = {
   food: { admin: "/admin/manage", tab: "foods", publicPath: "/foods" },
   place: { admin: "/admin/manage", tab: "places", publicPath: "/places" },
   region: { admin: "/admin/manage", tab: "regions", publicPath: "/regions" },
   route: { admin: "/admin/manage", tab: "routes", publicPath: "/routes" }
 };
 
-function ownerFromForm(formData: FormData) {
+function routeFromForm(formData: FormData) {
   const ownerType = String(formData.get("owner_type") ?? "") as ImageOwnerType;
-  const ownerId = String(formData.get("owner_id") ?? "");
-  const route = ownerPath[ownerType] ?? ownerPath.food;
-  return { ownerType, ownerId, route };
+  return {
+    ownerId: String(formData.get("owner_id") ?? ""),
+    ownerType,
+    route: ownerPath[ownerType] ?? ownerPath.food
+  };
 }
 
-async function uploadImage(formData: FormData) {
+async function addImage(formData: FormData) {
   "use server";
 
   const session = await requireAdminSession();
-  const { ownerType, ownerId, route } = ownerFromForm(formData);
+  const { ownerId, ownerType, route } = routeFromForm(formData);
   const base = `${route.admin}?tab=${route.tab}`;
-
   const file = formData.get("image");
 
   if (!(file instanceof File) || file.size === 0) {
@@ -45,8 +50,9 @@ async function uploadImage(formData: FormData) {
     );
   }
 
-  const result = await uploadContentImage(session.accessToken, {
+  const result = await addContentImage(session.accessToken, {
     actorId: session.userId,
+    altText: String(formData.get("alt_text") ?? ""),
     file: {
       bytes: await file.arrayBuffer(),
       name: file.name,
@@ -66,17 +72,16 @@ async function uploadImage(formData: FormData) {
   redirect(withReturnQuery(base, formData, "image_saved=1"));
 }
 
-async function removeImage(formData: FormData) {
+async function deleteImage(formData: FormData) {
   "use server";
 
   const session = await requireAdminSession();
-  const { ownerType, ownerId, route } = ownerFromForm(formData);
+  const { route } = routeFromForm(formData);
   const base = `${route.admin}?tab=${route.tab}`;
 
-  const result = await removeContentImage(session.accessToken, {
+  const result = await deleteContentImage(session.accessToken, {
     actorId: session.userId,
-    ownerId,
-    ownerType
+    imageId: String(formData.get("image_id") ?? "")
   });
 
   if (!result.ok) {
@@ -88,32 +93,114 @@ async function removeImage(formData: FormData) {
   redirect(withReturnQuery(base, formData, "image_removed=1"));
 }
 
-export function AdminImageField({
-  imageUrl,
+async function moveImage(formData: FormData) {
+  "use server";
+
+  const session = await requireAdminSession();
+  const { route } = routeFromForm(formData);
+  const base = `${route.admin}?tab=${route.tab}`;
+  const direction = String(formData.get("direction") ?? "up") === "down" ? "down" : "up";
+
+  const result = await moveContentImage(session.accessToken, {
+    actorId: session.userId,
+    direction,
+    imageId: String(formData.get("image_id") ?? "")
+  });
+
+  if (!result.ok) {
+    redirect(withReturnQuery(base, formData, `error=${encodeURIComponent(result.message)}`));
+  }
+
+  revalidatePath(route.publicPath);
+  revalidatePath(route.admin);
+  redirect(withReturnQuery(base, formData, "image_moved=1"));
+}
+
+export async function AdminImageField({
   ownerId,
   ownerType,
   returnQuery
 }: {
-  imageUrl: string | null;
   ownerId: string;
   ownerType: ImageOwnerType;
   returnQuery: string;
 }) {
+  const images = await getContentImages(ownerType, ownerId);
+
   return (
     <div className="admin-image-field">
-      <span className="admin-metric-label">대표 사진</span>
+      <span className="admin-metric-label">사진 ({images.length}장)</span>
 
-      {imageUrl ? (
-        // 저장소 주소가 도메인마다 달라 next/image 최적화를 쓰지 않는다.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img alt="현재 대표 사진" className="admin-image-preview" src={imageUrl} />
-      ) : (
+      {images.length === 0 ? (
         <p className="admin-image-empty">
-          아직 사진이 없습니다. 사진을 올리면 공개 페이지 카드와 상세 화면에 나옵니다.
+          아직 사진이 없습니다. 사진을 올리면 공개 페이지에 나옵니다.
         </p>
+      ) : (
+        <ul className="admin-image-list">
+          {images.map((image, index) => (
+            <li className="admin-image-item" key={image.id}>
+              {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                alt={image.altText ?? `사진 ${index + 1}`}
+                className="admin-image-thumb"
+                src={image.url}
+              />
+
+              <div className="admin-image-item-body">
+                {index === 0 ? (
+                  <span className="admin-badge success">대표 사진</span>
+                ) : (
+                  <span className="admin-image-order">{index + 1}번째</span>
+                )}
+                {image.altText ? (
+                  <span className="admin-image-alt">{image.altText}</span>
+                ) : null}
+
+                <div className="admin-image-item-actions">
+                  {index > 0 ? (
+                    <form action={moveImage}>
+                      <input name="owner_type" type="hidden" value={ownerType} />
+                      <input name="owner_id" type="hidden" value={ownerId} />
+                      <input name="image_id" type="hidden" value={image.id} />
+                      <input name="direction" type="hidden" value="up" />
+                      <input name="return_query" type="hidden" value={returnQuery} />
+                      <button className="admin-btn" type="submit">
+                        ↑ 앞으로
+                      </button>
+                    </form>
+                  ) : null}
+
+                  {index < images.length - 1 ? (
+                    <form action={moveImage}>
+                      <input name="owner_type" type="hidden" value={ownerType} />
+                      <input name="owner_id" type="hidden" value={ownerId} />
+                      <input name="image_id" type="hidden" value={image.id} />
+                      <input name="direction" type="hidden" value="down" />
+                      <input name="return_query" type="hidden" value={returnQuery} />
+                      <button className="admin-btn" type="submit">
+                        ↓ 뒤로
+                      </button>
+                    </form>
+                  ) : null}
+
+                  <form action={deleteImage}>
+                    <input name="owner_type" type="hidden" value={ownerType} />
+                    <input name="owner_id" type="hidden" value={ownerId} />
+                    <input name="image_id" type="hidden" value={image.id} />
+                    <input name="return_query" type="hidden" value={returnQuery} />
+                    <button className="admin-btn" type="submit">
+                      지우기
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
-      <form action={uploadImage} className="admin-image-form">
+      <form action={addImage} className="admin-image-form">
         <input name="owner_type" type="hidden" value={ownerType} />
         <input name="owner_id" type="hidden" value={ownerId} />
         <input name="return_query" type="hidden" value={returnQuery} />
@@ -123,23 +210,19 @@ export function AdminImageField({
           required
           type="file"
         />
+        <input
+          className="admin-image-alt-input"
+          name="alt_text"
+          placeholder="사진 설명 (선택 · 검색·접근성에 도움)"
+        />
         <button className="admin-btn primary" type="submit">
-          {imageUrl ? "사진 교체" : "사진 올리기"}
+          사진 추가
         </button>
       </form>
 
-      <p className="admin-image-hint">JPG · PNG · WebP · AVIF, 5MB 이하</p>
-
-      {imageUrl ? (
-        <form action={removeImage}>
-          <input name="owner_type" type="hidden" value={ownerType} />
-          <input name="owner_id" type="hidden" value={ownerId} />
-          <input name="return_query" type="hidden" value={returnQuery} />
-          <button className="admin-btn" type="submit">
-            사진 지우기
-          </button>
-        </form>
-      ) : null}
+      <p className="admin-image-hint">
+        JPG · PNG · WebP · AVIF, 5MB 이하. 맨 앞 사진이 목록 카드에 쓰입니다.
+      </p>
     </div>
   );
 }

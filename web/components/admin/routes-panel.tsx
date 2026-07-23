@@ -298,7 +298,6 @@ export async function RoutesPanel({
               <button className="admin-btn primary" type="submit">루트 저장</button>
             </form>
             <AdminImageField
-              imageUrl={route.imageUrl}
               ownerId={route.id}
               ownerType="route"
               returnQuery={ret}

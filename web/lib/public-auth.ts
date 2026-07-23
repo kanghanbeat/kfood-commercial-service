@@ -150,6 +150,11 @@ export function createPublicSupabaseUserClient(accessToken: string) {
 
   return createClient(config.url, config.anonKey, {
     auth: {
+      // 자동 갱신 금지. 화면 렌더 중에 갱신되면 새 리프레시 토큰을 쿠키에
+      // 저장할 수 없어 옛 토큰만 폐기되고, 다음 요청에서 세션이 끊긴다.
+      // (@supabase/ssr의 createServerClient는 이미 자체적으로 끄지만,
+      //  여기는 supabase-js를 직접 쓰므로 기본값이 true다 — 명시적으로 끈다)
+      autoRefreshToken: false,
       persistSession: false
     },
     global: {

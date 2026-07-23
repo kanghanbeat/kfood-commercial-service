@@ -666,6 +666,24 @@ export type UpdateAdminPlaceInput = {
   trustTags?: string[];
 };
 
+export type CreateAdminPlaceInput = {
+  actorId: string;
+  addressEn?: string | null;
+  addressKo?: string | null;
+  businessHoursNote?: string | null;
+  businessInfoNote?: string | null;
+  cautionTags?: string[];
+  editorialNote: string;
+  googleMapsUrl?: string | null;
+  nameEn: string;
+  nameKo?: string | null;
+  naverMapsUrl?: string | null;
+  regionId: string;
+  slug: string;
+  status: PublicationStatus;
+  trustTags?: string[];
+};
+
 export type AdminAuditLog = {
   id: string;
   actorId: string | null;
@@ -2450,6 +2468,73 @@ export async function updateAdminReportStatus(
   return { ok: true };
 }
 
+// 장소 생성. updateAdminPlace 패턴을 그대로 따름(감사 로그 포함).
+// RLS의 places_editor_manage(for all)가 editor/admin 삽입을 허용한다.
+export async function createAdminPlace(
+  accessToken: string,
+  input: CreateAdminPlaceInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (!input.slug.trim()) {
+    return { ok: false, message: "Slug is required." };
+  }
+  if (!input.nameEn.trim()) {
+    return { ok: false, message: "English name is required." };
+  }
+  if (!input.regionId) {
+    return { ok: false, message: "Region is required." };
+  }
+  if (!input.editorialNote.trim()) {
+    return { ok: false, message: "Editorial note is required." };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("places")
+    .insert({
+      address_en: input.addressEn?.trim() || null,
+      address_ko: input.addressKo?.trim() || null,
+      business_hours_note: input.businessHoursNote?.trim() || null,
+      business_info_note: input.businessInfoNote?.trim() || null,
+      caution_tags: input.cautionTags ?? [],
+      editorial_note: input.editorialNote.trim(),
+      google_maps_url: input.googleMapsUrl?.trim() || null,
+      name_en: input.nameEn.trim(),
+      name_ko: input.nameKo?.trim() || null,
+      naver_maps_url: input.naverMapsUrl?.trim() || null,
+      region_id: input.regionId,
+      slug: input.slug.trim(),
+      status: input.status,
+      trust_tags: input.trustTags ?? [],
+      updated_at: new Date().toISOString()
+    })
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "Place could not be created." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "place.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "place"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "Place created, but audit log failed." };
+  }
+
+  return { ok: true };
+}
+
 export async function updateAdminPlace(
   accessToken: string,
   input: UpdateAdminPlaceInput
@@ -3475,6 +3560,534 @@ export async function submitContentReport(
     return {
       ok: false,
       message: "The report could not be submitted. Please try again later."
+    };
+  }
+
+  return { ok: true };
+}
+
+// ── Admin: 보관 · 삭제 ─────────────────────────────────────
+// 보관(archive)은 status를 archived로 바꿔 목록에서 감추는 것이고,
+// 삭제(delete)는 DB에서 실제로 제거하는 것이다. 둘 다 감사 로그를 남긴다.
+//
+// 지역·장소는 다른 데이터가 참조 중이면 DB가 삭제를 막는다(on delete restrict).
+// 그 경우 Postgres가 23503(외래키 위반)을 돌려주므로, 왜 막혔는지 설명해준다.
+// 어드민 화면은 한국어라 이 메시지들만 한국어로 쓴다.
+
+export type AdminDeletableEntity =
+  | "region"
+  | "food"
+  | "place"
+  | "route"
+  | "production";
+
+const adminDeleteTargets: Record<
+  AdminDeletableEntity,
+  { table: string; label: string; blockedMessage: string }
+> = {
+  region: {
+    table: "regions",
+    label: "지역",
+    blockedMessage:
+      "이 지역에 연결된 장소나 루트가 있어 삭제할 수 없습니다. 그것들을 먼저 삭제하거나 다른 지역으로 옮긴 뒤 다시 시도하세요."
+  },
+  food: {
+    table: "foods",
+    label: "음식",
+    blockedMessage:
+      "이 음식에 연결된 데이터가 있어 삭제할 수 없습니다. 연결을 먼저 정리한 뒤 다시 시도하세요."
+  },
+  place: {
+    table: "places",
+    label: "장소",
+    blockedMessage:
+      "이 장소가 포함된 루트가 있어 삭제할 수 없습니다. 루트에서 이 장소를 먼저 빼낸 뒤 다시 시도하세요."
+  },
+  route: {
+    table: "route_guides",
+    label: "루트",
+    blockedMessage:
+      "이 루트에 연결된 데이터가 있어 삭제할 수 없습니다. 연결을 먼저 정리한 뒤 다시 시도하세요."
+  },
+  production: {
+    table: "productions",
+    label: "촬영 콘텐츠",
+    blockedMessage:
+      "이 콘텐츠에 연결된 데이터가 있어 삭제할 수 없습니다. 연결을 먼저 정리한 뒤 다시 시도하세요."
+  }
+};
+
+export type AdminEntityMutationInput = {
+  actorId: string;
+  entity: AdminDeletableEntity;
+  id: string;
+};
+
+/** 보관: status를 archived로. 데이터는 남고 공개 사이트에서만 빠진다. */
+export async function archiveAdminEntity(
+  accessToken: string,
+  input: AdminEntityMutationInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const target = adminDeleteTargets[input.entity];
+
+  if (!target) {
+    return { ok: false, message: "지원하지 않는 콘텐츠 유형입니다." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from(target.table)
+    .select("*")
+    .eq("id", input.id)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: `${target.label}을(를) 찾을 수 없습니다.` };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from(target.table)
+    .update({ status: "archived", updated_at: new Date().toISOString() })
+    .eq("id", input.id)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: `${target.label}을(를) 보관할 수 없습니다.` };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: `${input.entity}.archive`,
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.id,
+    entity_type: input.entity
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: `${target.label}을(를) 보관했지만 감사 로그 기록에 실패했습니다.`
+    };
+  }
+
+  return { ok: true };
+}
+
+/** 완전 삭제: DB에서 제거. 되돌릴 수 없다. 삭제 직전 내용은 감사 로그에 남는다. */
+export async function deleteAdminEntity(
+  accessToken: string,
+  input: AdminEntityMutationInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const target = adminDeleteTargets[input.entity];
+
+  if (!target) {
+    return { ok: false, message: "지원하지 않는 콘텐츠 유형입니다." };
+  }
+
+  // 삭제하면 내용을 다시 읽을 수 없으므로 미리 감사 로그용으로 확보한다.
+  const { data: beforeData, error: beforeError } = await supabase
+    .from(target.table)
+    .select("*")
+    .eq("id", input.id)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: `${target.label}을(를) 찾을 수 없습니다.` };
+  }
+
+  const { error: deleteError } = await supabase
+    .from(target.table)
+    .delete()
+    .eq("id", input.id);
+
+  if (deleteError) {
+    if (deleteError.code === "23503") {
+      return { ok: false, message: target.blockedMessage };
+    }
+    return { ok: false, message: `${target.label}을(를) 삭제할 수 없습니다.` };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: `${input.entity}.delete`,
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: beforeData,
+    entity_id: input.id,
+    entity_type: input.entity
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: `${target.label}을(를) 삭제했지만 감사 로그 기록에 실패했습니다.`
+    };
+  }
+
+  return { ok: true };
+}
+
+// ── Admin: 콘텐츠 기획 (content_plans) ──────────────────────
+// "무엇을 만들 것인가"를 적어두는 내부 기획. 인사이트 → 기획 → 제작(productions) 흐름.
+// 012_content_plans.sql 참조. 공개 사이트에는 노출되지 않는다.
+
+export type ContentPlanPriority = "high" | "medium" | "low";
+
+export type ContentPlanStatus =
+  | "planned"
+  | "in_progress"
+  | "published"
+  | "dropped";
+
+export type AdminContentPlan = {
+  id: string;
+  title: string;
+  titleEn: string | null;
+  category: string | null;
+  priority: ContentPlanPriority;
+  status: ContentPlanStatus;
+  insightNote: string | null;
+  targetWeek: string | null;
+  body: string | null;
+  productionId: string | null;
+  productionTitle: string | null;
+  updatedAt: string | null;
+};
+
+type AdminContentPlanRow = {
+  id: string;
+  title: string;
+  title_en: string | null;
+  category: string | null;
+  priority: ContentPlanPriority;
+  status: ContentPlanStatus;
+  insight_note: string | null;
+  target_week: string | null;
+  body: string | null;
+  production_id: string | null;
+  updated_at: string | null;
+  productions: { title: string } | { title: string }[] | null;
+};
+
+const adminContentPlanColumns =
+  "id, title, title_en, category, priority, status, insight_note, target_week, body, production_id, updated_at, productions(title)";
+
+function mapAdminContentPlan(row: AdminContentPlanRow): AdminContentPlan {
+  const production = Array.isArray(row.productions)
+    ? row.productions[0]
+    : row.productions;
+
+  return {
+    id: row.id,
+    title: row.title,
+    titleEn: row.title_en,
+    category: row.category,
+    priority: row.priority,
+    status: row.status,
+    insightNote: row.insight_note,
+    targetWeek: row.target_week,
+    body: row.body,
+    productionId: row.production_id,
+    productionTitle: production?.title ?? null,
+    updatedAt: row.updated_at
+  };
+}
+
+export async function getAdminContentPlans(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("content_plans")
+    .select(adminContentPlanColumns)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) =>
+    mapAdminContentPlan(row as unknown as AdminContentPlanRow)
+  );
+}
+
+export type CreateAdminContentPlanInput = {
+  actorId: string;
+  body?: string | null;
+  category?: string | null;
+  insightNote?: string | null;
+  priority: ContentPlanPriority;
+  status: ContentPlanStatus;
+  targetWeek?: string | null;
+  title: string;
+  titleEn?: string | null;
+};
+
+export type UpdateAdminContentPlanInput = CreateAdminContentPlanInput & {
+  planId: string;
+  productionId?: string | null;
+};
+
+function contentPlanWritePayload(input: CreateAdminContentPlanInput) {
+  return {
+    body: input.body?.trim() || null,
+    category: input.category?.trim() || null,
+    insight_note: input.insightNote?.trim() || null,
+    priority: input.priority,
+    status: input.status,
+    target_week: input.targetWeek?.trim() || null,
+    title: input.title.trim(),
+    title_en: input.titleEn?.trim() || null,
+    updated_at: new Date().toISOString()
+  };
+}
+
+export async function createAdminContentPlan(
+  accessToken: string,
+  input: CreateAdminContentPlanInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (!input.title.trim()) {
+    return { ok: false, message: "기획 주제는 필수입니다." };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("content_plans")
+    .insert({ ...contentPlanWritePayload(input), created_by: input.actorId })
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "기획을 생성할 수 없습니다." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "content_plan.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "content_plan"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "기획을 만들었지만 감사 로그 기록에 실패했습니다." };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminContentPlan(
+  accessToken: string,
+  input: UpdateAdminContentPlanInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (!input.title.trim()) {
+    return { ok: false, message: "기획 주제는 필수입니다." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("content_plans")
+    .select("*")
+    .eq("id", input.planId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "기획을 찾을 수 없습니다." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("content_plans")
+    .update(contentPlanWritePayload(input))
+    .eq("id", input.planId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "기획을 수정할 수 없습니다." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "content_plan.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.planId,
+    entity_type: "content_plan"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "기획을 수정했지만 감사 로그 기록에 실패했습니다." };
+  }
+
+  return { ok: true };
+}
+
+export async function deleteAdminContentPlan(
+  accessToken: string,
+  input: { actorId: string; planId: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("content_plans")
+    .select("*")
+    .eq("id", input.planId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "기획을 찾을 수 없습니다." };
+  }
+
+  const { error: deleteError } = await supabase
+    .from("content_plans")
+    .delete()
+    .eq("id", input.planId);
+
+  if (deleteError) {
+    return { ok: false, message: "기획을 삭제할 수 없습니다." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "content_plan.delete",
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: beforeData,
+    entity_id: input.planId,
+    entity_type: "content_plan"
+  });
+
+  if (auditError) {
+    return { ok: false, message: "기획을 삭제했지만 감사 로그 기록에 실패했습니다." };
+  }
+
+  return { ok: true };
+}
+
+/**
+ * 기획 → 제작 전환. 기획 내용을 바탕으로 촬영·제작 콘텐츠(productions)를 만들고
+ * 기획에 연결한다. 기획 상태는 '진행 중'으로 바뀐다.
+ */
+export async function startProductionFromPlan(
+  accessToken: string,
+  input: { actorId: string; planId: string; slug: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (!input.slug.trim()) {
+    return { ok: false, message: "제작 콘텐츠의 Slug는 필수입니다." };
+  }
+
+  const { data: planData, error: planError } = await supabase
+    .from("content_plans")
+    .select("*")
+    .eq("id", input.planId)
+    .maybeSingle();
+
+  if (planError || !planData) {
+    return { ok: false, message: "기획을 찾을 수 없습니다." };
+  }
+
+  const plan = planData as {
+    id: string;
+    title: string;
+    title_en: string | null;
+    body: string | null;
+    production_id: string | null;
+  };
+
+  if (plan.production_id) {
+    return { ok: false, message: "이미 제작 콘텐츠가 연결된 기획입니다." };
+  }
+
+  const { data: production, error: productionError } = await supabase
+    .from("productions")
+    .insert({
+      slug: input.slug.trim(),
+      title: plan.title_en?.trim() || plan.title,
+      title_ko: plan.title,
+      summary: plan.body,
+      status: "draft",
+      updated_at: new Date().toISOString()
+    })
+    .select("*")
+    .maybeSingle();
+
+  if (productionError || !production) {
+    return {
+      ok: false,
+      message:
+        "제작 콘텐츠를 만들 수 없습니다. Slug가 이미 쓰이고 있는지 확인하세요."
+    };
+  }
+
+  const productionId = (production as { id: string }).id;
+
+  const { data: afterPlan, error: linkError } = await supabase
+    .from("content_plans")
+    .update({
+      production_id: productionId,
+      status: "in_progress",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", input.planId)
+    .select("*")
+    .maybeSingle();
+
+  if (linkError || !afterPlan) {
+    return {
+      ok: false,
+      message: "제작 콘텐츠는 만들었지만 기획에 연결하지 못했습니다."
+    };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "content_plan.start_production",
+    actor_id: input.actorId,
+    after_data: afterPlan,
+    before_data: planData,
+    entity_id: input.planId,
+    entity_type: "content_plan"
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: "제작을 시작했지만 감사 로그 기록에 실패했습니다."
     };
   }
 

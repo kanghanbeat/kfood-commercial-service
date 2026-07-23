@@ -10,6 +10,16 @@ import {
 import type { AdminRegion, AdminRoute, PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { AdminEntityActions } from "@/components/admin/entity-actions";
+import {
+  AdminItem,
+  AdminListToolbar,
+  AdminPager,
+  applyListParams,
+  returnQuery,
+  withReturnQuery,
+  type ListParams
+} from "@/components/admin/list-controls";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const publicationStatuses: PublicationStatus[] = [
@@ -19,6 +29,11 @@ const publicationStatuses: PublicationStatus[] = [
   "archived"
 ];
 
+const statusFilterOptions = publicationStatuses.map((status) => ({
+  value: status,
+  label: publicationStatusLabels[status]
+}));
+
 function parseTags(value: FormDataEntryValue | null) {
   return String(value ?? "")
     .split(",")
@@ -26,8 +41,8 @@ function parseTags(value: FormDataEntryValue | null) {
     .filter(Boolean);
 }
 
-function redirectWith(query: string): never {
-  redirect(`/admin/manage?tab=routes&${query}`);
+function redirectWith(formData: FormData, query: string): never {
+  redirect(withReturnQuery("/admin/manage?tab=routes", formData, query));
 }
 
 function routeInputFromForm(formData: FormData) {
@@ -54,12 +69,12 @@ async function createRoute(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWith(`error=${encodeURIComponent(result.message)}`);
+    redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
   revalidatePath("/admin/manage");
   revalidatePath("/routes");
-  redirectWith("created=1");
+  redirectWith(formData, "created=1");
 }
 
 async function updateRoute(formData: FormData) {
@@ -73,12 +88,12 @@ async function updateRoute(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWith(`error=${encodeURIComponent(result.message)}`);
+    redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
   revalidatePath("/admin/manage");
   revalidatePath("/routes");
-  redirectWith("updated=1");
+  redirectWith(formData, "updated=1");
 }
 
 const statusBadge: Record<PublicationStatus, string> = {
@@ -171,16 +186,29 @@ function RouteFields({
 export async function RoutesPanel({
   accessToken,
   add,
-  message
+  message,
+  params
 }: {
   accessToken: string;
   add?: boolean;
-  message?: { error?: string; updated?: string; created?: string };
+  message?: {
+    error?: string;
+    updated?: string;
+    created?: string;
+    archived?: string;
+    deleted?: string;
+  };
+  params?: ListParams;
 }) {
   const [routes, regions] = await Promise.all([
     getAdminRoutes(accessToken),
     getAdminRegions(accessToken)
   ]);
+  const list = applyListParams(routes, params, {
+    search: (route) => `${route.title} ${route.slug} ${route.summary ?? ""}`,
+    status: (route) => route.status
+  });
+  const ret = returnQuery(params);
 
   return (
     <div className="admin-panel">
@@ -194,6 +222,12 @@ export async function RoutesPanel({
       {message?.updated ? (
         <p className="status-message success">루트가 수정되었습니다.</p>
       ) : null}
+      {message?.archived ? (
+        <p className="status-message success">루트을(를) 보관했습니다. 공개 사이트에서 빠집니다.</p>
+      ) : null}
+      {message?.deleted ? (
+        <p className="status-message success">루트을(를) 완전히 삭제했습니다.</p>
+      ) : null}
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
       ) : null}
@@ -206,6 +240,7 @@ export async function RoutesPanel({
           </p>
         ) : (
           <form action={createRoute} className="admin-form-list" style={{ marginTop: 12 }}>
+            <input name="return_query" type="hidden" value={ret} />
             <RouteFields regions={regions} />
             <button className="admin-btn primary" type="submit">루트 생성</button>
           </form>
@@ -216,26 +251,61 @@ export async function RoutesPanel({
         <div className="admin-empty">
           아직 루트가 없거나 Supabase 연결 전입니다. 위에서 새 루트를 추가하세요.
         </div>
+      ) : (
+        <AdminListToolbar
+          basePath="/admin/manage"
+          matched={list.matched}
+          params={params}
+          searchHint="루트 제목·slug 검색"
+          statuses={statusFilterOptions}
+          tab="routes"
+          total={list.total}
+        />
+      )}
+
+      {routes.length > 0 && list.matched === 0 ? (
+        <div className="admin-empty">조건에 맞는 루트가 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
       ) : null}
 
       <div className="admin-form-list">
-        {routes.map((route) => (
-          <form action={updateRoute} className="form-panel" key={route.id}>
-            <input name="route_id" type="hidden" value={route.id} />
-            <div className="admin-panel-head">
-              <strong>{route.title}</strong>
-              <p>
+        {list.rows.map((route) => (
+          <AdminItem
+            key={route.id}
+            meta={
+              <>
                 <span className={`admin-badge ${statusBadge[route.status]}`}>
                   {publicationStatusLabels[route.status]}
                 </span>{" "}
                 {route.estimatedDuration ?? "—"} · /{route.slug}
-              </p>
-            </div>
-            <RouteFields regions={regions} route={route} />
-            <button className="admin-btn primary" type="submit">루트 저장</button>
-          </form>
+              </>
+            }
+            previewHref={`/routes/${route.slug}`}
+            title={route.title}
+          >
+            <form action={updateRoute} className="form-panel">
+              <input name="route_id" type="hidden" value={route.id} />
+              <input name="return_query" type="hidden" value={ret} />
+              <RouteFields regions={regions} route={route} />
+              <button className="admin-btn primary" type="submit">루트 저장</button>
+            </form>
+            <AdminEntityActions
+              entity="route"
+              id={route.id}
+              isArchived={route.status === "archived"}
+              name={route.title}
+              returnQuery={ret}
+            />
+          </AdminItem>
         ))}
       </div>
+
+      <AdminPager
+        basePath="/admin/manage"
+        page={list.page}
+        pageCount={list.pageCount}
+        params={params}
+        tab="routes"
+      />
     </div>
   );
 }

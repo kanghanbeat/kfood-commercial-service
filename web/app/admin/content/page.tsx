@@ -1,4 +1,10 @@
+import Link from "next/link";
+
+import { getAdminContentPlans } from "@kfood/data";
+
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
+import { PlansPanel } from "@/components/admin/plans-panel";
+import { ProductionsPanel } from "@/components/admin/productions-panel";
 import { contentData } from "@/lib/dashboard";
 import { requireAdminSession } from "@/lib/admin-auth";
 
@@ -7,8 +13,9 @@ export const metadata = {
 };
 
 const contentTabs = [
-  { key: "calendar", label: "기획 캘린더" },
-  { key: "topics", label: "기획 목록" }
+  { key: "plans", label: "기획 목록" },
+  { key: "productions", label: "제작 목록" },
+  { key: "calendar", label: "기획 캘린더" }
 ];
 
 const flowSteps = [
@@ -19,56 +26,84 @@ const flowSteps = [
   { num: "05", title: "발행/전환", desc: "예약·구매 CTA 연결" }
 ];
 
-const priorityClass: Record<string, string> = {
-  high: "danger",
-  medium: "warning",
-  low: "brand"
-};
-
 export default async function AdminContentPage({
   searchParams
 }: {
-  searchParams?: Promise<{ tab?: string }>;
+  searchParams?: Promise<{
+    tab?: string;
+    add?: string;
+    error?: string;
+    updated?: string;
+    created?: string;
+    deleted?: string;
+    started?: string;
+    archived?: string;
+    q?: string;
+    status?: string;
+    page?: string;
+  }>;
 }) {
   const [session, params] = await Promise.all([
     requireAdminSession(),
     searchParams
   ]);
-  const tab = params?.tab ?? "calendar";
-  const { meta, stats, topics, calendar } = contentData;
+  const tab = params?.tab ?? "plans";
+  const add = params?.add === "1";
+  const listParams = { q: params?.q, status: params?.status, page: params?.page };
+
+  const plans = await getAdminContentPlans(session.accessToken);
+  const stats = {
+    total: plans.length,
+    published: plans.filter((plan) => plan.status === "published").length,
+    inProgress: plans.filter((plan) => plan.status === "in_progress").length,
+    planned: plans.filter((plan) => plan.status === "planned").length
+  };
+
+  // 캘린더는 아직 실데이터가 없다(정적 예시). 기획 목록만 DB에 연결된 상태.
+  const { meta, calendar } = contentData;
 
   return (
     <AdminShell active="content" session={session}>
       <div className="admin-topbar">
         <div className="admin-topbar-heading">
-          <span className="admin-eyebrow">콘텐츠 제작 · {meta.week}</span>
+          <span className="admin-eyebrow">콘텐츠 제작</span>
           <h1>콘텐츠 제작</h1>
-          <p>기획 캘린더, 촬영 기록, 번역 검수, 발행 상태를 한 화면에서 관리합니다.</p>
+          <p>
+            무엇을 만들지 기획하고(기획 목록), 만든 것을 올립니다(제작 목록).
+            기획에서 &ldquo;제작 시작&rdquo;을 누르면 제목·메모가 옮겨진 제작 콘텐츠가
+            옆 탭에 만들어집니다.
+          </p>
         </div>
         <div className="admin-topbar-actions">
-          <button className="admin-btn primary" type="button">기획 추가</button>
+          <Link
+            className="admin-btn primary"
+            href="/admin/content?tab=plans&add=1"
+            prefetch={false}
+          >
+            기획 추가
+          </Link>
         </div>
       </div>
 
       <div className="admin-metric-grid">
         <div className="admin-metric-card">
-          <span className="admin-metric-label">이번 주 기획</span>
+          <span className="admin-metric-label">전체 기획</span>
           <span className="admin-metric-value">{stats.total}</span>
-          <span className="admin-metric-sub">{meta.week}</span>
+          <span className="admin-metric-sub">지금까지 적어둔 기획</span>
         </div>
         <div className="admin-metric-card">
           <span className="admin-metric-label">발행 완료</span>
-          <span className="admin-metric-value">{stats.done}</span>
+          <span className="admin-metric-value">{stats.published}</span>
           <span className="admin-metric-sub">게시 완료</span>
         </div>
         <div className="admin-metric-card">
           <span className="admin-metric-label">진행 중</span>
-          <span className="admin-metric-value">{stats.in_progress}</span>
+          <span className="admin-metric-value">{stats.inProgress}</span>
           <span className="admin-metric-sub">제작·검수 중</span>
         </div>
         <div className="admin-metric-card">
           <span className="admin-metric-label">대기</span>
-          <span className="admin-metric-value">{stats.todo}</span>
+          <span className="admin-metric-value">{stats.planned}</span>
           <span className="admin-metric-sub">착수 전</span>
         </div>
       </div>
@@ -91,14 +126,36 @@ export default async function AdminContentPage({
 
       <AdminTabs basePath="/admin/content" current={tab} tabs={contentTabs} />
 
-      {tab === "calendar" ? (
+      {tab === "productions" ? (
+        <ProductionsPanel
+          accessToken={session.accessToken}
+          add={add}
+          message={{
+            archived: params?.archived,
+            created: params?.created,
+            deleted: params?.deleted,
+            error: params?.error,
+            updated: params?.updated
+          }}
+          params={listParams}
+        />
+      ) : tab === "calendar" ? (
         <div className="admin-panel">
           <div className="admin-panel-head">
             <h2>기획 캘린더</h2>
-            <p>{meta.week} 주간 제작 일정</p>
+            <p>
+              ⚠️ 아직 예시 데이터입니다({meta.week} 고정). 기획 목록은 실제 저장되지만
+              이 캘린더는 아직 연결 전입니다.
+            </p>
           </div>
           <table className="admin-table">
-            <thead><tr><th>날짜</th><th>요일</th><th>일정</th></tr></thead>
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th>요일</th>
+                <th>일정</th>
+              </tr>
+            </thead>
             <tbody>
               {calendar.map((day) => (
                 <tr key={day.date}>
@@ -110,7 +167,9 @@ export default async function AdminContentPage({
                     ) : (
                       day.items.map((item, i) => (
                         <div key={i}>
-                          <span className="admin-badge brand" style={{ marginRight: 8 }}>{item.channel}</span>
+                          <span className="admin-badge brand" style={{ marginRight: 8 }}>
+                            {item.channel}
+                          </span>
                           {item.label}
                         </div>
                       ))
@@ -122,32 +181,18 @@ export default async function AdminContentPage({
           </table>
         </div>
       ) : (
-        <div className="admin-panel">
-          <div className="admin-panel-head">
-            <h2>기획 목록</h2>
-            <p>인사이트에서 발견한 주제와 제작 우선순위</p>
-          </div>
-          <table className="admin-table">
-            <thead><tr><th>주제</th><th>카테고리</th><th>우선순위</th><th>근거 인사이트</th></tr></thead>
-            <tbody>
-              {topics.map((topic) => (
-                <tr key={topic.id}>
-                  <td>
-                    {topic.title_ko}
-                    <div style={{ color: "var(--text-body)", fontSize: 13 }}>{topic.title}</div>
-                  </td>
-                  <td>{topic.category}</td>
-                  <td>
-                    <span className={`admin-badge ${priorityClass[topic.priority] ?? "brand"}`}>
-                      {topic.priority}
-                    </span>
-                  </td>
-                  <td>{topic.source_insight}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <PlansPanel
+          accessToken={session.accessToken}
+          add={add}
+          message={{
+            created: params?.created,
+            deleted: params?.deleted,
+            error: params?.error,
+            started: params?.started,
+            updated: params?.updated
+          }}
+          params={listParams}
+        />
       )}
     </AdminShell>
   );

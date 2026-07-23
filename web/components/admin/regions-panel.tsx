@@ -9,6 +9,16 @@ import {
 import type { PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { AdminEntityActions } from "@/components/admin/entity-actions";
+import {
+  AdminItem,
+  AdminListToolbar,
+  AdminPager,
+  applyListParams,
+  returnQuery,
+  withReturnQuery,
+  type ListParams
+} from "@/components/admin/list-controls";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 const publicationStatuses: PublicationStatus[] = [
@@ -18,6 +28,11 @@ const publicationStatuses: PublicationStatus[] = [
   "archived"
 ];
 
+const statusFilterOptions = publicationStatuses.map((status) => ({
+  value: status,
+  label: publicationStatusLabels[status]
+}));
+
 function parseTags(value: FormDataEntryValue | null) {
   return String(value ?? "")
     .split(",")
@@ -25,8 +40,8 @@ function parseTags(value: FormDataEntryValue | null) {
     .filter(Boolean);
 }
 
-function redirectWith(query: string): never {
-  redirect(`/admin/manage?tab=regions&${query}`);
+function redirectWith(formData: FormData, query: string): never {
+  redirect(withReturnQuery("/admin/manage?tab=regions", formData, query));
 }
 
 async function createRegion(formData: FormData) {
@@ -45,12 +60,12 @@ async function createRegion(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWith(`error=${encodeURIComponent(result.message)}`);
+    redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
   revalidatePath("/admin/manage");
   revalidatePath("/regions");
-  redirectWith("created=1");
+  redirectWith(formData, "created=1");
 }
 
 async function updateRegion(formData: FormData) {
@@ -70,12 +85,12 @@ async function updateRegion(formData: FormData) {
   });
 
   if (!result.ok) {
-    redirectWith(`error=${encodeURIComponent(result.message)}`);
+    redirectWith(formData, `error=${encodeURIComponent(result.message)}`);
   }
 
   revalidatePath("/admin/manage");
   revalidatePath("/regions");
-  redirectWith("updated=1");
+  redirectWith(formData, "updated=1");
 }
 
 const statusBadge: Record<PublicationStatus, string> = {
@@ -88,13 +103,26 @@ const statusBadge: Record<PublicationStatus, string> = {
 export async function RegionsPanel({
   accessToken,
   add,
-  message
+  message,
+  params
 }: {
   accessToken: string;
   add?: boolean;
-  message?: { error?: string; updated?: string; created?: string };
+  message?: {
+    error?: string;
+    updated?: string;
+    created?: string;
+    archived?: string;
+    deleted?: string;
+  };
+  params?: ListParams;
 }) {
   const regions = await getAdminRegions(accessToken);
+  const list = applyListParams(regions, params, {
+    search: (region) => `${region.nameEn} ${region.nameKo} ${region.slug}`,
+    status: (region) => region.status
+  });
+  const ret = returnQuery(params);
 
   return (
     <div className="admin-panel">
@@ -108,6 +136,12 @@ export async function RegionsPanel({
       {message?.updated ? (
         <p className="status-message success">지역이 수정되었습니다.</p>
       ) : null}
+      {message?.archived ? (
+        <p className="status-message success">지역을(를) 보관했습니다. 공개 사이트에서 빠집니다.</p>
+      ) : null}
+      {message?.deleted ? (
+        <p className="status-message success">지역을(를) 완전히 삭제했습니다.</p>
+      ) : null}
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
       ) : null}
@@ -115,6 +149,7 @@ export async function RegionsPanel({
       <details className="form-panel" open={add}>
         <summary style={{ fontWeight: 600, cursor: "pointer" }}>+ 새 지역 추가</summary>
         <form action={createRegion} className="admin-form-list" style={{ marginTop: 12 }}>
+          <input name="return_query" type="hidden" value={ret} />
           <label>
             Slug (URL용, 영문·하이픈)
             <input name="slug" placeholder="myeongdong" required />
@@ -157,21 +192,40 @@ export async function RegionsPanel({
         <div className="admin-empty">
           아직 지역이 없거나 Supabase 연결 전입니다. 위에서 새 지역을 추가하세요.
         </div>
+      ) : (
+        <AdminListToolbar
+          basePath="/admin/manage"
+          matched={list.matched}
+          params={params}
+          searchHint="지역 이름·slug 검색"
+          statuses={statusFilterOptions}
+          tab="regions"
+          total={list.total}
+        />
+      )}
+
+      {regions.length > 0 && list.matched === 0 ? (
+        <div className="admin-empty">조건에 맞는 지역이 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
       ) : null}
 
       <div className="admin-form-list">
-        {regions.map((region) => (
-          <form action={updateRegion} className="form-panel" key={region.id}>
-            <input name="region_id" type="hidden" value={region.id} />
-            <div className="admin-panel-head">
-              <strong>{region.nameEn}</strong>
-              <p>
+        {list.rows.map((region) => (
+          <AdminItem
+            key={region.id}
+            meta={
+              <>
                 <span className={`admin-badge ${statusBadge[region.status]}`}>
                   {publicationStatusLabels[region.status]}
                 </span>{" "}
                 /{region.slug}
-              </p>
-            </div>
+              </>
+            }
+            previewHref={`/regions/${region.slug}`}
+            title={region.nameEn}
+          >
+          <form action={updateRegion} className="form-panel">
+            <input name="region_id" type="hidden" value={region.id} />
+            <input name="return_query" type="hidden" value={ret} />
             <label>
               Slug
               <input defaultValue={region.slug} name="slug" required />
@@ -212,8 +266,24 @@ export async function RegionsPanel({
             </label>
             <button className="admin-btn primary" type="submit">지역 저장</button>
           </form>
+          <AdminEntityActions
+            entity="region"
+            id={region.id}
+            isArchived={region.status === "archived"}
+            name={region.nameEn}
+            returnQuery={ret}
+          />
+          </AdminItem>
         ))}
       </div>
+
+      <AdminPager
+        basePath="/admin/manage"
+        page={list.page}
+        pageCount={list.pageCount}
+        params={params}
+        tab="regions"
+      />
     </div>
   );
 }

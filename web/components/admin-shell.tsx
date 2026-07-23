@@ -22,12 +22,12 @@ const menuItems: {
   desc: string;
 }[] = [
   { key: "insight", href: "/admin", label: "인사이트", desc: "요약 · 트렌드" },
-  { key: "content", href: "/admin/content", label: "콘텐츠 제작", desc: "기획 · 촬영" },
+  { key: "content", href: "/admin/content", label: "콘텐츠 제작", desc: "기획 · 제작" },
   {
     key: "manage",
     href: "/admin/manage",
     label: "콘텐츠 관리",
-    desc: "지역 · 음식 · 장소 · 루트 · 촬영"
+    desc: "지역 · 음식 · 장소 · 루트"
   },
   {
     key: "operations",
@@ -64,6 +64,9 @@ export function AdminShell({
               }
               href={item.href}
               key={item.key}
+              // 어드민 링크는 미리 불러오지 않는다. 여러 요청이 동시에 토큰 갱신을
+              // 시도하면 리프레시 토큰이 서로를 무효화해 세션이 끊긴다.
+              prefetch={false}
               aria-current={item.key === active ? "page" : undefined}
             >
               <span className="admin-menu-label">{item.label}</span>
@@ -104,6 +107,7 @@ export function AdminTabs({
           className={tab.key === current ? "admin-tab active" : "admin-tab"}
           href={`${basePath}?tab=${tab.key}`}
           key={tab.key}
+          prefetch={false}
           aria-current={tab.key === current ? "page" : undefined}
         >
           {tab.label}

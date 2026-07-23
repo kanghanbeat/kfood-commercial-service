@@ -216,7 +216,7 @@ export default async function FoodRegionPage({
         </p>
         <div className="card-grid-v2">
           <Link className="card-v2" href={`/foods/${food.slug}`}>
-            <CardPhoto label={food.nameEn} variant="food" />
+            <CardPhoto imageUrl={food.imageUrl} label={food.nameEn} variant="food" />
             <div className="card-v2-body">
               <span className="card-v2-title">{t.foodGuide(food.nameEn)}</span>
               <span className="card-v2-meta">{food.summary}</span>
@@ -224,7 +224,7 @@ export default async function FoodRegionPage({
             </div>
           </Link>
           <Link className="card-v2" href={`/regions/${region.slug}`}>
-            <CardPhoto label={region.nameEn} variant="region" />
+            <CardPhoto imageUrl={region.imageUrl} label={region.nameEn} variant="region" />
             <div className="card-v2-body">
               <span className="card-v2-title">{t.areaGuide(region.nameEn)}</span>
               <span className="card-v2-meta">{region.intro}</span>

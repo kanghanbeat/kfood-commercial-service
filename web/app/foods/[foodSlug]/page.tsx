@@ -144,7 +144,10 @@ export default async function FoodDetailPage({
                 href={`/foods/${food.slug}/${region.slug}`}
                 key={region.slug}
               >
-                <CardPhoto label={region.nameEn} variant="region" />
+                <CardPhoto
+                  imageUrl={region.imageUrl}
+                  label={region.nameEn}
+                  variant="region" />
                 <div className="card-v2-body">
                   <span className="card-v2-title">{region.nameEn}</span>
                   <span className="card-v2-meta">{region.routeTheme}</span>

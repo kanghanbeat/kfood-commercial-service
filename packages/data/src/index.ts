@@ -28,6 +28,7 @@ export type PublicRegion = {
   routeTheme: string;
   intro: string;
   bestForTags: string[];
+  imageUrl?: string | null;
 };
 
 export const fallbackRegions: PublicRegion[] = [
@@ -92,6 +93,7 @@ export type PublicFood = {
   tasteProfile: string;
   spicyLevel: 0 | 1 | 2 | 3 | 4;
   beginnerNote: string;
+  imageUrl?: string | null;
 };
 
 export type PhotoSourceCandidate = {
@@ -183,6 +185,7 @@ export type PublicPlace = {
   trustTags: string[];
   cautionTags: string[];
   lastVerifiedLabel: string;
+  imageUrl?: string | null;
 };
 
 export const fallbackPlaces: PublicPlace[] = [
@@ -285,6 +288,7 @@ export type PublicRoute = {
   summary: string;
   placeSlugs: string[];
   estimatedDuration: string;
+  imageUrl?: string | null;
 };
 
 export const fallbackRoutes: PublicRoute[] = [
@@ -409,6 +413,7 @@ type RegionRow = {
   name_en: string;
   intro: string;
   best_for_tags: string[];
+  hero_image_url: string | null;
 };
 
 type FoodRow = {
@@ -419,6 +424,7 @@ type FoodRow = {
   taste_profile: string | null;
   spicy_level: 0 | 1 | 2 | 3 | 4;
   beginner_note: string | null;
+  image_url: string | null;
 };
 
 type PlaceRow = {
@@ -438,6 +444,7 @@ type PlaceRow = {
   affiliate_url: string | null;
   sponsorship_note: string | null;
   regions: { slug: string } | null;
+  image_url: string | null;
 };
 
 type RouteGuideRow = {
@@ -446,6 +453,7 @@ type RouteGuideRow = {
   summary: string;
   estimated_duration: string | null;
   regions: { slug: string } | null;
+  hero_image_url: string | null;
 };
 
 type RelatedSlugRow = {
@@ -880,6 +888,7 @@ function mapRegion(row: RegionRow): PublicRegion {
   const displayTags = row.best_for_tags.map(humanizeTag);
   return {
     slug: row.slug,
+    imageUrl: row.hero_image_url ?? null,
     nameEn: row.name_en,
     primaryAudience: displayTags[0] ?? "K-food travelers",
     kfoodIdentity: displayTags.join(", "),
@@ -892,6 +901,7 @@ function mapRegion(row: RegionRow): PublicRegion {
 function mapFood(row: FoodRow): PublicFood {
   return {
     slug: row.slug,
+    imageUrl: row.image_url ?? null,
     nameEn: row.name_en,
     nameKo: row.name_ko,
     regionSlugs: [],
@@ -1117,6 +1127,7 @@ export function getFoodPhotoSourceCandidates(
 function mapPlace(row: PlaceRow): PublicPlace {
   return {
     slug: row.slug,
+    imageUrl: row.image_url ?? null,
     nameEn: row.name_en,
     regionSlug: row.regions?.slug ?? "seoul",
     foodSlugs: [],
@@ -1143,6 +1154,7 @@ function mapPlace(row: PlaceRow): PublicPlace {
 function mapRouteGuide(row: RouteGuideRow): PublicRoute {
   return {
     slug: row.slug,
+    imageUrl: row.hero_image_url ?? null,
     title: row.title,
     regionSlug: row.regions?.slug ?? "seoul",
     summary: row.summary,
@@ -1234,7 +1246,7 @@ export async function getPublishedRegions() {
 
   const { data, error } = await supabase
     .from("regions")
-    .select("slug, name_en, intro, best_for_tags")
+    .select("slug, name_en, intro, best_for_tags, hero_image_url")
     .eq("status", "published")
     .order("display_order", { ascending: true });
 
@@ -1255,7 +1267,7 @@ export async function getPublishedRegion(slug: string) {
 
   const { data, error } = await supabase
     .from("regions")
-    .select("slug, name_en, intro, best_for_tags")
+    .select("slug, name_en, intro, best_for_tags, hero_image_url")
     .eq("status", "published")
     .eq("slug", slug)
     .maybeSingle<RegionRow>();
@@ -1280,7 +1292,7 @@ export async function getPublishedFoods() {
       supabase
         .from("foods")
         .select(
-          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note"
+          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note, image_url"
         )
         .eq("status", "published")
         .order("display_order", { ascending: true }),
@@ -1318,7 +1330,7 @@ export async function getPublishedFood(slug: string) {
       supabase
         .from("foods")
         .select(
-          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note"
+          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note, image_url"
         )
         .eq("status", "published")
         .eq("slug", slug)
@@ -1361,7 +1373,7 @@ export async function getPublishedPlaces() {
       supabase
         .from("places")
         .select(
-          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, image_url, regions(slug)"
         )
         .eq("status", "published")
         .order("display_order", { ascending: true })
@@ -1400,7 +1412,7 @@ export async function getPublishedPlace(slug: string) {
       supabase
         .from("places")
         .select(
-          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, image_url, regions(slug)"
         )
         .eq("status", "published")
         .eq("slug", slug)
@@ -1443,7 +1455,7 @@ export async function getPublishedRoutes() {
     await Promise.all([
       supabase
         .from("route_guides")
-        .select("slug, title, summary, estimated_duration, regions(slug)")
+        .select("slug, title, summary, estimated_duration, hero_image_url, regions(slug)")
         .eq("status", "published")
         .order("display_order", { ascending: true })
         .returns<RouteGuideRow[]>(),
@@ -1480,7 +1492,7 @@ export async function getPublishedRoute(slug: string) {
     await Promise.all([
       supabase
         .from("route_guides")
-        .select("slug, title, summary, estimated_duration, regions(slug)")
+        .select("slug, title, summary, estimated_duration, hero_image_url, regions(slug)")
         .eq("status", "published")
         .eq("slug", slug)
         .maybeSingle<RouteGuideRow>(),

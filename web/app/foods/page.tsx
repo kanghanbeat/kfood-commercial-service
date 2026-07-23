@@ -26,7 +26,10 @@ export default async function FoodsPage() {
       <div className="card-grid-v2">
         {foods.map((food) => (
           <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
-            <CardPhoto label={food.nameEn} variant="food" />
+            <CardPhoto
+                  imageUrl={food.imageUrl}
+                  label={food.nameEn}
+                  variant="food" />
             <div className="card-v2-body">
               {/* 0/4는 정보가 아니라 소음 — 안 매운 음식은 중립 칩으로 "Not spicy" */}
               <span className={food.spicyLevel > 0 ? "food-chip spicy" : "food-chip"}>

@@ -631,6 +631,7 @@ export type AdminPlace = {
   trustTags: string[];
   cautionTags: string[];
   lastVerifiedAt: string | null;
+  imageUrl: string | null;
   updatedAt: string;
 };
 
@@ -648,6 +649,7 @@ type AdminPlaceRow = {
   trust_tags: string[];
   caution_tags: string[];
   last_verified_at: string | null;
+  image_url: string | null;
   updated_at: string;
   regions: { slug: string } | { slug: string }[] | null;
 };
@@ -828,6 +830,7 @@ function mapAdminPlace(row: AdminPlaceRow): AdminPlace {
     editorialNote: row.editorial_note,
     googleMapsUrl: row.google_maps_url,
     id: row.id,
+    imageUrl: row.image_url,
     lastVerifiedAt: row.last_verified_at,
     nameEn: row.name_en,
     nameKo: row.name_ko,
@@ -2308,7 +2311,7 @@ export async function getAdminPlaces(accessToken: string) {
   const { data, error } = await supabase
     .from("places")
     .select(
-      "id, slug, name_en, name_ko, status, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, trust_tags, caution_tags, last_verified_at, updated_at, regions(slug)"
+      "id, slug, name_en, name_ko, status, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, trust_tags, caution_tags, last_verified_at, image_url, updated_at, regions(slug)"
     )
     .order("display_order", { ascending: true });
 
@@ -2627,6 +2630,7 @@ export type AdminRegion = {
   displayOrder: number;
   status: PublicationStatus;
   editorialNote: string | null;
+  imageUrl: string | null;
   updatedAt: string | null;
 };
 
@@ -2640,6 +2644,7 @@ type AdminRegionRow = {
   display_order: number;
   status: PublicationStatus;
   editorial_note: string | null;
+  hero_image_url: string | null;
   updated_at: string | null;
 };
 
@@ -2654,6 +2659,7 @@ function mapAdminRegion(row: AdminRegionRow): AdminRegion {
     displayOrder: row.display_order,
     status: row.status,
     editorialNote: row.editorial_note,
+    imageUrl: row.hero_image_url,
     updatedAt: row.updated_at
   };
 }
@@ -2674,7 +2680,7 @@ export type UpdateAdminRegionInput = CreateAdminRegionInput & {
 };
 
 const adminRegionColumns =
-  "id, slug, name_en, name_ko, intro, best_for_tags, display_order, status, editorial_note, updated_at";
+  "id, slug, name_en, name_ko, intro, best_for_tags, display_order, status, editorial_note, hero_image_url, updated_at";
 
 export async function getAdminRegions(accessToken: string) {
   const supabase = createAuthenticatedClient(accessToken);
@@ -2826,6 +2832,7 @@ export type AdminFood = {
   cautionNote: string | null;
   status: PublicationStatus;
   editorialNote: string | null;
+  imageUrl: string | null;
   updatedAt: string | null;
 };
 
@@ -2843,6 +2850,7 @@ type AdminFoodRow = {
   caution_note: string | null;
   status: PublicationStatus;
   editorial_note: string | null;
+  image_url: string | null;
   updated_at: string | null;
 };
 
@@ -2861,6 +2869,7 @@ function mapAdminFood(row: AdminFoodRow): AdminFood {
     cautionNote: row.caution_note,
     status: row.status,
     editorialNote: row.editorial_note,
+    imageUrl: row.image_url,
     updatedAt: row.updated_at
   };
 }
@@ -2884,7 +2893,7 @@ export type CreateAdminFoodInput = {
 export type UpdateAdminFoodInput = CreateAdminFoodInput & { foodId: string };
 
 const adminFoodColumns =
-  "id, slug, name_en, name_ko, romanized_name, description, taste_profile, spicy_level, beginner_note, eating_guide, caution_note, status, editorial_note, updated_at";
+  "id, slug, name_en, name_ko, romanized_name, description, taste_profile, spicy_level, beginner_note, eating_guide, caution_note, status, editorial_note, image_url, updated_at";
 
 export async function getAdminFoods(accessToken: string) {
   const supabase = createAuthenticatedClient(accessToken);
@@ -3039,6 +3048,7 @@ export type AdminRoute = {
   transportMode: string | null;
   recommendedForTags: string[];
   editorialNote: string | null;
+  imageUrl: string | null;
   status: PublicationStatus;
   updatedAt: string | null;
 };
@@ -3053,6 +3063,7 @@ type AdminRouteRow = {
   transport_mode: string | null;
   recommended_for_tags: string[] | null;
   editorial_note: string | null;
+  hero_image_url: string | null;
   status: PublicationStatus;
   updated_at: string | null;
 };
@@ -3068,6 +3079,7 @@ function mapAdminRoute(row: AdminRouteRow): AdminRoute {
     transportMode: row.transport_mode,
     recommendedForTags: row.recommended_for_tags ?? [],
     editorialNote: row.editorial_note,
+    imageUrl: row.hero_image_url,
     status: row.status,
     updatedAt: row.updated_at
   };
@@ -3089,7 +3101,7 @@ export type CreateAdminRouteInput = {
 export type UpdateAdminRouteInput = CreateAdminRouteInput & { routeId: string };
 
 const adminRouteColumns =
-  "id, slug, region_id, title, summary, estimated_duration, transport_mode, recommended_for_tags, editorial_note, status, updated_at";
+  "id, slug, region_id, title, summary, estimated_duration, transport_mode, recommended_for_tags, editorial_note, status, hero_image_url, updated_at";
 
 export async function getAdminRoutes(accessToken: string) {
   const supabase = createAuthenticatedClient(accessToken);
@@ -4102,4 +4114,238 @@ export async function startProductionFromPlan(
   }
 
   return { ok: true };
+}
+
+// ── Admin: 콘텐츠 사진 업로드 ────────────────────────────────
+// 어드민에서 고른 사진 파일을 Supabase Storage에 올리고, 공개 주소를 돌려준다.
+// 014_content_images_storage.sql의 content-images 버킷을 쓴다.
+// 이미지 주소는 각 테이블의 image_url / hero_image_url 컬럼에 저장된다.
+
+const contentImageBucket = "content-images";
+
+export type ImageOwnerType = "food" | "place" | "region" | "route";
+
+// 테이블마다 사진 주소를 담는 컬럼 이름이 다르다.
+const imageColumnByOwner: Record<
+  ImageOwnerType,
+  { table: string; column: string; label: string }
+> = {
+  food: { table: "foods", column: "image_url", label: "음식" },
+  place: { table: "places", column: "image_url", label: "장소" },
+  region: { table: "regions", column: "hero_image_url", label: "지역" },
+  route: { table: "route_guides", column: "hero_image_url", label: "루트" }
+};
+
+const allowedImageTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif"
+];
+
+const maxImageBytes = 5 * 1024 * 1024;
+
+function imageExtension(fileType: string) {
+  if (fileType === "image/png") return "png";
+  if (fileType === "image/webp") return "webp";
+  if (fileType === "image/avif") return "avif";
+  return "jpg";
+}
+
+/**
+ * 사진을 올리고 해당 콘텐츠의 사진 주소를 갱신한다.
+ * 이미 사진이 있으면 새 파일로 교체하고 옛 파일은 지운다.
+ */
+export async function uploadContentImage(
+  accessToken: string,
+  input: {
+    actorId: string;
+    file: { name: string; type: string; size: number; bytes: ArrayBuffer };
+    ownerId: string;
+    ownerType: ImageOwnerType;
+  }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const target = imageColumnByOwner[input.ownerType];
+
+  if (!target) {
+    return { ok: false, message: "지원하지 않는 콘텐츠 유형입니다." };
+  }
+
+  if (!allowedImageTypes.includes(input.file.type)) {
+    return {
+      ok: false,
+      message: "JPG · PNG · WebP · AVIF 형식만 올릴 수 있습니다."
+    };
+  }
+
+  if (input.file.size > maxImageBytes) {
+    return { ok: false, message: "사진은 5MB 이하만 올릴 수 있습니다." };
+  }
+
+  if (input.file.size === 0) {
+    return { ok: false, message: "선택된 파일이 비어 있습니다." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from(target.table)
+    .select("*")
+    .eq("id", input.ownerId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: `${target.label}을(를) 찾을 수 없습니다.` };
+  }
+
+  const previousUrl =
+    (beforeData as Record<string, unknown>)[target.column] as string | null;
+
+  // 같은 이름으로 덮어쓰면 브라우저·CDN이 옛 사진을 계속 보여줄 수 있어
+  // 매번 새 파일명을 쓰고 옛 파일은 따로 지운다.
+  const stamp = Date.now().toString(36);
+  const path = `${input.ownerType}/${input.ownerId}/${stamp}.${imageExtension(input.file.type)}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(contentImageBucket)
+    .upload(path, input.file.bytes, {
+      contentType: input.file.type,
+      upsert: false
+    });
+
+  if (uploadError) {
+    return {
+      ok: false,
+      message:
+        "사진을 저장소에 올리지 못했습니다. 저장소 설정(content-images 버킷)이 되어 있는지 확인하세요."
+    };
+  }
+
+  const {
+    data: { publicUrl }
+  } = supabase.storage.from(contentImageBucket).getPublicUrl(path);
+
+  const { data: afterData, error: updateError } = await supabase
+    .from(target.table)
+    .update({ [target.column]: publicUrl, updated_at: new Date().toISOString() })
+    .eq("id", input.ownerId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    // 주소를 못 붙였으면 방금 올린 파일은 쓸모가 없으므로 되돌린다.
+    await supabase.storage.from(contentImageBucket).remove([path]);
+    return { ok: false, message: `${target.label}에 사진 주소를 저장하지 못했습니다.` };
+  }
+
+  await removeStoredImage(supabase, previousUrl);
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: `${input.ownerType}.image_upload`,
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.ownerId,
+    entity_type: input.ownerType
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: "사진은 올렸지만 감사 로그 기록에 실패했습니다."
+    };
+  }
+
+  return { ok: true };
+}
+
+/** 사진 제거: 주소를 비우고 저장소 파일도 지운다. */
+export async function removeContentImage(
+  accessToken: string,
+  input: { actorId: string; ownerId: string; ownerType: ImageOwnerType }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const target = imageColumnByOwner[input.ownerType];
+
+  if (!target) {
+    return { ok: false, message: "지원하지 않는 콘텐츠 유형입니다." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from(target.table)
+    .select("*")
+    .eq("id", input.ownerId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: `${target.label}을(를) 찾을 수 없습니다.` };
+  }
+
+  const previousUrl =
+    (beforeData as Record<string, unknown>)[target.column] as string | null;
+
+  const { data: afterData, error: updateError } = await supabase
+    .from(target.table)
+    .update({ [target.column]: null, updated_at: new Date().toISOString() })
+    .eq("id", input.ownerId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: `${target.label}의 사진을 지우지 못했습니다.` };
+  }
+
+  await removeStoredImage(supabase, previousUrl);
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: `${input.ownerType}.image_remove`,
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.ownerId,
+    entity_type: input.ownerType
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: "사진은 지웠지만 감사 로그 기록에 실패했습니다."
+    };
+  }
+
+  return { ok: true };
+}
+
+/** 공개 주소에서 저장소 경로를 되짚어 파일을 지운다(우리 버킷 파일일 때만). */
+async function removeStoredImage(
+  supabase: ReturnType<typeof createAuthenticatedClient>,
+  publicUrl: string | null
+) {
+  if (!supabase || !publicUrl) {
+    return;
+  }
+
+  const marker = `/${contentImageBucket}/`;
+  const markerIndex = publicUrl.indexOf(marker);
+
+  if (markerIndex === -1) {
+    return;
+  }
+
+  const path = publicUrl.slice(markerIndex + marker.length);
+
+  if (!path) {
+    return;
+  }
+
+  await supabase.storage.from(contentImageBucket).remove([path]);
 }

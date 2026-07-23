@@ -45,6 +45,8 @@ export default async function AdminManagePage({
     created?: string;
     archived?: string;
     deleted?: string;
+    image_saved?: string;
+    image_removed?: string;
     q?: string;
     status?: string;
     page?: string;
@@ -61,7 +63,9 @@ export default async function AdminManagePage({
     updated: params?.updated,
     created: params?.created,
     archived: params?.archived,
-    deleted: params?.deleted
+    deleted: params?.deleted,
+    imageSaved: params?.image_saved,
+    imageRemoved: params?.image_removed
   };
   // 검색·상태 필터·페이지는 탭 하나만 렌더되므로 공통 파라미터로 넘긴다.
   const listParams = { q: params?.q, status: params?.status, page: params?.page };

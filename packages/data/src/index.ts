@@ -2424,12 +2424,14 @@ export async function updatePlatformSetting(
     return { ok: false, message: "Setting could not be updated." };
   }
 
+  // entity_id는 uuid 컬럼이라 "community" 같은 키 문자열을 넣을 수 없다.
+  // 어떤 설정인지는 action 뒤에 붙이고, entity_id는 비운다.
   const { error: auditError } = await supabase.from("admin_audit_logs").insert({
-    action: "platform_setting.update",
+    action: `platform_setting.update.${key}`,
     actor_id: actorId,
     after_data: afterData,
     before_data: null,
-    entity_id: key,
+    entity_id: null,
     entity_type: "platform_setting"
   });
 

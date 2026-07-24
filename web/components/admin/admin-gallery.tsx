@@ -8,11 +8,13 @@ import type { ContentImage, ImageOwnerType } from "@kfood/data";
 import {
   deleteGalleryImage,
   moveGalleryImage,
+  setPrimaryGalleryImage,
   uploadGalleryImages
 } from "@/components/admin/image-gallery-actions";
 
 // 사진 갤러리 UI(클라이언트). 사진을 올리거나 순서를 바꿔도 페이지를 새로 열지 않고
-// 이 자리에서만 갱신한다 — 편집창이 닫히지 않고, 여러 장을 한 번에 올릴 수 있다.
+// 이 자리에서만 갱신한다. 사진이 많아도 보기 좋게 그리드(가로 여러 칸)로 배열하고,
+// 20장 이상일 때 한 칸씩 옮기지 않도록 "대표로"(맨 앞으로) 버튼을 둔다.
 
 export function AdminGallery({
   images,
@@ -31,6 +33,22 @@ export function AdminGallery({
   const [busy, setBusy] = useState(false);
   const [pending, startRefresh] = useTransition();
   const working = busy || pending;
+
+  async function run(
+    task: () => Promise<{ ok: boolean; message?: string }>,
+    fallbackMessage: string
+  ) {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const result = await task();
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.message ?? fallbackMessage);
+      return;
+    }
+    startRefresh(() => router.refresh());
+  }
 
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,35 +75,16 @@ export function AdminGallery({
     startRefresh(() => router.refresh());
   }
 
-  async function handleMove(imageId: string, direction: "up" | "down") {
-    setBusy(true);
-    setError(null);
-    setNotice(null);
-    const result = await moveGalleryImage({ direction, imageId, ownerType });
-    setBusy(false);
-    if (!result.ok) {
-      setError(result.message ?? "순서를 바꾸지 못했습니다.");
-      return;
-    }
-    startRefresh(() => router.refresh());
-  }
-
-  async function handleDelete(imageId: string) {
-    setBusy(true);
-    setError(null);
-    setNotice(null);
-    const result = await deleteGalleryImage({ imageId, ownerType });
-    setBusy(false);
-    if (!result.ok) {
-      setError(result.message ?? "사진을 지우지 못했습니다.");
-      return;
-    }
-    startRefresh(() => router.refresh());
-  }
-
   return (
     <div className="admin-image-field">
-      <span className="admin-metric-label">사진 ({images.length}장)</span>
+      <div className="admin-image-head">
+        <span className="admin-metric-label">사진 ({images.length}장)</span>
+        {images.length > 0 ? (
+          <span className="admin-image-head-hint">
+            맨 앞(1번)이 목록 카드에 쓰이는 대표 사진입니다.
+          </span>
+        ) : null}
+      </div>
 
       {error ? <p className="status-message error">{error}</p> : null}
       {notice ? <p className="status-message success">{notice}</p> : null}
@@ -95,57 +94,87 @@ export function AdminGallery({
           아직 사진이 없습니다. 사진을 올리면 공개 페이지에 나옵니다.
         </p>
       ) : (
-        <ul className="admin-image-list">
+        <ul className="admin-image-grid">
           {images.map((image, index) => (
-            <li className="admin-image-item" key={image.id}>
-              {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                alt={image.altText ?? `사진 ${index + 1}`}
-                className="admin-image-thumb"
-                src={image.url}
-              />
+            <li className="admin-image-tile" key={image.id}>
+              <div className="admin-image-thumb-wrap">
+                {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  alt={image.altText ?? `사진 ${index + 1}`}
+                  className="admin-image-thumb"
+                  src={image.url}
+                />
+                <span
+                  className={
+                    index === 0
+                      ? "admin-image-order-badge primary"
+                      : "admin-image-order-badge"
+                  }
+                >
+                  {index === 0 ? "대표" : index + 1}
+                </span>
+              </div>
 
-              <div className="admin-image-item-body">
-                {index === 0 ? (
-                  <span className="admin-badge success">대표 사진</span>
-                ) : (
-                  <span className="admin-image-order">{index + 1}번째</span>
-                )}
-                {image.altText ? (
-                  <span className="admin-image-alt">{image.altText}</span>
-                ) : null}
-
-                <div className="admin-image-item-actions">
-                  {index > 0 ? (
-                    <button
-                      className="admin-btn"
-                      disabled={working}
-                      onClick={() => handleMove(image.id, "up")}
-                      type="button"
-                    >
-                      ↑ 앞으로
-                    </button>
-                  ) : null}
-
-                  {index < images.length - 1 ? (
-                    <button
-                      className="admin-btn"
-                      disabled={working}
-                      onClick={() => handleMove(image.id, "down")}
-                      type="button"
-                    >
-                      ↓ 뒤로
-                    </button>
-                  ) : null}
-
+              <div className="admin-image-tile-actions">
+                {index > 0 ? (
                   <button
-                    className="admin-btn"
+                    className="admin-icon-btn"
                     disabled={working}
-                    onClick={() => handleDelete(image.id)}
+                    onClick={() =>
+                      run(
+                        () => setPrimaryGalleryImage({ imageId: image.id, ownerType }),
+                        "대표로 바꾸지 못했습니다."
+                      )
+                    }
+                    title="대표 사진으로 (맨 앞으로)"
                     type="button"
                   >
-                    지우기
+                    ★ 대표로
+                  </button>
+                ) : null}
+                <div className="admin-icon-btn-row">
+                  <button
+                    className="admin-icon-btn"
+                    disabled={working || index === 0}
+                    onClick={() =>
+                      run(
+                        () => moveGalleryImage({ direction: "up", imageId: image.id, ownerType }),
+                        "순서를 바꾸지 못했습니다."
+                      )
+                    }
+                    title="앞으로"
+                    type="button"
+                  >
+                    ←
+                  </button>
+                  <button
+                    className="admin-icon-btn"
+                    disabled={working || index === images.length - 1}
+                    onClick={() =>
+                      run(
+                        () => moveGalleryImage({ direction: "down", imageId: image.id, ownerType }),
+                        "순서를 바꾸지 못했습니다."
+                      )
+                    }
+                    title="뒤로"
+                    type="button"
+                  >
+                    →
+                  </button>
+                  <button
+                    className="admin-icon-btn danger"
+                    disabled={working}
+                    onClick={() =>
+                      run(
+                        () => deleteGalleryImage({ imageId: image.id, ownerType }),
+                        "사진을 지우지 못했습니다."
+                      )
+                    }
+                    title="지우기"
+                    type="button"
+                  >
+                    ✕
                   </button>
                 </div>
               </div>
@@ -175,7 +204,7 @@ export function AdminGallery({
       </form>
 
       <p className="admin-image-hint">
-        JPG · PNG · WebP · AVIF, 한 장당 5MB 이하. 여러 장 한 번에 선택할 수 있고, 맨 앞 사진이 목록 카드에 쓰입니다.
+        JPG · PNG · WebP · AVIF, 한 장당 5MB 이하. 여러 장 한 번에 선택할 수 있습니다.
       </p>
     </div>
   );

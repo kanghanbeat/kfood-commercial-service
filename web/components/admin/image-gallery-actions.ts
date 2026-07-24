@@ -6,6 +6,7 @@ import {
   addContentImage,
   deleteContentImage,
   moveContentImage,
+  setPrimaryContentImage,
   type ImageOwnerType
 } from "@kfood/data";
 
@@ -82,6 +83,25 @@ export async function moveGalleryImage(input: {
   const result = await moveContentImage(session.accessToken, {
     actorId: session.userId,
     direction: input.direction,
+    imageId: input.imageId
+  });
+
+  if (!result.ok) {
+    return { ok: false, message: result.message };
+  }
+
+  revalidateFor(input.ownerType);
+  return { ok: true };
+}
+
+export async function setPrimaryGalleryImage(input: {
+  imageId: string;
+  ownerType: ImageOwnerType;
+}): Promise<GalleryResult> {
+  const session = await requireAdminSession();
+
+  const result = await setPrimaryContentImage(session.accessToken, {
+    actorId: session.userId,
     imageId: input.imageId
   });
 

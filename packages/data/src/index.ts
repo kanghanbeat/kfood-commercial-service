@@ -4479,6 +4479,70 @@ export async function moveContentImage(
   return { ok: true };
 }
 
+/** 사진 한 장을 맨 앞(대표 사진)으로 보낸다. 20장 이상일 때 한 칸씩 옮기지 않도록. */
+export async function setPrimaryContentImage(
+  accessToken: string,
+  input: { actorId: string; imageId: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: currentData, error: currentError } = await supabase
+    .from("content_images")
+    .select("*")
+    .eq("id", input.imageId)
+    .maybeSingle();
+
+  if (currentError || !currentData) {
+    return { ok: false, message: "사진을 찾을 수 없습니다." };
+  }
+
+  const current = currentData as {
+    id: string;
+    owner_type: ImageOwnerType;
+    owner_id: string;
+    display_order: number;
+  };
+
+  // 현재 맨 앞 사진의 순서값보다 하나 작게 주면 맨 앞으로 온다(전체 renumber 없이).
+  const { data: firstRow } = await supabase
+    .from("content_images")
+    .select("display_order")
+    .eq("owner_type", current.owner_type)
+    .eq("owner_id", current.owner_id)
+    .order("display_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const firstOrder = (firstRow?.display_order as number | undefined) ?? current.display_order;
+
+  if (current.display_order <= firstOrder) {
+    // 이미 맨 앞이면 아무것도 하지 않는다.
+    return { ok: true };
+  }
+
+  await supabase
+    .from("content_images")
+    .update({ display_order: firstOrder - 1 })
+    .eq("id", current.id);
+
+  await syncPrimaryImage(supabase, current.owner_type, current.owner_id);
+
+  await supabase.from("admin_audit_logs").insert({
+    action: `${current.owner_type}.image_set_primary`,
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: currentData,
+    entity_id: current.owner_id,
+    entity_type: current.owner_type
+  });
+
+  return { ok: true };
+}
+
 /** 공개 주소에서 저장소 경로를 되짚어 파일을 지운다(우리 버킷 파일일 때만). */
 async function removeStoredImage(
   supabase: ReturnType<typeof createAuthenticatedClient>,

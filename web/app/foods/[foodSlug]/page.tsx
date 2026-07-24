@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import {
   fallbackPlaces,
+  getContentImages,
   getFoodPhotoReviewNote,
   getFoodPhotoSourceCandidates,
   getPublishedFood,
@@ -14,7 +15,7 @@ import {
 } from "@kfood/data";
 
 import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
-import { PhotoGallery } from "@/components/photo-gallery";
+import { GalleryViewer } from "@/components/gallery-viewer";
 import { getDict } from "@/lib/i18n";
 
 export async function generateStaticParams() {
@@ -46,12 +47,14 @@ export default async function FoodDetailPage({
     notFound();
   }
 
-  const [publishedPlaces, regions, productions, dict] = await Promise.all([
-    getPublishedPlaces(),
-    getPublishedRegions(),
-    getPublishedProductionsFor("food", foodSlug),
-    getDict()
-  ]);
+  const [publishedPlaces, regions, productions, dict, galleryImages] =
+    await Promise.all([
+      getPublishedPlaces(),
+      getPublishedRegions(),
+      getPublishedProductionsFor("food", foodSlug),
+      getDict(),
+      food.id ? getContentImages("food", food.id) : Promise.resolve([])
+    ]);
   const t = dict.foodDetail;
   const sourcePlaces =
     publishedPlaces.length > 0 ? publishedPlaces : fallbackPlaces;
@@ -75,7 +78,9 @@ export default async function FoodDetailPage({
         <span>{food.nameEn}</span>
       </nav>
 
-      {food.imageUrl ? (
+      {galleryImages.length > 0 ? (
+        <GalleryViewer images={galleryImages} title={food.nameEn} />
+      ) : food.imageUrl ? (
         <div className="food-hero-photo has-image">
           {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -92,10 +97,6 @@ export default async function FoodDetailPage({
           </span>
         </div>
       )}
-
-      {food.id ? (
-        <PhotoGallery ownerId={food.id} ownerType="food" title={food.nameEn} />
-      ) : null}
 
       <header className="food-v2-header">
         <span className="food-v2-eyebrow">{t.eyebrow}</span>

@@ -32,7 +32,7 @@ export default async function RoutesPage() {
           const region = regions.find((item) => item.slug === route.regionSlug);
           return (
             <Link className="card-v2" href={`/routes/${route.slug}`} key={route.slug}>
-              <CardPhoto label={route.title} variant="route" />
+              <CardPhoto imageUrl={route.imageUrl} label={route.title} variant="route" />
               <div className="card-v2-body">
                 <span className="food-chip">{route.estimatedDuration}</span>
                 <span className="card-v2-title">{route.title}</span>

@@ -50,13 +50,27 @@ const VARIANT_TAG: Record<CardPhotoVariant, string> = {
 export function CardPhoto({
   label,
   variant,
-  tall = false
+  tall = false,
+  imageUrl
 }: {
   label: string;
   variant: CardPhotoVariant;
   tall?: boolean;
+  imageUrl?: string | null;
 }) {
   const palette = PALETTES[hashLabel(label) % PALETTES.length];
+
+  // 어드민에서 사진을 올렸으면 그 사진을, 없으면 기존 색 배경 자리표시를 쓴다.
+  if (imageUrl) {
+    return (
+      <div className={`card-v2-photo${tall ? " tall" : ""} has-image`}>
+        {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img alt={label} className="card-v2-photo-img" loading="lazy" src={imageUrl} />
+        <span className="card-v2-photo-tag">{VARIANT_TAG[variant]}</span>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -32,7 +32,10 @@ export default async function PlacesPage() {
           const region = regions.find((item) => item.slug === place.regionSlug);
           return (
             <Link className="card-v2" href={`/places/${place.slug}`} key={place.slug}>
-              <CardPhoto label={place.nameEn} variant="place" />
+              <CardPhoto
+                  imageUrl={place.imageUrl}
+                  label={place.nameEn}
+                  variant="place" />
               <div className="card-v2-body">
                 <span className="food-chip">{region?.nameEn ?? "Seoul"}</span>
                 <span className="card-v2-title">{place.nameEn}</span>

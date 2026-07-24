@@ -6,6 +6,7 @@ import type { PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
 import { AdminEntityActions } from "@/components/admin/entity-actions";
+import { AdminImageField } from "@/components/admin/image-field";
 import {
   AdminItem,
   AdminListToolbar,
@@ -218,6 +219,8 @@ export async function FoodsPanel({
     created?: string;
     archived?: string;
     deleted?: string;
+    imageSaved?: string;
+    imageRemoved?: string;
   };
   params?: ListParams;
 }) {
@@ -245,6 +248,12 @@ export async function FoodsPanel({
       ) : null}
       {message?.deleted ? (
         <p className="status-message success">음식을(를) 완전히 삭제했습니다.</p>
+      ) : null}
+      {message?.imageSaved ? (
+        <p className="status-message success">사진을 저장했습니다. 공개 페이지에 반영됩니다.</p>
+      ) : null}
+      {message?.imageRemoved ? (
+        <p className="status-message success">사진을 지웠습니다.</p>
       ) : null}
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
@@ -300,6 +309,11 @@ export async function FoodsPanel({
               <FoodFields defaults={food} />
               <button className="admin-btn primary" type="submit">음식 저장</button>
             </form>
+            <AdminImageField
+              ownerId={food.id}
+              ownerType="food"
+              returnQuery={ret}
+            />
             <AdminEntityActions
               entity="food"
               id={food.id}

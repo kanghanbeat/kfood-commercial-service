@@ -28,6 +28,8 @@ export type PublicRegion = {
   routeTheme: string;
   intro: string;
   bestForTags: string[];
+  imageUrl?: string | null;
+  id?: string;
 };
 
 export const fallbackRegions: PublicRegion[] = [
@@ -92,6 +94,8 @@ export type PublicFood = {
   tasteProfile: string;
   spicyLevel: 0 | 1 | 2 | 3 | 4;
   beginnerNote: string;
+  imageUrl?: string | null;
+  id?: string;
 };
 
 export type PhotoSourceCandidate = {
@@ -183,6 +187,8 @@ export type PublicPlace = {
   trustTags: string[];
   cautionTags: string[];
   lastVerifiedLabel: string;
+  imageUrl?: string | null;
+  id?: string;
 };
 
 export const fallbackPlaces: PublicPlace[] = [
@@ -285,6 +291,8 @@ export type PublicRoute = {
   summary: string;
   placeSlugs: string[];
   estimatedDuration: string;
+  imageUrl?: string | null;
+  id?: string;
 };
 
 export const fallbackRoutes: PublicRoute[] = [
@@ -409,6 +417,8 @@ type RegionRow = {
   name_en: string;
   intro: string;
   best_for_tags: string[];
+  hero_image_url: string | null;
+  id: string;
 };
 
 type FoodRow = {
@@ -419,6 +429,8 @@ type FoodRow = {
   taste_profile: string | null;
   spicy_level: 0 | 1 | 2 | 3 | 4;
   beginner_note: string | null;
+  image_url: string | null;
+  id: string;
 };
 
 type PlaceRow = {
@@ -438,6 +450,8 @@ type PlaceRow = {
   affiliate_url: string | null;
   sponsorship_note: string | null;
   regions: { slug: string } | null;
+  image_url: string | null;
+  id: string;
 };
 
 type RouteGuideRow = {
@@ -446,6 +460,8 @@ type RouteGuideRow = {
   summary: string;
   estimated_duration: string | null;
   regions: { slug: string } | null;
+  hero_image_url: string | null;
+  id: string;
 };
 
 type RelatedSlugRow = {
@@ -631,6 +647,7 @@ export type AdminPlace = {
   trustTags: string[];
   cautionTags: string[];
   lastVerifiedAt: string | null;
+  imageUrl: string | null;
   updatedAt: string;
 };
 
@@ -648,6 +665,7 @@ type AdminPlaceRow = {
   trust_tags: string[];
   caution_tags: string[];
   last_verified_at: string | null;
+  image_url: string | null;
   updated_at: string;
   regions: { slug: string } | { slug: string }[] | null;
 };
@@ -828,6 +846,7 @@ function mapAdminPlace(row: AdminPlaceRow): AdminPlace {
     editorialNote: row.editorial_note,
     googleMapsUrl: row.google_maps_url,
     id: row.id,
+    imageUrl: row.image_url,
     lastVerifiedAt: row.last_verified_at,
     nameEn: row.name_en,
     nameKo: row.name_ko,
@@ -876,7 +895,9 @@ export function humanizeTag(tag: string): string {
 function mapRegion(row: RegionRow): PublicRegion {
   const displayTags = row.best_for_tags.map(humanizeTag);
   return {
+    id: row.id,
     slug: row.slug,
+    imageUrl: row.hero_image_url ?? null,
     nameEn: row.name_en,
     primaryAudience: displayTags[0] ?? "K-food travelers",
     kfoodIdentity: displayTags.join(", "),
@@ -888,7 +909,9 @@ function mapRegion(row: RegionRow): PublicRegion {
 
 function mapFood(row: FoodRow): PublicFood {
   return {
+    id: row.id,
     slug: row.slug,
+    imageUrl: row.image_url ?? null,
     nameEn: row.name_en,
     nameKo: row.name_ko,
     regionSlugs: [],
@@ -1113,7 +1136,9 @@ export function getFoodPhotoSourceCandidates(
 
 function mapPlace(row: PlaceRow): PublicPlace {
   return {
+    id: row.id,
     slug: row.slug,
+    imageUrl: row.image_url ?? null,
     nameEn: row.name_en,
     regionSlug: row.regions?.slug ?? "seoul",
     foodSlugs: [],
@@ -1139,7 +1164,9 @@ function mapPlace(row: PlaceRow): PublicPlace {
 
 function mapRouteGuide(row: RouteGuideRow): PublicRoute {
   return {
+    id: row.id,
     slug: row.slug,
+    imageUrl: row.hero_image_url ?? null,
     title: row.title,
     regionSlug: row.regions?.slug ?? "seoul",
     summary: row.summary,
@@ -1231,7 +1258,7 @@ export async function getPublishedRegions() {
 
   const { data, error } = await supabase
     .from("regions")
-    .select("slug, name_en, intro, best_for_tags")
+    .select("id, slug, name_en, intro, best_for_tags, hero_image_url")
     .eq("status", "published")
     .order("display_order", { ascending: true });
 
@@ -1252,7 +1279,7 @@ export async function getPublishedRegion(slug: string) {
 
   const { data, error } = await supabase
     .from("regions")
-    .select("slug, name_en, intro, best_for_tags")
+    .select("id, slug, name_en, intro, best_for_tags, hero_image_url")
     .eq("status", "published")
     .eq("slug", slug)
     .maybeSingle<RegionRow>();
@@ -1277,7 +1304,7 @@ export async function getPublishedFoods() {
       supabase
         .from("foods")
         .select(
-          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note"
+          "id, slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note, image_url"
         )
         .eq("status", "published")
         .order("display_order", { ascending: true }),
@@ -1315,7 +1342,7 @@ export async function getPublishedFood(slug: string) {
       supabase
         .from("foods")
         .select(
-          "slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note"
+          "id, slug, name_en, name_ko, description, taste_profile, spicy_level, beginner_note, image_url"
         )
         .eq("status", "published")
         .eq("slug", slug)
@@ -1358,7 +1385,7 @@ export async function getPublishedPlaces() {
       supabase
         .from("places")
         .select(
-          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+          "id, slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, image_url, regions(slug)"
         )
         .eq("status", "published")
         .order("display_order", { ascending: true })
@@ -1397,7 +1424,7 @@ export async function getPublishedPlace(slug: string) {
       supabase
         .from("places")
         .select(
-          "slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, regions(slug)"
+          "id, slug, name_en, name_ko, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, tourist_tags, trust_tags, caution_tags, last_verified_at, is_sponsored, affiliate_url, sponsorship_note, image_url, regions(slug)"
         )
         .eq("status", "published")
         .eq("slug", slug)
@@ -1440,7 +1467,7 @@ export async function getPublishedRoutes() {
     await Promise.all([
       supabase
         .from("route_guides")
-        .select("slug, title, summary, estimated_duration, regions(slug)")
+        .select("id, slug, title, summary, estimated_duration, hero_image_url, regions(slug)")
         .eq("status", "published")
         .order("display_order", { ascending: true })
         .returns<RouteGuideRow[]>(),
@@ -1477,7 +1504,7 @@ export async function getPublishedRoute(slug: string) {
     await Promise.all([
       supabase
         .from("route_guides")
-        .select("slug, title, summary, estimated_duration, regions(slug)")
+        .select("id, slug, title, summary, estimated_duration, hero_image_url, regions(slug)")
         .eq("status", "published")
         .eq("slug", slug)
         .maybeSingle<RouteGuideRow>(),
@@ -2308,7 +2335,7 @@ export async function getAdminPlaces(accessToken: string) {
   const { data, error } = await supabase
     .from("places")
     .select(
-      "id, slug, name_en, name_ko, status, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, trust_tags, caution_tags, last_verified_at, updated_at, regions(slug)"
+      "id, slug, name_en, name_ko, status, editorial_note, google_maps_url, naver_maps_url, business_hours_note, business_info_note, trust_tags, caution_tags, last_verified_at, image_url, updated_at, regions(slug)"
     )
     .order("display_order", { ascending: true });
 
@@ -2627,6 +2654,7 @@ export type AdminRegion = {
   displayOrder: number;
   status: PublicationStatus;
   editorialNote: string | null;
+  imageUrl: string | null;
   updatedAt: string | null;
 };
 
@@ -2640,6 +2668,7 @@ type AdminRegionRow = {
   display_order: number;
   status: PublicationStatus;
   editorial_note: string | null;
+  hero_image_url: string | null;
   updated_at: string | null;
 };
 
@@ -2654,6 +2683,7 @@ function mapAdminRegion(row: AdminRegionRow): AdminRegion {
     displayOrder: row.display_order,
     status: row.status,
     editorialNote: row.editorial_note,
+    imageUrl: row.hero_image_url,
     updatedAt: row.updated_at
   };
 }
@@ -2674,7 +2704,7 @@ export type UpdateAdminRegionInput = CreateAdminRegionInput & {
 };
 
 const adminRegionColumns =
-  "id, slug, name_en, name_ko, intro, best_for_tags, display_order, status, editorial_note, updated_at";
+  "id, slug, name_en, name_ko, intro, best_for_tags, display_order, status, editorial_note, hero_image_url, updated_at";
 
 export async function getAdminRegions(accessToken: string) {
   const supabase = createAuthenticatedClient(accessToken);
@@ -2826,6 +2856,7 @@ export type AdminFood = {
   cautionNote: string | null;
   status: PublicationStatus;
   editorialNote: string | null;
+  imageUrl: string | null;
   updatedAt: string | null;
 };
 
@@ -2843,6 +2874,7 @@ type AdminFoodRow = {
   caution_note: string | null;
   status: PublicationStatus;
   editorial_note: string | null;
+  image_url: string | null;
   updated_at: string | null;
 };
 
@@ -2861,6 +2893,7 @@ function mapAdminFood(row: AdminFoodRow): AdminFood {
     cautionNote: row.caution_note,
     status: row.status,
     editorialNote: row.editorial_note,
+    imageUrl: row.image_url,
     updatedAt: row.updated_at
   };
 }
@@ -2884,7 +2917,7 @@ export type CreateAdminFoodInput = {
 export type UpdateAdminFoodInput = CreateAdminFoodInput & { foodId: string };
 
 const adminFoodColumns =
-  "id, slug, name_en, name_ko, romanized_name, description, taste_profile, spicy_level, beginner_note, eating_guide, caution_note, status, editorial_note, updated_at";
+  "id, slug, name_en, name_ko, romanized_name, description, taste_profile, spicy_level, beginner_note, eating_guide, caution_note, status, editorial_note, image_url, updated_at";
 
 export async function getAdminFoods(accessToken: string) {
   const supabase = createAuthenticatedClient(accessToken);
@@ -3039,6 +3072,7 @@ export type AdminRoute = {
   transportMode: string | null;
   recommendedForTags: string[];
   editorialNote: string | null;
+  imageUrl: string | null;
   status: PublicationStatus;
   updatedAt: string | null;
 };
@@ -3053,6 +3087,7 @@ type AdminRouteRow = {
   transport_mode: string | null;
   recommended_for_tags: string[] | null;
   editorial_note: string | null;
+  hero_image_url: string | null;
   status: PublicationStatus;
   updated_at: string | null;
 };
@@ -3068,6 +3103,7 @@ function mapAdminRoute(row: AdminRouteRow): AdminRoute {
     transportMode: row.transport_mode,
     recommendedForTags: row.recommended_for_tags ?? [],
     editorialNote: row.editorial_note,
+    imageUrl: row.hero_image_url,
     status: row.status,
     updatedAt: row.updated_at
   };
@@ -3089,7 +3125,7 @@ export type CreateAdminRouteInput = {
 export type UpdateAdminRouteInput = CreateAdminRouteInput & { routeId: string };
 
 const adminRouteColumns =
-  "id, slug, region_id, title, summary, estimated_duration, transport_mode, recommended_for_tags, editorial_note, status, updated_at";
+  "id, slug, region_id, title, summary, estimated_duration, transport_mode, recommended_for_tags, editorial_note, status, hero_image_url, updated_at";
 
 export async function getAdminRoutes(accessToken: string) {
   const supabase = createAuthenticatedClient(accessToken);
@@ -3248,6 +3284,7 @@ export type AdminProduction = {
   externalUrl: string | null;
   status: PublicationStatus;
   editorialNote: string | null;
+  scheduledDate: string | null;
   tags: ProductionTag[];
   updatedAt: string | null;
 };
@@ -3265,6 +3302,7 @@ type AdminProductionRow = {
   external_url: string | null;
   status: PublicationStatus;
   editorial_note: string | null;
+  scheduled_date: string | null;
   updated_at: string | null;
   production_tags?: ProductionTagRow[] | null;
 };
@@ -3281,6 +3319,7 @@ function mapAdminProduction(row: AdminProductionRow): AdminProduction {
     externalUrl: row.external_url,
     status: row.status,
     editorialNote: row.editorial_note,
+    scheduledDate: row.scheduled_date,
     tags: (row.production_tags ?? []).map((tag) => ({
       entityType: tag.entity_type,
       entityId: tag.entity_id
@@ -3299,6 +3338,7 @@ export type CreateAdminProductionInput = {
   summary?: string;
   externalUrl?: string;
   editorialNote?: string;
+  scheduledDate?: string | null;
   status: PublicationStatus;
   tags: ProductionTag[];
 };
@@ -3308,7 +3348,7 @@ export type UpdateAdminProductionInput = CreateAdminProductionInput & {
 };
 
 const adminProductionColumns =
-  "id, slug, title, title_ko, type, channel, summary, external_url, status, editorial_note, updated_at, production_tags(entity_type, entity_id)";
+  "id, slug, title, title_ko, type, channel, summary, external_url, status, editorial_note, scheduled_date, updated_at, production_tags(entity_type, entity_id)";
 
 export async function getAdminProductions(accessToken: string) {
   const supabase = createAuthenticatedClient(accessToken);
@@ -3345,6 +3385,7 @@ function productionWritePayload(input: CreateAdminProductionInput) {
     summary: input.summary?.trim() || null,
     external_url: input.externalUrl?.trim() || null,
     editorial_note: input.editorialNote?.trim() || null,
+    scheduled_date: input.scheduledDate?.trim() || null,
     status: input.status,
     updated_at: new Date().toISOString()
   };
@@ -3760,6 +3801,7 @@ export type AdminContentPlan = {
   status: ContentPlanStatus;
   insightNote: string | null;
   targetWeek: string | null;
+  targetDate: string | null;
   body: string | null;
   productionId: string | null;
   productionTitle: string | null;
@@ -3775,6 +3817,7 @@ type AdminContentPlanRow = {
   status: ContentPlanStatus;
   insight_note: string | null;
   target_week: string | null;
+  target_date: string | null;
   body: string | null;
   production_id: string | null;
   updated_at: string | null;
@@ -3782,7 +3825,7 @@ type AdminContentPlanRow = {
 };
 
 const adminContentPlanColumns =
-  "id, title, title_en, category, priority, status, insight_note, target_week, body, production_id, updated_at, productions(title)";
+  "id, title, title_en, category, priority, status, insight_note, target_week, target_date, body, production_id, updated_at, productions(title)";
 
 function mapAdminContentPlan(row: AdminContentPlanRow): AdminContentPlan {
   const production = Array.isArray(row.productions)
@@ -3798,6 +3841,7 @@ function mapAdminContentPlan(row: AdminContentPlanRow): AdminContentPlan {
     status: row.status,
     insightNote: row.insight_note,
     targetWeek: row.target_week,
+    targetDate: row.target_date,
     body: row.body,
     productionId: row.production_id,
     productionTitle: production?.title ?? null,
@@ -3815,7 +3859,7 @@ export async function getAdminContentPlans(accessToken: string) {
   const { data, error } = await supabase
     .from("content_plans")
     .select(adminContentPlanColumns)
-    .order("display_order", { ascending: true })
+    .order("target_date", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   if (error || !data) {
@@ -3834,6 +3878,7 @@ export type CreateAdminContentPlanInput = {
   insightNote?: string | null;
   priority: ContentPlanPriority;
   status: ContentPlanStatus;
+  targetDate?: string | null;
   targetWeek?: string | null;
   title: string;
   titleEn?: string | null;
@@ -3851,6 +3896,7 @@ function contentPlanWritePayload(input: CreateAdminContentPlanInput) {
     insight_note: input.insightNote?.trim() || null,
     priority: input.priority,
     status: input.status,
+    target_date: input.targetDate?.trim() || null,
     target_week: input.targetWeek?.trim() || null,
     title: input.title.trim(),
     title_en: input.titleEn?.trim() || null,
@@ -4092,4 +4138,487 @@ export async function startProductionFromPlan(
   }
 
   return { ok: true };
+}
+
+// ── Admin: 콘텐츠 사진 업로드 ────────────────────────────────
+// 어드민에서 고른 사진 파일을 Supabase Storage에 올리고, 공개 주소를 돌려준다.
+// 014_content_images_storage.sql의 content-images 버킷을 쓴다.
+// 이미지 주소는 각 테이블의 image_url / hero_image_url 컬럼에 저장된다.
+
+const contentImageBucket = "content-images";
+
+export type ImageOwnerType = "food" | "place" | "region" | "route";
+
+// 테이블마다 사진 주소를 담는 컬럼 이름이 다르다.
+const imageColumnByOwner: Record<
+  ImageOwnerType,
+  { table: string; column: string; label: string }
+> = {
+  food: { table: "foods", column: "image_url", label: "음식" },
+  place: { table: "places", column: "image_url", label: "장소" },
+  region: { table: "regions", column: "hero_image_url", label: "지역" },
+  route: { table: "route_guides", column: "hero_image_url", label: "루트" }
+};
+
+const allowedImageTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif"
+];
+
+const maxImageBytes = 5 * 1024 * 1024;
+
+function imageExtension(fileType: string) {
+  if (fileType === "image/png") return "png";
+  if (fileType === "image/webp") return "webp";
+  if (fileType === "image/avif") return "avif";
+  return "jpg";
+}
+
+export type ContentImage = {
+  id: string;
+  url: string;
+  altText: string | null;
+  displayOrder: number;
+};
+
+/** 한 콘텐츠에 붙은 사진 전부(순서대로). */
+export async function getContentImages(
+  ownerType: ImageOwnerType,
+  ownerId: string
+): Promise<ContentImage[]> {
+  const supabase = createPublicClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("content_images")
+    .select("id, url, alt_text, display_order")
+    .eq("owner_type", ownerType)
+    .eq("owner_id", ownerId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((row) => ({
+    id: row.id as string,
+    url: row.url as string,
+    altText: (row.alt_text as string | null) ?? null,
+    displayOrder: row.display_order as number
+  }));
+}
+
+/**
+ * 갤러리의 첫 사진을 대표 사진(image_url / hero_image_url)에 반영한다.
+ * 목록 카드는 대표 1장만 읽으므로 갤러리가 바뀔 때마다 맞춰준다.
+ */
+async function syncPrimaryImage(
+  supabase: NonNullable<ReturnType<typeof createAuthenticatedClient>>,
+  ownerType: ImageOwnerType,
+  ownerId: string
+) {
+  const target = imageColumnByOwner[ownerType];
+
+  const { data } = await supabase
+    .from("content_images")
+    .select("url")
+    .eq("owner_type", ownerType)
+    .eq("owner_id", ownerId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: true })
+    .limit(1);
+
+  const firstUrl = (data?.[0]?.url as string | undefined) ?? null;
+
+  await supabase
+    .from(target.table)
+    .update({ [target.column]: firstUrl, updated_at: new Date().toISOString() })
+    .eq("id", ownerId);
+}
+
+/** 사진 한 장을 갤러리에 추가한다. */
+export async function addContentImage(
+  accessToken: string,
+  input: {
+    actorId: string;
+    altText?: string | null;
+    file: { name: string; type: string; size: number; bytes: ArrayBuffer };
+    ownerId: string;
+    ownerType: ImageOwnerType;
+  }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const target = imageColumnByOwner[input.ownerType];
+
+  if (!target) {
+    return { ok: false, message: "지원하지 않는 콘텐츠 유형입니다." };
+  }
+
+  if (!allowedImageTypes.includes(input.file.type)) {
+    return {
+      ok: false,
+      message: "JPG · PNG · WebP · AVIF 형식만 올릴 수 있습니다."
+    };
+  }
+
+  if (input.file.size > maxImageBytes) {
+    return { ok: false, message: "사진은 5MB 이하만 올릴 수 있습니다." };
+  }
+
+  if (input.file.size === 0) {
+    return { ok: false, message: "선택된 파일이 비어 있습니다." };
+  }
+
+  // 캐시 때문에 옛 사진이 남지 않도록 매번 새 파일명을 쓴다.
+  const stamp = Date.now().toString(36);
+  const suffix = Math.floor(Math.random() * 1e6).toString(36);
+  const path = `${input.ownerType}/${input.ownerId}/${stamp}${suffix}.${imageExtension(input.file.type)}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(contentImageBucket)
+    .upload(path, input.file.bytes, {
+      contentType: input.file.type,
+      upsert: false
+    });
+
+  if (uploadError) {
+    return {
+      ok: false,
+      message:
+        "사진을 저장소에 올리지 못했습니다. 저장소 설정(content-images 버킷)이 되어 있는지 확인하세요."
+    };
+  }
+
+  const {
+    data: { publicUrl }
+  } = supabase.storage.from(contentImageBucket).getPublicUrl(path);
+
+  // 맨 뒤에 붙인다.
+  const { data: lastRow } = await supabase
+    .from("content_images")
+    .select("display_order")
+    .eq("owner_type", input.ownerType)
+    .eq("owner_id", input.ownerId)
+    .order("display_order", { ascending: false })
+    .limit(1);
+
+  const nextOrder = ((lastRow?.[0]?.display_order as number | undefined) ?? 0) + 10;
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("content_images")
+    .insert({
+      alt_text: input.altText?.trim() || null,
+      created_by: input.actorId,
+      display_order: nextOrder,
+      owner_id: input.ownerId,
+      owner_type: input.ownerType,
+      storage_path: path,
+      url: publicUrl
+    })
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !inserted) {
+    await supabase.storage.from(contentImageBucket).remove([path]);
+    return { ok: false, message: "사진 정보를 저장하지 못했습니다." };
+  }
+
+  await syncPrimaryImage(supabase, input.ownerType, input.ownerId);
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: `${input.ownerType}.image_add`,
+    actor_id: input.actorId,
+    after_data: inserted,
+    before_data: null,
+    entity_id: input.ownerId,
+    entity_type: input.ownerType
+  });
+
+  if (auditError) {
+    return { ok: false, message: "사진은 올렸지만 감사 로그 기록에 실패했습니다." };
+  }
+
+  return { ok: true };
+}
+
+/** 갤러리에서 사진 한 장을 지운다(저장소 파일도 함께). */
+export async function deleteContentImage(
+  accessToken: string,
+  input: { actorId: string; imageId: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("content_images")
+    .select("*")
+    .eq("id", input.imageId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "사진을 찾을 수 없습니다." };
+  }
+
+  const image = beforeData as {
+    owner_type: ImageOwnerType;
+    owner_id: string;
+    storage_path: string;
+  };
+
+  const { error: deleteError } = await supabase
+    .from("content_images")
+    .delete()
+    .eq("id", input.imageId);
+
+  if (deleteError) {
+    return { ok: false, message: "사진을 지우지 못했습니다." };
+  }
+
+  await supabase.storage.from(contentImageBucket).remove([image.storage_path]);
+  await syncPrimaryImage(supabase, image.owner_type, image.owner_id);
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: `${image.owner_type}.image_delete`,
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: beforeData,
+    entity_id: image.owner_id,
+    entity_type: image.owner_type
+  });
+
+  if (auditError) {
+    return { ok: false, message: "사진은 지웠지만 감사 로그 기록에 실패했습니다." };
+  }
+
+  return { ok: true };
+}
+
+/** 사진 순서를 한 칸 옮긴다. 맨 앞 사진이 대표 사진이 된다. */
+export async function moveContentImage(
+  accessToken: string,
+  input: { actorId: string; direction: "up" | "down"; imageId: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: currentData, error: currentError } = await supabase
+    .from("content_images")
+    .select("*")
+    .eq("id", input.imageId)
+    .maybeSingle();
+
+  if (currentError || !currentData) {
+    return { ok: false, message: "사진을 찾을 수 없습니다." };
+  }
+
+  const current = currentData as {
+    id: string;
+    owner_type: ImageOwnerType;
+    owner_id: string;
+    display_order: number;
+  };
+
+  // 옮길 자리에 있는 사진(바로 앞 또는 바로 뒤)을 찾아 순서를 맞바꾼다.
+  const { data: neighbourRows } = await supabase
+    .from("content_images")
+    .select("*")
+    .eq("owner_type", current.owner_type)
+    .eq("owner_id", current.owner_id)
+    .order("display_order", { ascending: input.direction === "down" })
+    .limit(50);
+
+  const ordered = (neighbourRows ?? []) as Array<{
+    id: string;
+    display_order: number;
+  }>;
+  const currentIndex = ordered.findIndex((row) => row.id === current.id);
+  const neighbour = ordered[currentIndex + 1];
+
+  if (!neighbour) {
+    // 이미 맨 끝이면 아무것도 하지 않는다.
+    return { ok: true };
+  }
+
+  await supabase
+    .from("content_images")
+    .update({ display_order: neighbour.display_order })
+    .eq("id", current.id);
+  await supabase
+    .from("content_images")
+    .update({ display_order: current.display_order })
+    .eq("id", neighbour.id);
+
+  await syncPrimaryImage(supabase, current.owner_type, current.owner_id);
+
+  await supabase.from("admin_audit_logs").insert({
+    action: `${current.owner_type}.image_reorder`,
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: currentData,
+    entity_id: current.owner_id,
+    entity_type: current.owner_type
+  });
+
+  return { ok: true };
+}
+
+/** 드래그로 바뀐 순서를 통째로 저장한다. orderedIds 순서대로 display_order를 0,1,2…로 다시 매긴다. */
+export async function reorderContentImages(
+  accessToken: string,
+  input: {
+    actorId: string;
+    ownerType: ImageOwnerType;
+    ownerId: string;
+    orderedIds: string[];
+  }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (input.orderedIds.length === 0) {
+    return { ok: true };
+  }
+
+  // 넘어온 id가 실제 이 콘텐츠의 사진인지 확인(엉뚱한 id 차단).
+  const { data: rows } = await supabase
+    .from("content_images")
+    .select("id")
+    .eq("owner_type", input.ownerType)
+    .eq("owner_id", input.ownerId);
+
+  const owned = new Set((rows ?? []).map((row) => (row as { id: string }).id));
+  const ids = input.orderedIds.filter((id) => owned.has(id));
+
+  if (ids.length === 0) {
+    return { ok: false, message: "순서를 바꿀 사진을 찾지 못했습니다." };
+  }
+
+  for (let index = 0; index < ids.length; index += 1) {
+    await supabase
+      .from("content_images")
+      .update({ display_order: index })
+      .eq("id", ids[index]);
+  }
+
+  await syncPrimaryImage(supabase, input.ownerType, input.ownerId);
+
+  await supabase.from("admin_audit_logs").insert({
+    action: `${input.ownerType}.image_reorder`,
+    actor_id: input.actorId,
+    after_data: { orderedIds: ids },
+    before_data: null,
+    entity_id: input.ownerId,
+    entity_type: input.ownerType
+  });
+
+  return { ok: true };
+}
+
+/** 사진 한 장을 맨 앞(대표 사진)으로 보낸다. 20장 이상일 때 한 칸씩 옮기지 않도록. */
+export async function setPrimaryContentImage(
+  accessToken: string,
+  input: { actorId: string; imageId: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: currentData, error: currentError } = await supabase
+    .from("content_images")
+    .select("*")
+    .eq("id", input.imageId)
+    .maybeSingle();
+
+  if (currentError || !currentData) {
+    return { ok: false, message: "사진을 찾을 수 없습니다." };
+  }
+
+  const current = currentData as {
+    id: string;
+    owner_type: ImageOwnerType;
+    owner_id: string;
+    display_order: number;
+  };
+
+  // 현재 맨 앞 사진의 순서값보다 하나 작게 주면 맨 앞으로 온다(전체 renumber 없이).
+  const { data: firstRow } = await supabase
+    .from("content_images")
+    .select("display_order")
+    .eq("owner_type", current.owner_type)
+    .eq("owner_id", current.owner_id)
+    .order("display_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const firstOrder = (firstRow?.display_order as number | undefined) ?? current.display_order;
+
+  if (current.display_order <= firstOrder) {
+    // 이미 맨 앞이면 아무것도 하지 않는다.
+    return { ok: true };
+  }
+
+  await supabase
+    .from("content_images")
+    .update({ display_order: firstOrder - 1 })
+    .eq("id", current.id);
+
+  await syncPrimaryImage(supabase, current.owner_type, current.owner_id);
+
+  await supabase.from("admin_audit_logs").insert({
+    action: `${current.owner_type}.image_set_primary`,
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: currentData,
+    entity_id: current.owner_id,
+    entity_type: current.owner_type
+  });
+
+  return { ok: true };
+}
+
+/** 공개 주소에서 저장소 경로를 되짚어 파일을 지운다(우리 버킷 파일일 때만). */
+async function removeStoredImage(
+  supabase: ReturnType<typeof createAuthenticatedClient>,
+  publicUrl: string | null
+) {
+  if (!supabase || !publicUrl) {
+    return;
+  }
+
+  const marker = `/${contentImageBucket}/`;
+  const markerIndex = publicUrl.indexOf(marker);
+
+  if (markerIndex === -1) {
+    return;
+  }
+
+  const path = publicUrl.slice(markerIndex + marker.length);
+
+  if (!path) {
+    return;
+  }
+
+  await supabase.storage.from(contentImageBucket).remove([path]);
 }

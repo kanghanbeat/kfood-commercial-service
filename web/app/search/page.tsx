@@ -131,7 +131,10 @@ export default async function SearchPage({
             <SearchResultSection title="Foods" count={foodHits.length}>
               {foodHits.map((food) => (
                 <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
-                  <CardPhoto label={food.nameEn} variant="food" />
+                  <CardPhoto
+                  imageUrl={food.imageUrl}
+                  label={food.nameEn}
+                  variant="food" />
                   <div className="card-v2-body">
                     <span className="card-v2-title">{food.nameEn}</span>
                     <span className="card-v2-meta">{food.summary}</span>
@@ -150,7 +153,10 @@ export default async function SearchPage({
                   href={`/regions/${region.slug}`}
                   key={region.slug}
                 >
-                  <CardPhoto label={region.nameEn} variant="region" />
+                  <CardPhoto
+                  imageUrl={region.imageUrl}
+                  label={region.nameEn}
+                  variant="region" />
                   <div className="card-v2-body">
                     <span className="card-v2-title">{region.nameEn}</span>
                     <span className="card-v2-meta">{region.intro}</span>
@@ -169,7 +175,10 @@ export default async function SearchPage({
                   href={`/places/${place.slug}`}
                   key={place.slug}
                 >
-                  <CardPhoto label={place.nameEn} variant="place" />
+                  <CardPhoto
+                  imageUrl={place.imageUrl}
+                  label={place.nameEn}
+                  variant="place" />
                   <div className="card-v2-body">
                     <span className="card-v2-title">{place.nameEn}</span>
                     <span className="card-v2-meta">{place.editorialNote}</span>
@@ -188,7 +197,10 @@ export default async function SearchPage({
                   href={`/routes/${route.slug}`}
                   key={route.slug}
                 >
-                  <CardPhoto label={route.title} variant="route" />
+                  <CardPhoto
+                  imageUrl={route.imageUrl}
+                  label={route.title}
+                  variant="route" />
                   <div className="card-v2-body">
                     <span className="card-v2-title">{route.title}</span>
                     <span className="card-v2-meta">{route.summary}</span>

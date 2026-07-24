@@ -11,6 +11,7 @@ import type { AdminRegion, PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
 import { AdminEntityActions } from "@/components/admin/entity-actions";
+import { AdminImageField } from "@/components/admin/image-field";
 import {
   AdminItem,
   AdminListToolbar,
@@ -210,6 +211,8 @@ export async function PlacesPanel({
     created?: string;
     archived?: string;
     deleted?: string;
+    imageSaved?: string;
+    imageRemoved?: string;
   };
   params?: ListParams;
 }) {
@@ -241,6 +244,12 @@ export async function PlacesPanel({
       ) : null}
       {message?.deleted ? (
         <p className="status-message success">장소을(를) 완전히 삭제했습니다.</p>
+      ) : null}
+      {message?.imageSaved ? (
+        <p className="status-message success">사진을 저장했습니다. 공개 페이지에 반영됩니다.</p>
+      ) : null}
+      {message?.imageRemoved ? (
+        <p className="status-message success">사진을 지웠습니다.</p>
       ) : null}
       {message?.error ? (
         <p className="status-message error">{message.error}</p>
@@ -369,6 +378,11 @@ export async function PlacesPanel({
               장소 저장
             </button>
           </form>
+            <AdminImageField
+              ownerId={place.id}
+              ownerType="place"
+              returnQuery={ret}
+            />
           <AdminEntityActions
             entity="place"
             id={place.id}

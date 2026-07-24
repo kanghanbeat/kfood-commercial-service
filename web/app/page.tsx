@@ -176,7 +176,10 @@ export default async function HomePage() {
           <div className="card-grid-v2 mobile-carousel magazine">
             {trendingFoods.map((food) => (
               <Link className="card-v2" href={`/foods/${food.slug}`} key={food.slug}>
-                <CardPhoto label={food.nameEn} variant="food" />
+                <CardPhoto
+                  imageUrl={food.imageUrl}
+                  label={food.nameEn}
+                  variant="food" />
                 <div className="card-v2-body">
                   {/* 0/4는 정보가 아니라 소음 — 안 매운 음식은 중립 칩으로 "Not spicy" */}
                   <span className={food.spicyLevel > 0 ? "food-chip spicy" : "food-chip"}>
@@ -207,7 +210,10 @@ export default async function HomePage() {
           <div className="card-grid-v2 mobile-carousel magazine">
             {editorPicks.map((route) => (
               <Link className="card-v2" href={`/routes/${route.slug}`} key={route.slug}>
-                <CardPhoto label={route.title} variant="route" />
+                <CardPhoto
+                  imageUrl={route.imageUrl}
+                  label={route.title}
+                  variant="route" />
                 <div className="card-v2-body">
                   <span className="food-chip">{route.estimatedDuration}</span>
                   <span className="card-v2-title">{route.title}</span>

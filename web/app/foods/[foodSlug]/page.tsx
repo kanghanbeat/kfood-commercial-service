@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import {
   fallbackPlaces,
+  getContentImages,
   getFoodPhotoReviewNote,
   getFoodPhotoSourceCandidates,
   getPublishedFood,
@@ -14,6 +15,7 @@ import {
 } from "@kfood/data";
 
 import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
+import { GalleryViewer } from "@/components/gallery-viewer";
 import { getDict } from "@/lib/i18n";
 
 export async function generateStaticParams() {
@@ -45,12 +47,14 @@ export default async function FoodDetailPage({
     notFound();
   }
 
-  const [publishedPlaces, regions, productions, dict] = await Promise.all([
-    getPublishedPlaces(),
-    getPublishedRegions(),
-    getPublishedProductionsFor("food", foodSlug),
-    getDict()
-  ]);
+  const [publishedPlaces, regions, productions, dict, galleryImages] =
+    await Promise.all([
+      getPublishedPlaces(),
+      getPublishedRegions(),
+      getPublishedProductionsFor("food", foodSlug),
+      getDict(),
+      food.id ? getContentImages("food", food.id) : Promise.resolve([])
+    ]);
   const t = dict.foodDetail;
   const sourcePlaces =
     publishedPlaces.length > 0 ? publishedPlaces : fallbackPlaces;
@@ -74,15 +78,25 @@ export default async function FoodDetailPage({
         <span>{food.nameEn}</span>
       </nav>
 
-      <div
-        className="food-hero-photo"
-        style={{ background: heroPhoto.gradient }}
-        aria-hidden="true"
-      >
-        <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
-          {heroPhoto.letter}
-        </span>
-      </div>
+      {galleryImages.length > 0 ? (
+        <GalleryViewer images={galleryImages} title={food.nameEn} />
+      ) : food.imageUrl ? (
+        <div className="food-hero-photo has-image">
+          {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt={food.nameEn} className="food-hero-photo-img" src={food.imageUrl} />
+        </div>
+      ) : (
+        <div
+          className="food-hero-photo"
+          style={{ background: heroPhoto.gradient }}
+          aria-hidden="true"
+        >
+          <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
+            {heroPhoto.letter}
+          </span>
+        </div>
+      )}
 
       <header className="food-v2-header">
         <span className="food-v2-eyebrow">{t.eyebrow}</span>
@@ -144,7 +158,10 @@ export default async function FoodDetailPage({
                 href={`/foods/${food.slug}/${region.slug}`}
                 key={region.slug}
               >
-                <CardPhoto label={region.nameEn} variant="region" />
+                <CardPhoto
+                  imageUrl={region.imageUrl}
+                  label={region.nameEn}
+                  variant="region" />
                 <div className="card-v2-body">
                   <span className="card-v2-title">{region.nameEn}</span>
                   <span className="card-v2-meta">{region.routeTheme}</span>

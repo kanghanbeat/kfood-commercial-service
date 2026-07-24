@@ -120,7 +120,10 @@ export default async function RegionsPage({
       <div className="card-grid-v2">
         {visibleRegions.map((region) => (
           <Link className="card-v2" href={`/regions/${region.slug}`} key={region.slug}>
-            <CardPhoto label={region.nameEn} variant="region" />
+            <CardPhoto
+                  imageUrl={region.imageUrl}
+                  label={region.nameEn}
+                  variant="region" />
             <div className="card-v2-body">
               <span className="food-chip">{region.primaryAudience}</span>
               <span className="card-v2-title">{region.nameEn}</span>

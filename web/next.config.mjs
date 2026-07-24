@@ -9,8 +9,8 @@ const nextConfig = {
   transpilePackages: ["@kfood/types", "@kfood/config", "@kfood/data"],
   experimental: {
     serverActions: {
-      // 어드민 사진 업로드용. 기본 1MB로는 사진이 안 올라간다(사진 자체는 5MB 제한).
-      bodySizeLimit: "8mb"
+      // 어드민 사진 업로드용. 여러 장 한 번에 올리므로 넉넉히 잡는다(사진 한 장은 5MB 제한).
+      bodySizeLimit: "40mb"
     }
   },
   turbopack: {

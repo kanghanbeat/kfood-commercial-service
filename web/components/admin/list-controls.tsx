@@ -189,16 +189,19 @@ export function AdminItem({
   title,
   meta,
   previewHref,
+  selectionSlot,
   children
 }: {
   title: string;
   meta: ReactNode;
   previewHref?: string;
+  selectionSlot?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <details className="admin-item">
       <summary className="admin-item-summary">
+        {selectionSlot ?? null}
         <span className="admin-item-title">{title}</span>
         <span className="admin-item-meta">{meta}</span>
         {previewHref ? (

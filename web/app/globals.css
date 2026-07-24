@@ -3411,3 +3411,62 @@ h3 {
 .pg-thumb:hover {
   border-color: var(--border-strong, #ccc);
 }
+
+/* 목록 일괄 선택·작업 */
+.admin-bulk-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--control-radius);
+  background: var(--surface-muted, #f5f5f7);
+}
+
+.admin-bulk-bar.active {
+  border-color: var(--brand);
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  background: var(--card, #fff);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.admin-bulk-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-bulk-selectall {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-body);
+  cursor: pointer;
+}
+
+.admin-bulk-count {
+  font-size: 14px;
+  color: var(--brand);
+}
+
+.admin-bulk-hint {
+  font-size: 12px;
+  color: var(--text-body);
+}
+
+.admin-bulk-check {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.admin-bulk-check input {
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+}

@@ -10,6 +10,7 @@ import {
 import type { AdminRegion, AdminRoute, PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { BulkBar, BulkCheckbox, BulkProvider } from "@/components/admin/bulk";
 import { AdminEntityActions } from "@/components/admin/entity-actions";
 import { AdminImageField } from "@/components/admin/image-field";
 import {
@@ -276,10 +277,19 @@ export async function RoutesPanel({
         <div className="admin-empty">조건에 맞는 루트가 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
       ) : null}
 
-      <div className="admin-form-list">
+      <BulkProvider>
+        {list.rows.length > 0 ? (
+          <BulkBar
+            entity="route"
+            pageIds={list.rows.map((route) => route.id)}
+            statuses={statusFilterOptions}
+          />
+        ) : null}
+        <div className="admin-form-list">
         {list.rows.map((route) => (
           <AdminItem
             key={route.id}
+            selectionSlot={<BulkCheckbox id={route.id} label={route.title} />}
             meta={
               <>
                 <span className={`admin-badge ${statusBadge[route.status]}`}>
@@ -311,7 +321,8 @@ export async function RoutesPanel({
             />
           </AdminItem>
         ))}
-      </div>
+        </div>
+      </BulkProvider>
 
       <AdminPager
         basePath="/admin/manage"

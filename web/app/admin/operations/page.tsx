@@ -1,4 +1,4 @@
-import { getAdminAuditLogs } from "@kfood/data";
+import { getAdminAuditLogs, getAdminReports } from "@kfood/data";
 
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
 import { CommentsPanel } from "@/components/admin/comments-panel";
@@ -18,14 +18,6 @@ const operationTabs = [
   { key: "posts", label: "게시물 관리" },
   { key: "comments", label: "댓글 관리" },
   { key: "settings", label: "사이트 설정" }
-];
-
-// 상단 요약 카드: 운영 현황. 신고/감사 외 일부는 placeholder.
-const operationMetrics = [
-  { label: "처리 대기 신고", value: "18", sub: "긴급 3건 포함" },
-  { label: "24시간 처리율", value: "91%", sub: "목표 90% 이상" },
-  { label: "활성 관리자", value: "7", sub: "admin 2 · editor 5" },
-  { label: "최근 감사 로그", value: "126", sub: "오늘 기록 기준" }
 ];
 
 export default async function AdminOperationsPage({
@@ -49,6 +41,39 @@ export default async function AdminOperationsPage({
   // 검색·상태 필터·페이지는 탭 하나만 렌더되므로 공통 파라미터로 넘긴다.
   const listParams = { q: params?.q, status: params?.status, page: params?.page };
 
+  // 상단 요약 카드: 신고·감사 로그 실데이터로 채운다(더미 아님).
+  const [reports, auditLogs] = await Promise.all([
+    getAdminReports(session.accessToken),
+    getAdminAuditLogs(session.accessToken)
+  ]);
+  const pendingReports = reports.filter(
+    (report) => report.status === "pending" || report.status === "in_review"
+  ).length;
+  const resolvedReports = reports.filter((report) => report.status === "resolved").length;
+  const ignoredReports = reports.filter((report) => report.status === "ignored").length;
+  const operationMetrics = [
+    {
+      label: "처리 대기 신고",
+      value: String(pendingReports),
+      sub: pendingReports > 0 ? "확인 필요" : "대기 없음"
+    },
+    {
+      label: "처리 완료 신고",
+      value: String(resolvedReports),
+      sub: `무시 ${ignoredReports}건 별도`
+    },
+    {
+      label: "전체 신고",
+      value: String(reports.length),
+      sub: reports.length >= 100 ? "최근 100건 기준" : "누적"
+    },
+    {
+      label: "감사 로그(최근)",
+      value: String(auditLogs.length),
+      sub: auditLogs.length >= 100 ? "최근 100건 기준" : "전체 기록"
+    }
+  ];
+
   return (
     <AdminShell active="operations" session={session}>
       <div className="admin-topbar">
@@ -59,14 +84,6 @@ export default async function AdminOperationsPage({
             신고 처리 · 변경 이력 감사 · 회원 관리 · 고객 게시물·댓글 모더레이션 ·
             사이트 공개 설정, 사이트 운영에 필요한 6가지를 탭으로 모아둔 화면입니다.
           </p>
-        </div>
-        <div className="admin-topbar-actions">
-          <button className="admin-btn" type="button">
-            로그 내보내기
-          </button>
-          <button className="admin-btn primary" type="button">
-            관리자 추가
-          </button>
         </div>
       </div>
 

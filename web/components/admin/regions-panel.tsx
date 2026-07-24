@@ -9,6 +9,7 @@ import {
 import type { PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { BulkBar, BulkCheckbox, BulkProvider } from "@/components/admin/bulk";
 import { AdminEntityActions } from "@/components/admin/entity-actions";
 import { AdminImageField } from "@/components/admin/image-field";
 import {
@@ -217,10 +218,19 @@ export async function RegionsPanel({
         <div className="admin-empty">조건에 맞는 지역이 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
       ) : null}
 
-      <div className="admin-form-list">
+      <BulkProvider>
+        {list.rows.length > 0 ? (
+          <BulkBar
+            entity="region"
+            pageIds={list.rows.map((region) => region.id)}
+            statuses={statusFilterOptions}
+          />
+        ) : null}
+        <div className="admin-form-list">
         {list.rows.map((region) => (
           <AdminItem
             key={region.id}
+            selectionSlot={<BulkCheckbox id={region.id} label={region.nameEn} />}
             meta={
               <>
                 <span className={`admin-badge ${statusBadge[region.status]}`}>
@@ -289,7 +299,8 @@ export async function RegionsPanel({
           />
           </AdminItem>
         ))}
-      </div>
+        </div>
+      </BulkProvider>
 
       <AdminPager
         basePath="/admin/manage"

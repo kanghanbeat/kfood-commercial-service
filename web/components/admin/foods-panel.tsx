@@ -5,6 +5,7 @@ import { createAdminFood, getAdminFoods, updateAdminFood } from "@kfood/data";
 import type { PublicationStatus } from "@kfood/data";
 
 import { publicationStatusLabels } from "@/components/admin-shell";
+import { BulkBar, BulkCheckbox, BulkProvider } from "@/components/admin/bulk";
 import { AdminEntityActions } from "@/components/admin/entity-actions";
 import { AdminImageField } from "@/components/admin/image-field";
 import {
@@ -288,10 +289,19 @@ export async function FoodsPanel({
         <div className="admin-empty">조건에 맞는 음식이 없습니다. 검색어나 상태 필터를 바꿔보세요.</div>
       ) : null}
 
-      <div className="admin-form-list">
+      <BulkProvider>
+        {list.rows.length > 0 ? (
+          <BulkBar
+            entity="food"
+            pageIds={list.rows.map((food) => food.id)}
+            statuses={statusFilterOptions}
+          />
+        ) : null}
+        <div className="admin-form-list">
         {list.rows.map((food) => (
           <AdminItem
             key={food.id}
+            selectionSlot={<BulkCheckbox id={food.id} label={food.nameEn} />}
             meta={
               <>
                 <span className={`admin-badge ${statusBadge[food.status]}`}>
@@ -323,7 +333,8 @@ export async function FoodsPanel({
             />
           </AdminItem>
         ))}
-      </div>
+        </div>
+      </BulkProvider>
 
       <AdminPager
         basePath="/admin/manage"

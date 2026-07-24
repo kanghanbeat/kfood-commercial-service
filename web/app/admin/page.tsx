@@ -47,9 +47,6 @@ export default async function AdminInsightPage({
           <h1>인사이트 요약</h1>
           <p>외국인 관심 신호를 콘텐츠 기획으로 연결하는 관리자 첫 화면입니다. (수집 {meta.collection_date} · {meta.collection_method})</p>
         </div>
-        <div className="admin-topbar-actions">
-          <button className="admin-btn" type="button">데이터 새로고침</button>
-        </div>
       </div>
 
       <AdminTabs basePath="/admin" current={tab} tabs={insightTabs} />

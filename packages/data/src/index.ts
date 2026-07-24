@@ -3721,6 +3721,61 @@ export async function archiveAdminEntity(
   return { ok: true };
 }
 
+/** 발행 상태만 바꾼다(공개·숨김·초안·보관). 일괄 상태 변경에 쓴다. */
+export async function setAdminEntityStatus(
+  accessToken: string,
+  input: {
+    actorId: string;
+    entity: AdminDeletableEntity;
+    id: string;
+    status: PublicationStatus;
+  }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const target = adminDeleteTargets[input.entity];
+
+  if (!target) {
+    return { ok: false, message: "지원하지 않는 콘텐츠 유형입니다." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from(target.table)
+    .select("*")
+    .eq("id", input.id)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: `${target.label}을(를) 찾을 수 없습니다.` };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from(target.table)
+    .update({ status: input.status, updated_at: new Date().toISOString() })
+    .eq("id", input.id)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: `${target.label} 상태를 바꾸지 못했습니다.` };
+  }
+
+  await supabase.from("admin_audit_logs").insert({
+    action: `${input.entity}.status_change`,
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.id,
+    entity_type: input.entity
+  });
+
+  return { ok: true };
+}
+
 /** 완전 삭제: DB에서 제거. 되돌릴 수 없다. 삭제 직전 내용은 감사 로그에 남는다. */
 export async function deleteAdminEntity(
   accessToken: string,

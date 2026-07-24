@@ -2750,6 +2750,32 @@ h3 {
 
 .admin-image-thumb-wrap {
   position: relative;
+  cursor: grab;
+}
+
+.admin-image-thumb-wrap:active {
+  cursor: grabbing;
+}
+
+.admin-image-tile.dragging {
+  opacity: 0.5;
+  border-color: var(--brand);
+}
+
+.admin-image-drag-hint {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #fff;
+  background: rgba(17, 17, 17, 0.55);
+  border-radius: 6px;
+  pointer-events: none;
 }
 
 .admin-image-thumb {

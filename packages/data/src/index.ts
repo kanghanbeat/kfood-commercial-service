@@ -4479,6 +4479,61 @@ export async function moveContentImage(
   return { ok: true };
 }
 
+/** 드래그로 바뀐 순서를 통째로 저장한다. orderedIds 순서대로 display_order를 0,1,2…로 다시 매긴다. */
+export async function reorderContentImages(
+  accessToken: string,
+  input: {
+    actorId: string;
+    ownerType: ImageOwnerType;
+    ownerId: string;
+    orderedIds: string[];
+  }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (input.orderedIds.length === 0) {
+    return { ok: true };
+  }
+
+  // 넘어온 id가 실제 이 콘텐츠의 사진인지 확인(엉뚱한 id 차단).
+  const { data: rows } = await supabase
+    .from("content_images")
+    .select("id")
+    .eq("owner_type", input.ownerType)
+    .eq("owner_id", input.ownerId);
+
+  const owned = new Set((rows ?? []).map((row) => (row as { id: string }).id));
+  const ids = input.orderedIds.filter((id) => owned.has(id));
+
+  if (ids.length === 0) {
+    return { ok: false, message: "순서를 바꿀 사진을 찾지 못했습니다." };
+  }
+
+  for (let index = 0; index < ids.length; index += 1) {
+    await supabase
+      .from("content_images")
+      .update({ display_order: index })
+      .eq("id", ids[index]);
+  }
+
+  await syncPrimaryImage(supabase, input.ownerType, input.ownerId);
+
+  await supabase.from("admin_audit_logs").insert({
+    action: `${input.ownerType}.image_reorder`,
+    actor_id: input.actorId,
+    after_data: { orderedIds: ids },
+    before_data: null,
+    entity_id: input.ownerId,
+    entity_type: input.ownerType
+  });
+
+  return { ok: true };
+}
+
 /** 사진 한 장을 맨 앞(대표 사진)으로 보낸다. 20장 이상일 때 한 칸씩 옮기지 않도록. */
 export async function setPrimaryContentImage(
   accessToken: string,

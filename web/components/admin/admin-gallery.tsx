@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import type { ContentImage, ImageOwnerType } from "@kfood/data";
@@ -8,13 +8,14 @@ import type { ContentImage, ImageOwnerType } from "@kfood/data";
 import {
   deleteGalleryImage,
   moveGalleryImage,
+  reorderGalleryImages,
   setPrimaryGalleryImage,
   uploadGalleryImages
 } from "@/components/admin/image-gallery-actions";
 
-// 사진 갤러리 UI(클라이언트). 사진을 올리거나 순서를 바꿔도 페이지를 새로 열지 않고
-// 이 자리에서만 갱신한다. 사진이 많아도 보기 좋게 그리드(가로 여러 칸)로 배열하고,
-// 20장 이상일 때 한 칸씩 옮기지 않도록 "대표로"(맨 앞으로) 버튼을 둔다.
+// 사진 갤러리 UI(클라이언트). 그리드로 배열하고, 썸네일을 끌어(드래그) 순서를 바꾼다.
+// 드래그는 라이브러리 없이 브라우저 기본 기능(HTML5 Drag&Drop)만 쓴다.
+// 버튼(★ 대표로 / ← → / ✕)도 그대로 둔다 — 터치나 미세 조정용.
 
 export function AdminGallery({
   images,
@@ -29,10 +30,21 @@ export function AdminGallery({
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  // busy: 서버에 저장 중, pending: 저장 후 화면 갱신 중. 둘 중 하나라도 켜지면 버튼을 잠근다.
+  // busy: 서버 저장 중, pending: 저장 후 화면 갱신 중. 둘 중 하나면 버튼 잠금.
   const [busy, setBusy] = useState(false);
   const [pending, startRefresh] = useTransition();
   const working = busy || pending;
+
+  // 드래그 중에는 화면에서 즉시 순서가 바뀌어 보이도록 로컬 상태로 들고 있는다.
+  const [items, setItems] = useState<ContentImage[]>(images);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  // 서버 데이터가 갱신되면(refresh 후) 로컬 순서도 맞춘다.
+  const serverKey = images.map((image) => image.id).join("|");
+  useEffect(() => {
+    setItems(images);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverKey]);
 
   async function run(
     task: () => Promise<{ ok: boolean; message?: string }>,
@@ -45,9 +57,10 @@ export function AdminGallery({
     setBusy(false);
     if (!result.ok) {
       setError(result.message ?? fallbackMessage);
-      return;
+      return false;
     }
     startRefresh(() => router.refresh());
+    return true;
   }
 
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
@@ -75,13 +88,46 @@ export function AdminGallery({
     startRefresh(() => router.refresh());
   }
 
+  function handleDragOver(overId: string) {
+    if (!draggingId || draggingId === overId) {
+      return;
+    }
+    setItems((prev) => {
+      const from = prev.findIndex((image) => image.id === draggingId);
+      const to = prev.findIndex((image) => image.id === overId);
+      if (from === -1 || to === -1) {
+        return prev;
+      }
+      const next = prev.slice();
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  }
+
+  async function handleDragEnd() {
+    setDraggingId(null);
+    const orderedIds = items.map((image) => image.id);
+    const original = images.map((image) => image.id);
+    if (orderedIds.join("|") === original.join("|")) {
+      return; // 순서가 안 바뀌었으면 저장하지 않는다.
+    }
+    const ok = await run(
+      () => reorderGalleryImages({ orderedIds, ownerId, ownerType }),
+      "순서를 저장하지 못했습니다."
+    );
+    if (!ok) {
+      setItems(images); // 실패하면 원래 순서로 되돌린다.
+    }
+  }
+
   return (
     <div className="admin-image-field">
       <div className="admin-image-head">
-        <span className="admin-metric-label">사진 ({images.length}장)</span>
-        {images.length > 0 ? (
+        <span className="admin-metric-label">사진 ({items.length}장)</span>
+        {items.length > 0 ? (
           <span className="admin-image-head-hint">
-            맨 앞(1번)이 목록 카드에 쓰이는 대표 사진입니다.
+            썸네일을 끌어 순서를 바꾸세요. 맨 앞(대표)이 목록 카드에 쓰입니다.
           </span>
         ) : null}
       </div>
@@ -89,20 +135,36 @@ export function AdminGallery({
       {error ? <p className="status-message error">{error}</p> : null}
       {notice ? <p className="status-message success">{notice}</p> : null}
 
-      {images.length === 0 ? (
+      {items.length === 0 ? (
         <p className="admin-image-empty">
           아직 사진이 없습니다. 사진을 올리면 공개 페이지에 나옵니다.
         </p>
       ) : (
         <ul className="admin-image-grid">
-          {images.map((image, index) => (
-            <li className="admin-image-tile" key={image.id}>
-              <div className="admin-image-thumb-wrap">
+          {items.map((image, index) => (
+            <li
+              className={
+                draggingId === image.id
+                  ? "admin-image-tile dragging"
+                  : "admin-image-tile"
+              }
+              key={image.id}
+              onDragEnter={() => handleDragOver(image.id)}
+              onDragOver={(event) => event.preventDefault()}
+            >
+              <div
+                className="admin-image-thumb-wrap"
+                draggable={!working}
+                onDragEnd={handleDragEnd}
+                onDragStart={() => setDraggingId(image.id)}
+                title="끌어서 순서 변경"
+              >
                 {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   alt={image.altText ?? `사진 ${index + 1}`}
                   className="admin-image-thumb"
+                  draggable={false}
                   src={image.url}
                 />
                 <span
@@ -113,6 +175,9 @@ export function AdminGallery({
                   }
                 >
                   {index === 0 ? "대표" : index + 1}
+                </span>
+                <span className="admin-image-drag-hint" aria-hidden="true">
+                  ⠿
                 </span>
               </div>
 
@@ -150,7 +215,7 @@ export function AdminGallery({
                   </button>
                   <button
                     className="admin-icon-btn"
-                    disabled={working || index === images.length - 1}
+                    disabled={working || index === items.length - 1}
                     onClick={() =>
                       run(
                         () => moveGalleryImage({ direction: "down", imageId: image.id, ownerType }),

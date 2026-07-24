@@ -6,6 +6,7 @@ import {
   addContentImage,
   deleteContentImage,
   moveContentImage,
+  reorderContentImages,
   setPrimaryContentImage,
   type ImageOwnerType
 } from "@kfood/data";
@@ -84,6 +85,28 @@ export async function moveGalleryImage(input: {
     actorId: session.userId,
     direction: input.direction,
     imageId: input.imageId
+  });
+
+  if (!result.ok) {
+    return { ok: false, message: result.message };
+  }
+
+  revalidateFor(input.ownerType);
+  return { ok: true };
+}
+
+export async function reorderGalleryImages(input: {
+  ownerId: string;
+  ownerType: ImageOwnerType;
+  orderedIds: string[];
+}): Promise<GalleryResult> {
+  const session = await requireAdminSession();
+
+  const result = await reorderContentImages(session.accessToken, {
+    actorId: session.userId,
+    orderedIds: input.orderedIds,
+    ownerId: input.ownerId,
+    ownerType: input.ownerType
   });
 
   if (!result.ok) {

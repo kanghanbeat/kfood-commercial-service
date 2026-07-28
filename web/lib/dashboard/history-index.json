@@ -1,58 +1,74 @@
 {
- "weeks": [
-  {
-   "key": "2026-W26",
-   "label": "2026년 6월 4주차 (W26)",
-   "date_range": "2026-06-22 ~ 2026-06-28",
-   "month": "2026-06",
-   "file": "data/history/2026-W26.json",
-   "top_food": "불닭볶음면",
-   "total_posts": 407
-  },
-  {
-   "key": "2026-W25",
-   "label": "2026년 6월 3주차 (W25)",
-   "date_range": "2026-06-15 ~ 2026-06-21",
-   "month": "2026-06",
-   "file": "data/history/2026-W25.json",
-   "top_food": "불닭볶음면",
-   "total_posts": 699
-  },
-  {
-   "key": "2026-W23",
-   "label": "2026년 6월 1주차 (W23)",
-   "date_range": "2026-06-01 ~ 2026-06-07",
-   "month": "2026-06",
-   "file": "data/history/2026-W23.json",
-   "top_food": "불닭볶음면",
-   "total_posts": 80
-  },
-  {
-   "key": "2026-W21",
-   "label": "2026년 5월 4주차 (W21)",
-   "date_range": "2026-05-18 ~ 2026-05-24",
-   "month": "2026-05",
-   "file": "data/history/2026-W21.json",
-   "top_food": "떡볶이",
-   "total_posts": 1089
-  }
- ],
- "months": [
-  {
-   "key": "2026-06",
-   "label": "2026년 6월",
-   "weeks": [
-    "2026-W26",
-    "2026-W25",
-    "2026-W23"
-   ]
-  },
-  {
-   "key": "2026-05",
-   "label": "2026년 5월",
-   "weeks": [
-    "2026-W21"
-   ]
-  }
- ]
+  "weeks": [
+    {
+      "key": "2026-W31",
+      "label": "2026년 7월 5주차 (W31)",
+      "date_range": "2026-07-27 ~ 2026-08-02",
+      "month": "2026-07",
+      "file": "data/history/2026-W31.json",
+      "top_food": "불닭볶음면",
+      "total_posts": 210
+    },
+    {
+      "key": "2026-W26",
+      "label": "2026년 6월 4주차 (W26)",
+      "date_range": "2026-06-22 ~ 2026-06-28",
+      "month": "2026-06",
+      "file": "data/history/2026-W26.json",
+      "top_food": "불닭볶음면",
+      "total_posts": 407
+    },
+    {
+      "key": "2026-W25",
+      "label": "2026년 6월 3주차 (W25)",
+      "date_range": "2026-06-15 ~ 2026-06-21",
+      "month": "2026-06",
+      "file": "data/history/2026-W25.json",
+      "top_food": "불닭볶음면",
+      "total_posts": 699
+    },
+    {
+      "key": "2026-W23",
+      "label": "2026년 6월 1주차 (W23)",
+      "date_range": "2026-06-01 ~ 2026-06-07",
+      "month": "2026-06",
+      "file": "data/history/2026-W23.json",
+      "top_food": "불닭볶음면",
+      "total_posts": 80
+    },
+    {
+      "key": "2026-W21",
+      "label": "2026년 5월 4주차 (W21)",
+      "date_range": "2026-05-18 ~ 2026-05-24",
+      "month": "2026-05",
+      "file": "data/history/2026-W21.json",
+      "top_food": "떡볶이",
+      "total_posts": 1089
+    }
+  ],
+  "months": [
+    {
+      "key": "2026-07",
+      "label": "2026년 7월",
+      "weeks": [
+        "2026-W31"
+      ]
+    },
+    {
+      "key": "2026-06",
+      "label": "2026년 6월",
+      "weeks": [
+        "2026-W26",
+        "2026-W25",
+        "2026-W23"
+      ]
+    },
+    {
+      "key": "2026-05",
+      "label": "2026년 5월",
+      "weeks": [
+        "2026-W21"
+      ]
+    }
+  ]
 }

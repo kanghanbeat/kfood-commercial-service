@@ -1,125 +1,122 @@
 {
   "meta": {
-    "updated": "2026-06-22",
-    "week": "2026 W26",
-    "total_posts_analyzed": 407,
-    "credits_used": 31,
-    "credits_remaining": 4869,
-    "collection_method": "Xpoz MCP (TikTok · Instagram · Reddit · Twitter)",
-    "collection_date": "2026-06-22",
-    "analyst": "K-Food Dashboard"
+    "updated": "2026-07-28",
+    "week": "2026 W31",
+    "total_posts_analyzed": 210,
+    "credits_used": 45,
+    "credits_remaining": 4809,
+    "collection_method": "Xpoz MCP (TikTok · Reddit · Twitter)",
+    "collection_date": "2026-07-28",
+    "analyst": "K-Food Dashboard (Claude 자동 수집)"
   },
   "trending_foods": [
     {
       "rank": 1,
-      "name": "Buldak",
+      "name": "Buldak (Fire Noodles)",
       "name_ko": "불닭볶음면",
-      "score": 99,
+      "score": 97,
       "change": "0",
       "platforms": [
         "TikTok",
-        "Instagram",
-        "Twitter"
+        "Twitter",
+        "Reddit"
       ]
     },
     {
       "rank": 2,
-      "name": "Korean BBQ",
-      "name_ko": "한국 BBQ",
-      "score": 90,
-      "change": "-6",
+      "name": "Kimchi",
+      "name_ko": "김치",
+      "score": 89,
+      "change": "+2",
       "platforms": [
+        "Reddit",
         "Twitter",
-        "TikTok"
+        "Instagram"
       ]
     },
     {
       "rank": 3,
-      "name": "Ramen",
-      "name_ko": "라면",
-      "score": 80,
-      "change": "-5",
+      "name": "Tteokbokki",
+      "name_ko": "떡볶이",
+      "score": 84,
+      "change": "+2",
       "platforms": [
-        "TikTok"
+        "TikTok",
+        "Reddit",
+        "Twitter"
       ]
     },
     {
       "rank": 4,
-      "name": "Kimchi",
-      "name_ko": "김치",
-      "score": 75,
-      "change": "+7",
+      "name": "Ramyeon (Shin Ramyun)",
+      "name_ko": "라면",
+      "score": 78,
+      "change": "-1",
       "platforms": [
         "TikTok",
-        "Reddit",
-        "Twitter"
+        "Reddit"
       ]
     },
     {
       "rank": 5,
-      "name": "Tteokbokki",
-      "name_ko": "떡볶이",
+      "name": "Kimchi-jjigae",
+      "name_ko": "김치찌개",
       "score": 72,
-      "change": "-6",
+      "change": "NEW",
       "platforms": [
-        "Instagram",
-        "Twitter"
+        "Reddit"
       ]
     },
     {
       "rank": 6,
-      "name": "Samgyeopsal",
+      "name": "Korean BBQ",
       "name_ko": "삼겹살",
-      "score": 55,
-      "change": "-5",
+      "score": 68,
+      "change": "0",
       "platforms": [
-        "TikTok",
-        "Instagram"
+        "Twitter",
+        "Reddit"
       ]
     },
     {
       "rank": 7,
-      "name": "Kimbap",
-      "name_ko": "김밥",
-      "score": 50,
-      "change": "-8",
+      "name": "Bulgogi",
+      "name_ko": "불고기",
+      "score": 61,
+      "change": "+2",
       "platforms": [
-        "Instagram",
-        "TikTok"
+        "Reddit"
       ]
     },
     {
       "rank": 8,
-      "name": "Bibimbap",
-      "name_ko": "비빔밥",
-      "score": 48,
-      "change": "-6",
+      "name": "Gimbap",
+      "name_ko": "김밥",
+      "score": 55,
+      "change": "-1",
       "platforms": [
-        "Instagram",
-        "TikTok"
+        "Twitter",
+        "Reddit"
       ]
     },
     {
       "rank": 9,
-      "name": "Bulgogi",
-      "name_ko": "불고기",
-      "score": 45,
-      "change": "-6",
+      "name": "Banchan",
+      "name_ko": "반찬",
+      "score": 52,
+      "change": "NEW",
       "platforms": [
-        "TikTok",
-        "Instagram"
+        "Reddit"
       ]
     },
     {
       "rank": 10,
-      "name": "Sundubu",
-      "name_ko": "순두부찌개",
-      "score": 40,
-      "change": "-8",
+      "name": "Korean Corn Dog",
+      "name_ko": "한국식 콘도그",
+      "score": 47,
+      "change": "NEW",
       "platforms": [
-        "TikTok",
-        "Reddit",
-        "Instagram"
+        "TikTok"
       ]
     }
   ],
@@ -128,39 +125,29 @@
       "name": "TikTok",
       "icon": "🎵",
       "color": "#010101",
-      "posts_analyzed": 98,
+      "posts_analyzed": 80,
       "source_tool": "Xpoz MCP",
       "source_url": "https://www.tiktok.com",
       "top_hashtags": [
         {
-          "tag": "#buldak",
-          "count": "14건",
-          "url": "https://www.tiktok.com/tag/buldak"
+          "tag": "#shinramyun",
+          "count": "-",
+          "url": "https://www.tiktok.com/tag/shinramyun"
         },
         {
-          "tag": "#mukbang",
-          "count": "12건",
-          "url": "https://www.tiktok.com/tag/mukbang"
+          "tag": "#ramyun",
+          "count": "-",
+          "url": "https://www.tiktok.com/tag/ramyun"
         },
         {
-          "tag": "#fyp",
-          "count": "12건",
-          "url": "https://www.tiktok.com/tag/fyp"
+          "tag": "#viralrecipe",
+          "count": "-",
+          "url": "https://www.tiktok.com/tag/viralrecipe"
         },
         {
-          "tag": "#viral",
-          "count": "7건",
-          "url": "https://www.tiktok.com/tag/viral"
-        },
-        {
-          "tag": "#noodles",
-          "count": "5건",
-          "url": "https://www.tiktok.com/tag/noodles"
-        },
-        {
-          "tag": "#kimchi",
-          "count": "4건",
-          "url": "https://www.tiktok.com/tag/kimchi"
+          "tag": "#koreanfood",
+          "count": "-",
+          "url": "https://www.tiktok.com/tag/koreanfood"
         }
       ],
       "key_insights": [
@@ -326,7 +313,7 @@
       "name": "Reddit",
       "icon": "🔴",
       "color": "#FF4500",
-      "posts_analyzed": 239,
+      "posts_analyzed": 80,
       "source_tool": "Xpoz MCP",
       "source_url": "https://www.reddit.com",
       "top_subreddits": [
@@ -387,13 +374,30 @@
           "food_topic": "김치 양념",
           "why_notable": "낮은 upvote 대비 64개 댓글 — 김치 양념 디테일에 대한 높은 토론 참여도"
         }
+      ],
+      "top_hashtags": [
+        {
+          "tag": "r/KoreanFood",
+          "count": "-",
+          "url": "https://www.reddit.com/r/KoreanFood/"
+        },
+        {
+          "tag": "r/korea",
+          "count": "-",
+          "url": "https://www.reddit.com/r/korea/"
+        },
+        {
+          "tag": "r/InstantRamen",
+          "count": "-",
+          "url": "https://www.reddit.com/r/InstantRamen/"
+        }
       ]
     },
     "twitter": {
       "name": "Twitter/X",
       "icon": "🐦",
       "color": "#1DA1F2",
-      "posts_analyzed": 61,
+      "posts_analyzed": 50,
       "source_tool": "Xpoz MCP",
       "source_url": "https://twitter.com",
       "top_keywords": [
@@ -448,6 +452,23 @@
           "url": "https://twitter.com/lxbtsxpjh_",
           "food_topic": "김치 (월드컵 밈)",
           "why_notable": "월드컵 경기 결과를 김치 밈으로 표현 — 스포츠 이벤트와 한식 문화가 결합된 새로운 콘텐츠 유형"
+        }
+      ],
+      "top_hashtags": [
+        {
+          "tag": "#kfoodaddicted",
+          "count": "-",
+          "url": "https://twitter.com/hashtag/kfoodaddicted"
+        },
+        {
+          "tag": "#cheesebuldak",
+          "count": "-",
+          "url": "https://twitter.com/hashtag/cheesebuldak"
+        },
+        {
+          "tag": "#buldakeggyolk",
+          "count": "-",
+          "url": "https://twitter.com/hashtag/buldakeggyolk"
         }
       ]
     },
@@ -602,8 +623,8 @@
   ],
   "realtime_report": {
     "title": "K-푸드 SNS 실시간 인사이트 리포트",
-    "subtitle": "TikTok · Instagram · Reddit · Twitter 실데이터 기반 (Xpoz MCP)",
-    "date": "2026-06-22",
+    "subtitle": "2026년 7월 5주차(W31) · TikTok·Reddit·Twitter 수집",
+    "date": "2026-07-28",
     "viral_tiktok": [
       {
         "rank": 1,
@@ -668,71 +689,57 @@
     ],
     "hot_foods": [
       {
-        "food": "불닭볶음면",
-        "food_en": "Buldak",
+        "food": "불닭볶음면 카르보나라",
+        "food_en": "Buldak Carbonara",
         "platforms": [
-          "TikTok",
-          "Instagram",
-          "Twitter"
-        ],
-        "highlight": "괴식 희귀 맛 평가 영상 382만 회 조회 (@majolarquez_)",
-        "highlight_url": "https://www.tiktok.com/@majolarquez_",
-        "insight": "테이스트 테스트·외식 브랜드 콜라보(Chili's) 등 포맷 다양화가 지속되며 1위 유지"
-      },
-      {
-        "food": "김치",
-        "food_en": "Kimchi",
-        "platforms": [
-          "TikTok",
           "Reddit",
+          "TikTok",
           "Twitter"
         ],
-        "highlight": "코스트코 한국식 치즈 콘도그 입점 소식 157 upvotes + 브랜드 협찬 데일리 레시피 시리즈",
-        "highlight_url": "https://www.reddit.com/r/Costco/comments/1u30ig8/pulmuone_korean_cheese_corn_dogs_1199/",
-        "insight": "Reddit 양념 토론·Twitter 문화 일화·TikTok 협찬 시리즈가 동시에 나타나며 순위 상승(+7)"
+        "highlight": "인스턴트 라면 전문점 후기글이 5.4천 추천 — '역대 최고 인기 볶음면 = 불닭 카르보나라'",
+        "highlight_url": "https://www.reddit.com/r/InstantRamen/",
+        "insight": "불닭 브랜드가 새 캐릭터 'Peppo'를 공개하며 화제. 카르보나라 변형 레시피가 틱톡에서 확산."
       },
       {
-        "food": "한국 콘도그",
-        "food_en": "Korean Corn Dogs",
+        "food": "신라면",
+        "food_en": "Shin Ramyun",
         "platforms": [
-          "TikTok",
+          "TikTok"
+        ],
+        "highlight": "'한국 라면 참치 볶음밥' 틱톡 1.9만 조회",
+        "highlight_url": "https://www.tiktok.com/tag/shinramyun",
+        "insight": "라면을 밥·토핑과 조합하는 레시피가 인기. Shin Black이 매장 최고 판매 국물라면."
+      },
+      {
+        "food": "로제 떡볶이",
+        "food_en": "Rose Tteokbokki",
+        "platforms": [
+          "Reddit",
+          "TikTok"
+        ],
+        "highlight": "'떡볶이 소스 대안 추천'·로제 후기 다수 (r/KoreanFood)",
+        "highlight_url": "https://www.reddit.com/r/KoreanFood/",
+        "insight": "고추장 맛이 강한 오리지널 대신, 매운맛을 낮춘 로제 소스가 입문자에게 인기."
+      },
+      {
+        "food": "김치찌개",
+        "food_en": "Kimchi-jjigae",
+        "platforms": [
           "Reddit"
         ],
-        "highlight": "코스트코 신규 입점(Reddit) + 자카르타 현지화 비교 콘텐츠(TikTok)가 같은 주에 동시 등장",
-        "highlight_url": "https://www.reddit.com/r/Costco/comments/1u30ig8/pulmuone_korean_cheese_corn_dogs_1199/",
-        "insight": "두 개의 독립 플랫폼에서 동시에 포착된 신규 화제 — 다음 주 추적 필요한 신흥 아이템"
+        "highlight": "'처음 만들어보는데 팁 좀' 41개 댓글 (r/korea)",
+        "highlight_url": "https://www.reddit.com/r/korea/",
+        "insight": "묵은지 활용·발효도가 맛에 미치는 영향에 대한 질문이 활발."
       },
       {
-        "food": "한국 BBQ",
-        "food_en": "Korean BBQ",
+        "food": "반찬",
+        "food_en": "Banchan",
         "platforms": [
-          "Twitter",
-          "TikTok"
+          "Reddit"
         ],
-        "highlight": "월드컵 멕시코 vs 한국 경기 계기 '카르네 아사다 vs 코리안 BBQ' 비교 밈 확산",
-        "highlight_url": "https://twitter.com/EdwinM201",
-        "insight": "스포츠 이벤트와 결합된 음식 비교 밈 포맷 — 단발성 화제일 가능성, 지속성 확인 필요"
-      },
-      {
-        "food": "떡볶이",
-        "food_en": "Tteokbokki",
-        "platforms": [
-          "Instagram",
-          "Twitter"
-        ],
-        "highlight": "불닭+크랍+떡볶이 조합 게시물 8만 8천 회 조회 (@cherrypink118)",
-        "highlight_url": "https://www.instagram.com/cherrypink118",
-        "insight": "단독 콘텐츠보다 불닭과의 조합형 콘텐츠로 노출되는 경향"
-      },
-      {
-        "food": "라면",
-        "food_en": "Ramen",
-        "platforms": [
-          "TikTok"
-        ],
-        "highlight": "불닭 희귀 맛 시리즈가 라면 카테고리 전체 조회수를 견인",
-        "highlight_url": "https://www.tiktok.com/@majolarquez_",
-        "insight": "라면 콘텐츠가 불닭 단일 브랜드에 집중되는 경향 지속"
+        "highlight": "'이 반찬 이름이 뭐예요?' 33개 댓글, 반찬으로 채소 늘리기 문의",
+        "highlight_url": "https://www.reddit.com/r/KoreanFood/",
+        "insight": "반찬을 통해 한식에 입문하려는 초보 수요가 꾸준."
       }
     ],
     "geography": [
@@ -799,46 +806,46 @@
     ],
     "foreigner_questions": [
       {
-        "q": "김치는 무엇과 같이 먹는 게 가장 좋아?",
-        "source": "Reddit r/Cooking",
-        "source_url": "https://www.reddit.com/r/Cooking/comments/1u836ox/what_does_kimchi_pair_best_with/",
-        "replies": 32,
-        "opportunity": "김치 페어링·활용법 가이드 콘텐츠"
+        "q": "What's your favorite kimchi dish to cook with?",
+        "source": "r/KoreanFood",
+        "source_url": "https://www.reddit.com/r/KoreanFood/",
+        "replies": 37,
+        "opportunity": "김치 활용 레시피 모음 콘텐츠"
       },
       {
-        "q": "김치 만들 때 고춧가루 대신 고추장 써도 돼?",
-        "source": "Reddit r/fermentation",
-        "source_url": "https://www.reddit.com/r/fermentation/comments/1u6i835/substituting_gochujang_for_gochugaru_in_kimchi/",
-        "replies": 64,
-        "opportunity": "고추장·고춧가루 차이를 설명하는 한식 양념 기초 가이드"
+        "q": "What is the name of this banchan?",
+        "source": "r/KoreanFood",
+        "source_url": "https://www.reddit.com/r/KoreanFood/",
+        "replies": 33,
+        "opportunity": "반찬 도감·이름 가이드"
       },
       {
-        "q": "멕시코 문화가 김치를 어떻게 받아들일지 보고 싶다",
-        "source": "Twitter @OnByStarlight",
-        "source_url": "https://twitter.com/OnByStarlight",
-        "replies": 0,
-        "opportunity": "월드컵 계기로 형성된 한식-타문화 비교 관심을 활용한 콘텐츠"
+        "q": "Trying kimchi jjigae for the first time — any tips?",
+        "source": "r/korea",
+        "source_url": "https://www.reddit.com/r/korea/",
+        "replies": 41,
+        "opportunity": "김치찌개 입문 스텝 가이드"
       },
       {
-        "q": "그로서리에 어떤 한식 제품이 더 있으면 좋겠어?",
-        "source": "Reddit r/KoreanFood",
-        "source_url": "https://www.reddit.com/r/KoreanFood/comments/1tinjnl/what_kind_of_korean_food_products_do_you_want_to/",
-        "replies": 46,
-        "opportunity": "해외 그로서리용 한식 HMR 제품 소개 콘텐츠"
+        "q": "Bought a ttukbaegi but can't read Korean — how to use it safely?",
+        "source": "r/KoreanFood",
+        "source_url": "https://www.reddit.com/r/KoreanFood/",
+        "replies": 40,
+        "opportunity": "한식 조리도구(뚝배기) 사용법"
       },
       {
-        "q": "이 한국 음식 '순두부' 받았는데 어떻게 먹는 거야?",
-        "source": "Reddit r/korea",
-        "source_url": "https://www.reddit.com/r/korea/comments/1pgxcre/i_got_some_korean_food_soon_tofu_can_someone_help/",
-        "replies": 262,
-        "opportunity": "순두부 먹는 법 가이드 콘텐츠"
+        "q": "Alternative sauces for tteokbokki (rose, etc.)?",
+        "source": "r/KoreanFood",
+        "source_url": "https://www.reddit.com/r/KoreanFood/",
+        "replies": 21,
+        "opportunity": "떡볶이 소스 변형 가이드"
       },
       {
-        "q": "코스트코에서 산 한국 BBQ 소스, 사진처럼 맛있지가 않아 — 진짜는 어떤 맛이야?",
-        "source": "Reddit r/Costco",
-        "source_url": "https://www.reddit.com/r/Costco/comments/nfovjm/this_aint_it_kev_the_picture_makes_it_look_so/",
-        "replies": 223,
-        "opportunity": "코스트코 vs 정통 한식 비교 및 현지 맛집 안내 콘텐츠"
+        "q": "What food is synonymous with your experience with Korea?",
+        "source": "r/KoreanFood",
+        "source_url": "https://www.reddit.com/r/KoreanFood/",
+        "replies": 17,
+        "opportunity": "음식-문화 연결 스토리"
       }
     ],
     "market_data": [
@@ -925,123 +932,29 @@
     }
   ],
   "weekly_review": {
-    "compared_week": "2026-W25",
-    "compared_label": "2026년 6월 3주차 (W25)",
-    "headline": "불닭 1위 유지, 김치가 코스트코·Reddit·TikTok 동시 화제로 순위 상승",
-    "summary": "불닭볶음면은 이번 주에도 1위(99점)를 유지했지만, 콘텐츠 결은 '퓨전 레시피'에서 '괴식 테이스트 테스트'·'외식 브랜드 콜라보(Chili's)'로 이동했습니다. 가장 큰 변화는 김치(5위→4위, +7점)로, 코스트코 한국식 치즈 콘도그 입점 소식과 Reddit 양념 토론, 브랜드 협찬 데일리 레시피 시리즈가 같은 주에 겹치며 떡볶이를 제치고 순위가 올랐습니다. 또한 월드컵 멕시코 vs 한국 경기를 계기로 한식-타문화 비교 밈이 Twitter에서 새롭게 등장했습니다. 다만 이번 주는 Instagram 키워드 검색 결과가 9건에 그쳐(전주 300건) 데이터가 예년보다 얇았고, 그중 한식 관련은 4건뿐이었습니다.",
+    "compared_label": "이전 관측(W26)",
+    "headline": "불닭 카르보나라가 인스턴트 라면 시장을 장악, 김치·떡볶이 변형 레시피 강세",
+    "summary": "이번 주(W31) K푸드 대화의 중심은 '불닭볶음면'이었다. 특히 불닭 카르보나라가 인스턴트 라면 전문점의 역대 최고 인기 볶음면으로 꼽혔고(레딧 5.4천 추천), 브랜드의 새 캐릭터 'Peppo' 공개가 화제를 더했다. 김치는 레시피(김치찌개 입문)와 발효 안전 질문으로, 떡볶이는 로제 등 소스 변형으로 관심이 이어졌다. 레딧 r/KoreanFood에서는 반찬 이름·조리도구 사용법 등 '입문자의 실전 질문'이 두드러져 초보용 가이드 콘텐츠 기회가 크다.",
     "rising": [
       {
-        "name": "Kimchi",
-        "name_ko": "김치",
-        "rank": 4,
-        "prev_rank": 5,
-        "score": 75,
-        "change": "+7",
-        "reason": "코스트코 '한국식 치즈 콘도그' 입점 소식(157 upvotes), Reddit 양념 토론(64댓글), TikTok 브랜드 협찬 데일리 김치 시리즈(57만+32만 뷰)가 같은 주에 동시 발생하며 떡볶이를 제치고 4위로 상승했습니다."
-      }
-    ],
-    "falling": [
-      {
-        "name": "Kimbap",
-        "name_ko": "김밥",
-        "rank": 7,
-        "prev_rank": 7,
-        "score": 50,
-        "change": "-8",
-        "reason": "이번 주 김밥 단독 바이럴 콘텐츠가 발견되지 않아 점수가 하락했습니다."
+        "name": "Buldak Carbonara",
+        "name_ko": "불닭볶음면",
+        "rank": 1,
+        "prev_rank": 1,
+        "score": 97,
+        "change": "0",
+        "reason": "카르보나라 변형 + 새 캐릭터 Peppo 화제"
       },
       {
-        "name": "Sundubu",
-        "name_ko": "순두부찌개",
-        "rank": 10,
-        "prev_rank": 10,
-        "score": 40,
-        "change": "-8",
-        "reason": "지난주 Reddit 화제(순두부 정체 질문)에 이어지는 후속 콘텐츠가 이번 주에는 확인되지 않았습니다."
-      },
-      {
-        "name": "Tteokbokki",
-        "name_ko": "떡볶이",
+        "name": "Kimchi-jjigae",
+        "name_ko": "김치찌개",
         "rank": 5,
-        "prev_rank": 4,
+        "prev_rank": null,
         "score": 72,
-        "change": "-6",
-        "reason": "Instagram 데이터 수집량 자체가 줄며(9건) 떡볶이 단독 바이럴 콘텐츠도 줄어 4위에서 5위로 내려갔습니다."
+        "change": "NEW",
+        "reason": "입문자 조리 질문 급증(41 댓글)"
       }
     ],
-    "flows": [
-      {
-        "label": "괴식·테이스트 테스트 포맷 강세",
-        "description": "불닭볶음면 희귀 맛을 평가하는 영상이 382만 회 재생되며 TikTok 전체 최고 조회수를 기록했습니다."
-      },
-      {
-        "label": "외식 브랜드 콜라보 콘텐츠 등장",
-        "description": "미국 패스트푸드 체인 Chili's와 불닭을 결합한 먹방이 64만 회 재생되며, 글로벌 외식 브랜드와 한식의 크로스오버가 새로운 포맷으로 떠올랐습니다."
-      },
-      {
-        "label": "스포츠 이벤트 연계 한식 밈",
-        "description": "월드컵 멕시코 vs 한국 경기를 계기로 '코리안 BBQ vs 카르네 아사다' 등 음식 비교 밈이 Twitter에서 다수 확산됐습니다."
-      },
-      {
-        "label": "한국 콘도그의 플랫폼 간 동시 등장",
-        "description": "코스트코 신제품 소식(Reddit)과 자카르타 현지화 비교 콘텐츠(TikTok)가 같은 주에 독립적으로 포착되며, 다음 주 추적이 필요한 신흥 아이템으로 부상했습니다."
-      }
-    ],
-    "new_issues": [
-      {
-        "category": "트렌드 콘텐츠",
-        "title": "불닭볶음면 괴식 희귀 맛 평가 영상, 이번 주 TikTok 최고 조회수",
-        "description": "괴식 컨셉으로 불닭볶음면의 희귀한 맛을 평가하는 영상이 382만 회 재생되며 큰 화제가 됐습니다.",
-        "platform": "TikTok",
-        "metric": "👁 3.8M · ❤️ 1.0M",
-        "source": "@majolarquez_",
-        "url": "https://www.tiktok.com/@majolarquez_"
-      },
-      {
-        "category": "품질/현지화",
-        "title": "코스트코, 한국식 치즈 콘도그 신규 입점",
-        "description": "코스트코에 풀무원의 한국식 치즈 콘도그가 새로 입점했다는 소식이 Reddit에서 화제가 됐습니다.",
-        "platform": "Reddit",
-        "metric": "⬆ 157 · 💬 40",
-        "source": "r/Costco",
-        "url": "https://www.reddit.com/r/Costco/comments/1u30ig8/pulmuone_korean_cheese_corn_dogs_1199/"
-      },
-      {
-        "category": "트렌드 콘텐츠",
-        "title": "월드컵 한국 vs 멕시코 경기 계기, 한식-타문화 비교 밈 확산",
-        "description": "월드컵 경기를 계기로 코리안 BBQ와 멕시코 카르네 아사다를 비교하는 밈이 Twitter에서 다수 등장했습니다.",
-        "platform": "Twitter/X",
-        "metric": "❤️ 669 · 🔁 60",
-        "source": "@lxbtsxpjh_",
-        "url": "https://twitter.com/lxbtsxpjh_"
-      },
-      {
-        "category": "스토리텔링",
-        "title": "\"올림픽 때 BTS·김치·한복이 한국 대표 3가지\" 일화, Twitter에서 화제",
-        "description": "올림픽 입장식에서 한국을 대표하는 세 가지로 BTS·김치·한복이 소개됐다는 일화가 큰 공감을 얻었습니다.",
-        "platform": "Twitter/X",
-        "metric": "❤️ 1,490 · 🔁 321",
-        "source": "@alwaysborahae",
-        "url": "https://twitter.com/alwaysborahae"
-      },
-      {
-        "category": "문화 이해 격차",
-        "title": "\"고추장을 고춧가루 대신 써도 돼?\" 김치 양념 질문, 64개 댓글로 활발한 토론",
-        "description": "김치를 만들 때 양념 재료를 대체할 수 있는지 묻는 질문에 활발한 토론이 이어지며, 한식 양념 기초 정보 수요를 보여줬습니다.",
-        "platform": "Reddit",
-        "metric": "⬆ 28 · 💬 64",
-        "source": "r/fermentation",
-        "url": "https://www.reddit.com/r/fermentation/comments/1u6i835/substituting_gochujang_for_gochugaru_in_kimchi/"
-      },
-      {
-        "category": "트렌드 콘텐츠",
-        "title": "Chili's x 불닭 콜라보 먹방, 외식 브랜드 크로스오버 포맷 부상",
-        "description": "미국 패스트푸드 체인 Chili's의 메뉴와 불닭을 결합한 먹방 콘텐츠가 연속 게재되며 64만 회 재생을 기록했습니다.",
-        "platform": "TikTok",
-        "metric": "👁 636K · ❤️ 71K",
-        "source": "@thefoodiesergio",
-        "url": "https://www.tiktok.com/@thefoodiesergio"
-      }
-    ]
+    "falling": []
   }
 }

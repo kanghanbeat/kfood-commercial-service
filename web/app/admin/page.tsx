@@ -1,5 +1,7 @@
+import Link from "next/link";
+
 import { AdminShell, AdminTabs } from "@/components/admin-shell";
-import { insightsData } from "@/lib/dashboard";
+import { dashboardWeeks, getInsightsForWeek } from "@/lib/dashboard";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export const metadata = {
@@ -27,15 +29,16 @@ function Delta({ change }: { change: string }) {
 export default async function AdminInsightPage({
   searchParams
 }: {
-  searchParams?: Promise<{ tab?: string }>;
+  searchParams?: Promise<{ tab?: string; week?: string }>;
 }) {
   const [session, params] = await Promise.all([
     requireAdminSession(),
     searchParams
   ]);
   const tab = params?.tab ?? "summary";
+  const selectedWeek = params?.week ?? dashboardWeeks[0]?.key;
   const { meta, trending_foods, platforms, realtime_report, regional_sentiment, weekly_review } =
-    insightsData;
+    getInsightsForWeek(selectedWeek);
   const platformList = Object.values(platforms);
   const top = trending_foods[0];
 
@@ -49,7 +52,31 @@ export default async function AdminInsightPage({
         </div>
       </div>
 
-      <AdminTabs basePath="/admin" current={tab} tabs={insightTabs} />
+      {dashboardWeeks.length > 1 ? (
+        <div className="admin-week-picker">
+          <span className="admin-week-label">주차</span>
+          {dashboardWeeks.map((week) => (
+            <Link
+              className={
+                week.key === selectedWeek ? "admin-week-chip active" : "admin-week-chip"
+              }
+              href={`/admin?tab=${tab}&week=${week.key}`}
+              key={week.key}
+              prefetch={false}
+              title={`${week.date_range} · 분석 ${week.total_posts}건 · 1위 ${week.top_food}`}
+            >
+              {week.label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+
+      <AdminTabs
+        basePath="/admin"
+        current={tab}
+        query={selectedWeek ? { week: selectedWeek } : undefined}
+        tabs={insightTabs}
+      />
 
       {tab === "summary" ? (
         <>

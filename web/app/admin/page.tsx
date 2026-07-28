@@ -103,13 +103,19 @@ export default async function AdminInsightPage({
             </div>
           </div>
 
-          <div className="admin-panel">
-            <div className="admin-panel-head">
-              <h2>주간 리뷰 — {weekly_review.compared_label} 대비</h2>
-              <p>{weekly_review.headline}</p>
+          {weekly_review ? (
+            <div className="admin-panel">
+              <div className="admin-panel-head">
+                <h2>주간 리뷰 — {weekly_review.compared_label} 대비</h2>
+                <p>{weekly_review.headline}</p>
+              </div>
+              <p style={{ color: "var(--text-body)", lineHeight: 1.6 }}>{weekly_review.summary}</p>
             </div>
-            <p style={{ color: "var(--text-body)", lineHeight: 1.6 }}>{weekly_review.summary}</p>
-          </div>
+          ) : (
+            <div className="admin-panel">
+              <div className="admin-empty">이 주차에는 주간 리뷰 데이터가 없습니다.</div>
+            </div>
+          )}
         </>
       ) : null}
 

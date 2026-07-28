@@ -89,7 +89,8 @@ export type InsightsData = {
     foreigner_questions: ForeignerQuestion[];
   };
   regional_sentiment: RegionalSentiment[];
-  weekly_review: {
+  // 오래된 주차 스냅샷에는 주간 리뷰가 없을 수 있다(그때 내부대시보드에 없던 항목).
+  weekly_review?: {
     compared_label: string;
     headline: string;
     summary: string;

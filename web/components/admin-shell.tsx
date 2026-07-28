@@ -94,18 +94,31 @@ export function AdminShell({
 export function AdminTabs({
   basePath,
   current,
-  tabs
+  tabs,
+  query
 }: {
   basePath: string;
   current: string;
   tabs: { key: string; label: string }[];
+  // 탭을 바꿔도 유지할 추가 쿼리(예: 인사이트의 선택 주차)
+  query?: Record<string, string>;
 }) {
+  function href(tabKey: string) {
+    const search = new URLSearchParams({ tab: tabKey });
+    if (query) {
+      for (const [key, value] of Object.entries(query)) {
+        if (value) search.set(key, value);
+      }
+    }
+    return `${basePath}?${search.toString()}`;
+  }
+
   return (
     <nav className="admin-tabs" aria-label="Section tabs">
       {tabs.map((tab) => (
         <Link
           className={tab.key === current ? "admin-tab active" : "admin-tab"}
-          href={`${basePath}?tab=${tab.key}`}
+          href={href(tab.key)}
           key={tab.key}
           prefetch={false}
           aria-current={tab.key === current ? "page" : undefined}

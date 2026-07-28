@@ -3470,3 +3470,38 @@ h3 {
   height: 17px;
   cursor: pointer;
 }
+
+/* 인사이트 주차 선택 */
+.admin-week-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.admin-week-label {
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.admin-week-chip {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  color: var(--text-body);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-week-chip:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.admin-week-chip.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}

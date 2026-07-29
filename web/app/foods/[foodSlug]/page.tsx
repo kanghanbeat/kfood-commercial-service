@@ -154,12 +154,12 @@ export default async function FoodDetailPage({
         </p>
         <div className="food-info-grid">
           <div className="food-info-card">
-            <h3>{t.tasteH}</h3>
-            <p>{food.tasteProfile}</p>
-          </div>
-          <div className="food-info-card">
             <h3>{t.goodToKnowH}</h3>
             <p>{food.beginnerNote}</p>
+          </div>
+          <div className="food-info-card">
+            <h3>{t.tasteH}</h3>
+            <p>{food.tasteProfile}</p>
           </div>
           <div className="food-info-card">
             <h3>{t.menuTipH}</h3>

@@ -10,6 +10,8 @@ import {
 } from "@kfood/data";
 
 import { resolveCardPhoto } from "@/components/card-photo";
+import { JsonLd } from "@/components/json-ld";
+import { absUrl, breadcrumbLd, clip, detailMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const places = await getPublishedPlaces();
@@ -23,9 +25,13 @@ export async function generateMetadata({
 }) {
   const { placeSlug } = await params;
   const place = await getPublishedPlace(placeSlug);
-  return {
-    title: place ? place.nameEn : "Place"
-  };
+  if (!place) return { title: "Place" };
+  return detailMetadata({
+    title: `${place.nameEn} — Where to Eat in Korea`,
+    description: place.editorialNote,
+    path: `/places/${place.slug}`,
+    imageUrl: place.imageUrl
+  });
 }
 
 export default async function PlaceDetailPage({
@@ -49,8 +55,28 @@ export default async function PlaceDetailPage({
 
   const heroPhoto = resolveCardPhoto(place.nameEn);
 
+  const jsonLd = [
+    breadcrumbLd([
+      { name: "Home", path: "/" },
+      { name: "Places", path: "/places" },
+      { name: place.nameEn, path: `/places/${place.slug}` }
+    ]),
+    {
+      "@context": "https://schema.org",
+      "@type": "Restaurant",
+      name: place.nameEn,
+      servesCuisine: "Korean",
+      description: clip(place.editorialNote),
+      url: absUrl(`/places/${place.slug}`),
+      ...(place.googleMapsUrl ? { hasMap: place.googleMapsUrl } : {}),
+      ...(place.imageUrl ? { image: place.imageUrl } : {}),
+      ...(region ? { containedInPlace: { "@type": "Place", name: region.nameEn } } : {})
+    }
+  ];
+
   return (
     <main className="page-shell">
+      <JsonLd data={jsonLd} />
       <div
         className="food-hero-photo"
         style={{ background: heroPhoto.gradient }}

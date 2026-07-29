@@ -11,7 +11,9 @@ import {
 } from "@kfood/data";
 
 import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
+import { JsonLd } from "@/components/json-ld";
 import { getDict } from "@/lib/i18n";
+import { breadcrumbLd, detailMetadata } from "@/lib/seo";
 
 // 음식×지역 조합 페이지 — "best tteokbokki in Seoul" 같은 롱테일 검색 유입구
 // (기획정렬-한빛대조.md §1-3). 기존 /foods/[foodSlug], /regions/[slug]는 그대로 두고
@@ -42,10 +44,12 @@ export async function generateMetadata({
     return { title: "Food" };
   }
 
-  return {
+  return detailMetadata({
     title: `Best ${food.nameEn} in ${region.nameEn}`,
-    description: `Where to try ${food.nameEn} in ${region.nameEn} — curated places, taste notes, and tips for travelers.`
-  };
+    description: `Where to try ${food.nameEn} in ${region.nameEn} — curated places, taste notes, and tips for travelers.`,
+    path: `/foods/${food.slug}/${region.slug}`,
+    imageUrl: food.imageUrl
+  });
 }
 
 export default async function FoodRegionPage({
@@ -81,8 +85,16 @@ export default async function FoodRegionPage({
   );
   const heroPhoto = resolveCardPhoto(`${food.nameEn} ${region.nameEn}`);
 
+  const jsonLd = breadcrumbLd([
+    { name: "Home", path: "/" },
+    { name: "Foods", path: "/foods" },
+    { name: food.nameEn, path: `/foods/${food.slug}` },
+    { name: region.nameEn, path: `/foods/${food.slug}/${region.slug}` }
+  ]);
+
   return (
     <div className="food-v2">
+      <JsonLd data={jsonLd} />
       <nav className="food-breadcrumb" aria-label="Breadcrumb">
         <Link href="/">{dict.common.home}</Link>
         <span>/</span>

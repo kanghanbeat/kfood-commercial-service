@@ -77,15 +77,23 @@ export default async function PlaceDetailPage({
   return (
     <main className="page-shell">
       <JsonLd data={jsonLd} />
-      <div
-        className="food-hero-photo"
-        style={{ background: heroPhoto.gradient }}
-        aria-hidden="true"
-      >
-        <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
-          {heroPhoto.letter}
-        </span>
-      </div>
+      {place.imageUrl ? (
+        <div className="food-hero-photo has-image">
+          {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt={place.nameEn} className="food-hero-photo-img" src={place.imageUrl} />
+        </div>
+      ) : (
+        <div
+          className="food-hero-photo"
+          style={{ background: heroPhoto.gradient }}
+          aria-hidden="true"
+        >
+          <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
+            {heroPhoto.letter}
+          </span>
+        </div>
+      )}
 
       <header className="detail-header">
         <p className="eyebrow">{place.lastVerifiedLabel}</p>
@@ -176,23 +184,25 @@ export default async function PlaceDetailPage({
         </ul>
       </section>
 
-      <section className="section-block" aria-labelledby="place-foods">
-        <div className="section-heading">
-          <p className="eyebrow">Food match</p>
-          <h2 id="place-foods">Known for</h2>
-        </div>
-        <ul className="content-list">
-          {foods.map((food) => (
-            <li key={food.slug}>
-              <Link href={`/foods/${food.slug}`}>
-                <span className="meta-label">{food.tasteProfile}</span>
-                <strong>{food.nameEn}</strong>
-                <p>{food.summary}</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {foods.length > 0 ? (
+        <section className="section-block" aria-labelledby="place-foods">
+          <div className="section-heading">
+            <p className="eyebrow">Food match</p>
+            <h2 id="place-foods">Known for</h2>
+          </div>
+          <ul className="content-list">
+            {foods.map((food) => (
+              <li key={food.slug}>
+                <Link href={`/foods/${food.slug}`}>
+                  <span className="meta-label">{food.tasteProfile}</span>
+                  <strong>{food.nameEn}</strong>
+                  <p>{food.summary}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </main>
   );
 }

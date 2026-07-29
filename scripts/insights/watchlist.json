@@ -1,0 +1,30 @@
+{
+  "_comment": "매주 동일하게 측정하는 K푸드 워치리스트. aliases는 소문자 부분일치, hashtags는 # 없이 소문자. 새 음식이 뜨면 여기 추가.",
+  "dishes": [
+    { "ko": "불닭볶음면", "en": "Buldak (Fire Noodles)", "aliases": ["buldak", "fire noodle", "불닭"], "hashtags": ["buldak", "buldakcarbonara", "cheesebuldak", "buldakramen"] },
+    { "ko": "김치", "en": "Kimchi", "aliases": ["kimchi", "김치"], "hashtags": ["kimchi"] },
+    { "ko": "떡볶이", "en": "Tteokbokki", "aliases": ["tteokbokki", "ddeokbokki", "떡볶이", "rice cake"], "hashtags": ["tteokbokki", "rosetteokbokki", "ddeokbokki"] },
+    { "ko": "김밥", "en": "Gimbap", "aliases": ["gimbap", "kimbap", "김밥"], "hashtags": ["gimbap", "kimbap"] },
+    { "ko": "라면", "en": "Ramyeon (Shin Ramyun)", "aliases": ["ramyeon", "ramyun", "라면", "shin ramyun", "shin ramen"], "hashtags": ["ramyun", "shinramyun", "shinramen"] },
+    { "ko": "김치찌개", "en": "Kimchi-jjigae", "aliases": ["kimchi jjigae", "kimchijjigae", "김치찌개"], "hashtags": ["kimchijjigae"] },
+    { "ko": "삼겹살", "en": "Korean BBQ", "aliases": ["korean bbq", "samgyeopsal", "삼겹살", "고기구이", "kbbq"], "hashtags": ["koreanbbq", "kbbq", "samgyeopsal"] },
+    { "ko": "불고기", "en": "Bulgogi", "aliases": ["bulgogi", "불고기"], "hashtags": ["bulgogi"] },
+    { "ko": "비빔밥", "en": "Bibimbap", "aliases": ["bibimbap", "비빔밥"], "hashtags": ["bibimbap"] },
+    { "ko": "반찬", "en": "Banchan", "aliases": ["banchan", "반찬", "side dish"], "hashtags": ["banchan"] },
+    { "ko": "한국식 콘도그", "en": "Korean Corn Dog", "aliases": ["korean corn dog", "korean hotdog", "핫도그"], "hashtags": ["koreancorndog", "koreanhotdog"] },
+    { "ko": "호떡", "en": "Hotteok", "aliases": ["hotteok", "호떡"], "hashtags": ["hotteok"] },
+    { "ko": "붕어빵", "en": "Bungeoppang", "aliases": ["bungeoppang", "붕어빵"], "hashtags": ["bungeoppang"] },
+    { "ko": "순두부찌개", "en": "Sundubu-jjigae", "aliases": ["sundubu", "soft tofu stew", "순두부"], "hashtags": ["sundubu"] },
+    { "ko": "치킨", "en": "Korean Fried Chicken", "aliases": ["korean fried chicken", "yangnyeom", "양념치킨", "korean chicken"], "hashtags": ["koreanfriedchicken", "yangnyeom"] }
+  ],
+  "scoring": {
+    "_comment": "참여도 가중치. 플랫폼별로 정규화(각 플랫폼 내 점유율)한 뒤 합산하므로 절대수치 차이는 상쇄됨.",
+    "like": 1,
+    "play": 0.05,
+    "comment": 2,
+    "retweet": 2,
+    "redditScore": 1,
+    "minPlatforms": 2
+  },
+  "genericHashtags": ["food", "fyp", "foryou", "foryoupage", "viral", "foodie", "foodtiktok", "mukbang", "asmr", "recipe", "cooking", "yummy", "delicious", "trending", "reels", "instagood", "capcut"]
+}

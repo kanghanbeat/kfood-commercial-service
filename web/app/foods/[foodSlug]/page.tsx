@@ -4,8 +4,6 @@ import { notFound } from "next/navigation";
 import {
   fallbackPlaces,
   getContentImages,
-  getFoodPhotoReviewNote,
-  getFoodPhotoSourceCandidates,
   getPublishedFood,
   getPublishedFoods,
   getPublishedPlaces,
@@ -68,12 +66,15 @@ export default async function FoodDetailPage({
   const places = sourcePlaces.filter((place) =>
     place.foodSlugs.includes(food.slug)
   );
-  const photoReview = getFoodPhotoReviewNote(food);
   const heroPhoto = resolveCardPhoto(food.nameEn);
   const tasteTags = food.tasteProfile
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+  // 실제로 연결된 지역만(없으면 섹션 자체를 숨긴다)
+  const foodRegions = food.regionSlugs
+    .map((slug) => regions.find((item) => item.slug === slug))
+    .filter((region): region is (typeof regions)[number] => Boolean(region));
 
   const jsonLd = [
     breadcrumbLd([
@@ -153,10 +154,6 @@ export default async function FoodDetailPage({
         </p>
         <div className="food-info-grid">
           <div className="food-info-card">
-            <h3>{t.descriptionH}</h3>
-            <p>{food.summary}</p>
-          </div>
-          <div className="food-info-card">
             <h3>{t.tasteH}</h3>
             <p>{food.tasteProfile}</p>
           </div>
@@ -171,14 +168,13 @@ export default async function FoodDetailPage({
         </div>
       </section>
 
-      <section aria-labelledby="food-regions">
-        <p className="food-section-title" id="food-regions">
-          {t.whereItFits}
-        </p>
-        <div className="card-grid-v2">
-          {food.regionSlugs.map((regionSlug) => {
-            const region = regions.find((item) => item.slug === regionSlug);
-            return region ? (
+      {foodRegions.length > 0 ? (
+        <section aria-labelledby="food-regions">
+          <p className="food-section-title" id="food-regions">
+            {t.whereItFits}
+          </p>
+          <div className="card-grid-v2">
+            {foodRegions.map((region) => (
               <Link
                 className="card-v2"
                 href={`/foods/${food.slug}/${region.slug}`}
@@ -196,10 +192,10 @@ export default async function FoodDetailPage({
                   </span>
                 </div>
               </Link>
-            ) : null;
-          })}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section aria-labelledby="food-places">
         <p className="food-section-title" id="food-places">
@@ -262,31 +258,6 @@ export default async function FoodDetailPage({
         </section>
       ) : null}
 
-      <section aria-labelledby="food-photo-sources">
-        <p className="food-section-title" id="food-photo-sources">
-          Photo sourcing
-        </p>
-        <div className="food-info-card" style={{ marginBottom: 16 }}>
-          <h3>{photoReview.label}</h3>
-          <p>{photoReview.note}</p>
-          <p style={{ color: "var(--text-heading)" }}>{photoReview.nextAction}</p>
-        </div>
-        <div className="food-info-grid">
-          {getFoodPhotoSourceCandidates(food).map((candidate) => (
-            <a
-              className="food-info-card"
-              href={candidate.href}
-              key={candidate.sourceName}
-              rel="noreferrer"
-              target="_blank"
-            >
-              <h3>{candidate.sourceName}</h3>
-              <p style={{ color: "var(--brand)" }}>{candidate.licenseFit}</p>
-              <p>{candidate.reviewNote}</p>
-            </a>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

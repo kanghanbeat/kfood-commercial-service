@@ -3366,7 +3366,7 @@ h3 {
 
 .pg-main-img {
   max-width: 100%;
-  max-height: 70vh;
+  max-height: 440px;
   width: auto;
   height: auto;
   object-fit: contain;

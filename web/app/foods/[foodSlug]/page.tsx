@@ -16,7 +16,9 @@ import {
 
 import { CardPhoto, resolveCardPhoto } from "@/components/card-photo";
 import { GalleryViewer } from "@/components/gallery-viewer";
+import { JsonLd } from "@/components/json-ld";
 import { getDict } from "@/lib/i18n";
+import { absUrl, breadcrumbLd, clip, detailMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const foods = await getPublishedFoods();
@@ -30,9 +32,14 @@ export async function generateMetadata({
 }) {
   const { foodSlug } = await params;
   const food = await getPublishedFood(foodSlug);
-  return {
-    title: food ? `${food.nameEn} Guide` : "Food"
-  };
+  if (!food) return { title: "Food" };
+  const koPart = food.nameKo && food.nameKo !== food.nameEn ? ` (${food.nameKo})` : "";
+  return detailMetadata({
+    title: `${food.nameEn}${koPart} — Korean Food Guide`,
+    description: food.summary,
+    path: `/foods/${food.slug}`,
+    imageUrl: food.imageUrl
+  });
 }
 
 export default async function FoodDetailPage({
@@ -68,8 +75,27 @@ export default async function FoodDetailPage({
     .map((t) => t.trim())
     .filter(Boolean);
 
+  const jsonLd = [
+    breadcrumbLd([
+      { name: "Home", path: "/" },
+      { name: "Foods", path: "/foods" },
+      { name: food.nameEn, path: `/foods/${food.slug}` }
+    ]),
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: `${food.nameEn} — Korean Food Guide`,
+      description: clip(food.summary),
+      inLanguage: "en",
+      mainEntityOfPage: absUrl(`/foods/${food.slug}`),
+      about: { "@type": "Thing", name: food.nameEn, alternateName: food.nameKo },
+      ...(food.imageUrl ? { image: food.imageUrl } : {})
+    }
+  ];
+
   return (
     <div className="food-v2">
+      <JsonLd data={jsonLd} />
       <nav className="food-breadcrumb" aria-label="Breadcrumb">
         <Link href="/">{dict.common.home}</Link>
         <span>/</span>

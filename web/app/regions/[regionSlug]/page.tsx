@@ -12,6 +12,8 @@ import {
 } from "@kfood/data";
 
 import { resolveCardPhoto } from "@/components/card-photo";
+import { JsonLd } from "@/components/json-ld";
+import { absUrl, breadcrumbLd, clip, detailMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const regions = await getPublishedRegions();
@@ -25,9 +27,13 @@ export async function generateMetadata({
 }) {
   const { regionSlug } = await params;
   const region = await getPublishedRegion(regionSlug);
-  return {
-    title: region ? `${region.nameEn} K-food Guide` : "Region"
-  };
+  if (!region) return { title: "Region" };
+  return detailMetadata({
+    title: `${region.nameEn} — K-food Guide`,
+    description: region.intro,
+    path: `/regions/${region.slug}`,
+    imageUrl: region.imageUrl
+  });
 }
 
 export default async function RegionDetailPage({
@@ -56,8 +62,25 @@ export default async function RegionDetailPage({
 
   const heroPhoto = resolveCardPhoto(region.nameEn);
 
+  const jsonLd = [
+    breadcrumbLd([
+      { name: "Home", path: "/" },
+      { name: "Regions", path: "/regions" },
+      { name: region.nameEn, path: `/regions/${region.slug}` }
+    ]),
+    {
+      "@context": "https://schema.org",
+      "@type": "TouristDestination",
+      name: `${region.nameEn} — K-food Guide`,
+      description: clip(region.intro),
+      url: absUrl(`/regions/${region.slug}`),
+      ...(region.imageUrl ? { image: region.imageUrl } : {})
+    }
+  ];
+
   return (
     <main className="page-shell">
+      <JsonLd data={jsonLd} />
       <div
         className="food-hero-photo"
         style={{ background: heroPhoto.gradient }}

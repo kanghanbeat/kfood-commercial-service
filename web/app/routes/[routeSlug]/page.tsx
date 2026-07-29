@@ -9,6 +9,8 @@ import {
 } from "@kfood/data";
 
 import { resolveCardPhoto } from "@/components/card-photo";
+import { JsonLd } from "@/components/json-ld";
+import { absUrl, breadcrumbLd, clip, detailMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const routes = await getPublishedRoutes();
@@ -22,10 +24,13 @@ export async function generateMetadata({
 }) {
   const { routeSlug } = await params;
   const route = await getPublishedRoute(routeSlug);
-
-  return {
-    title: route ? `${route.title} K-food Route` : "K-food Route"
-  };
+  if (!route) return { title: "K-food Route" };
+  return detailMetadata({
+    title: `${route.title} — K-food Route`,
+    description: route.summary,
+    path: `/routes/${route.slug}`,
+    imageUrl: route.imageUrl
+  });
 }
 
 export default async function RouteDetailPage({
@@ -53,8 +58,26 @@ export default async function RouteDetailPage({
 
   const heroPhoto = resolveCardPhoto(route.title);
 
+  const jsonLd = [
+    breadcrumbLd([
+      { name: "Home", path: "/" },
+      { name: "Routes", path: "/routes" },
+      { name: route.title, path: `/routes/${route.slug}` }
+    ]),
+    {
+      "@context": "https://schema.org",
+      "@type": "TouristTrip",
+      name: `${route.title} — K-food Route`,
+      description: clip(route.summary),
+      url: absUrl(`/routes/${route.slug}`),
+      ...(route.estimatedDuration ? { estimatedDuration: route.estimatedDuration } : {}),
+      ...(route.imageUrl ? { image: route.imageUrl } : {})
+    }
+  ];
+
   return (
     <main className="page-shell">
+      <JsonLd data={jsonLd} />
       <div
         className="food-hero-photo"
         style={{ background: heroPhoto.gradient }}

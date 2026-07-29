@@ -78,15 +78,23 @@ export default async function RouteDetailPage({
   return (
     <main className="page-shell">
       <JsonLd data={jsonLd} />
-      <div
-        className="food-hero-photo"
-        style={{ background: heroPhoto.gradient }}
-        aria-hidden="true"
-      >
-        <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
-          {heroPhoto.letter}
-        </span>
-      </div>
+      {route.imageUrl ? (
+        <div className="food-hero-photo has-image">
+          {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt={route.title} className="food-hero-photo-img" src={route.imageUrl} />
+        </div>
+      ) : (
+        <div
+          className="food-hero-photo"
+          style={{ background: heroPhoto.gradient }}
+          aria-hidden="true"
+        >
+          <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
+            {heroPhoto.letter}
+          </span>
+        </div>
+      )}
 
       <header className="detail-header">
         <p className="eyebrow">{route.estimatedDuration}</p>

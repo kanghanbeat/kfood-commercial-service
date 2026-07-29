@@ -81,15 +81,23 @@ export default async function RegionDetailPage({
   return (
     <main className="page-shell">
       <JsonLd data={jsonLd} />
-      <div
-        className="food-hero-photo"
-        style={{ background: heroPhoto.gradient }}
-        aria-hidden="true"
-      >
-        <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
-          {heroPhoto.letter}
-        </span>
-      </div>
+      {region.imageUrl ? (
+        <div className="food-hero-photo has-image">
+          {/* 저장소 주소가 환경마다 달라 next/image 최적화를 쓰지 않는다. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt={region.nameEn} className="food-hero-photo-img" src={region.imageUrl} />
+        </div>
+      ) : (
+        <div
+          className="food-hero-photo"
+          style={{ background: heroPhoto.gradient }}
+          aria-hidden="true"
+        >
+          <span className="food-hero-photo-mono" style={{ color: heroPhoto.glyph }}>
+            {heroPhoto.letter}
+          </span>
+        </div>
+      )}
 
       <header className="detail-header">
         <p className="eyebrow">{region.primaryAudience}</p>
@@ -104,41 +112,45 @@ export default async function RegionDetailPage({
         </div>
       </header>
 
-      <section className="section-block" aria-labelledby="region-foods">
-        <div className="section-heading">
-          <p className="eyebrow">What to eat</p>
-          <h2 id="region-foods">Recommended foods</h2>
-        </div>
-        <ul className="content-list">
-          {foods.map((food) => (
-            <li key={food.slug}>
-              <Link href={`/foods/${food.slug}`}>
-                <span className="meta-label">Spicy level {food.spicyLevel}/4</span>
-                <strong>{food.nameEn}</strong>
-                <p>{food.summary}</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {foods.length > 0 ? (
+        <section className="section-block" aria-labelledby="region-foods">
+          <div className="section-heading">
+            <p className="eyebrow">What to eat</p>
+            <h2 id="region-foods">Recommended foods</h2>
+          </div>
+          <ul className="content-list">
+            {foods.map((food) => (
+              <li key={food.slug}>
+                <Link href={`/foods/${food.slug}`}>
+                  <span className="meta-label">Spicy level {food.spicyLevel}/4</span>
+                  <strong>{food.nameEn}</strong>
+                  <p>{food.summary}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
-      <section className="section-block" aria-labelledby="region-places">
-        <div className="section-heading">
-          <p className="eyebrow">Where to try</p>
-          <h2 id="region-places">Place directions</h2>
-        </div>
-        <ul className="content-list">
-          {places.map((place) => (
-            <li key={place.slug}>
-              <Link href={`/places/${place.slug}`}>
-                <span className="meta-label">{place.lastVerifiedLabel}</span>
-                <strong>{place.nameEn}</strong>
-                <p>{place.editorialNote}</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {places.length > 0 ? (
+        <section className="section-block" aria-labelledby="region-places">
+          <div className="section-heading">
+            <p className="eyebrow">Where to try</p>
+            <h2 id="region-places">Place directions</h2>
+          </div>
+          <ul className="content-list">
+            {places.map((place) => (
+              <li key={place.slug}>
+                <Link href={`/places/${place.slug}`}>
+                  <span className="meta-label">{place.lastVerifiedLabel}</span>
+                  <strong>{place.nameEn}</strong>
+                  <p>{place.editorialNote}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {productions.length > 0 ? (
         <section className="section-block" aria-labelledby="region-productions">

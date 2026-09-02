@@ -5,6 +5,7 @@ import { getAdminContentPlans, getAdminProductions } from "@kfood/data";
 import { AdminShell, publicationStatusLabels, AdminTabs } from "@/components/admin-shell";
 import { PlansPanel, planStatusLabels } from "@/components/admin/plans-panel";
 import { ProductionsPanel } from "@/components/admin/productions-panel";
+import { ShootLogsPanel } from "@/components/admin/shoot-logs-panel";
 import {
   buildCalendarDays,
   formatIsoWeek,
@@ -18,6 +19,7 @@ export const metadata = {
 
 const contentTabs = [
   { key: "plans", label: "기획 목록" },
+  { key: "shoot", label: "촬영 일지" },
   { key: "productions", label: "제작 목록" },
   { key: "calendar", label: "기획 캘린더" }
 ];
@@ -42,6 +44,10 @@ export default async function AdminContentPage({
     deleted?: string;
     started?: string;
     archived?: string;
+    imported?: string;
+    stopAdded?: string;
+    stopUpdated?: string;
+    stopDeleted?: string;
     q?: string;
     status?: string;
     page?: string;
@@ -84,9 +90,9 @@ export default async function AdminContentPage({
           <span className="admin-eyebrow">콘텐츠 제작</span>
           <h1>콘텐츠 제작</h1>
           <p>
-            무엇을 만들지 기획하고(기획 목록), 만든 것을 올립니다(제작 목록).
-            기획에서 &ldquo;제작 시작&rdquo;을 누르면 제목·메모가 옮겨진 제작 콘텐츠가
-            옆 탭에 만들어집니다.
+            무엇을 만들지 기획하고(기획 목록), 다녀온 촬영을 기록하고(촬영 일지),
+            만든 것을 올립니다(제작 목록). 기획에서 &ldquo;제작 시작&rdquo;을 누르면
+            제목·메모가 옮겨진 제작 콘텐츠가 옆 탭에 만들어집니다.
           </p>
         </div>
         <div className="admin-topbar-actions">
@@ -141,7 +147,22 @@ export default async function AdminContentPage({
 
       <AdminTabs basePath="/admin/content" current={tab} tabs={contentTabs} />
 
-      {tab === "productions" ? (
+      {tab === "shoot" ? (
+        <ShootLogsPanel
+          accessToken={session.accessToken}
+          message={{
+            created: params?.created,
+            deleted: params?.deleted,
+            error: params?.error,
+            imported: params?.imported,
+            stopAdded: params?.stopAdded,
+            stopDeleted: params?.stopDeleted,
+            stopUpdated: params?.stopUpdated,
+            updated: params?.updated
+          }}
+          params={listParams}
+        />
+      ) : tab === "productions" ? (
         <ProductionsPanel
           accessToken={session.accessToken}
           add={add}

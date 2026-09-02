@@ -4197,6 +4197,569 @@ export async function startProductionFromPlan(
   return { ok: true };
 }
 
+// ── Admin: 촬영 일지 (shoot_logs + shoot_log_stops) ──────────
+// "어디에 다녀와서 무엇을 찍었나"를 남기는 내부 기록.
+// 016_shoot_logs.sql 참조. 공개 사이트에는 노출되지 않는다.
+// 회차(shoot_logs) 하나에 들른 곳(shoot_log_stops)이 여러 개 붙는다.
+
+export type ShootLogStatus = "planned" | "in_progress" | "done";
+
+export type ShootStopCategory =
+  | "breakfast"
+  | "lunch"
+  | "dinner"
+  | "snack"
+  | "meal"
+  | "cafe"
+  | "takeout"
+  | "stay"
+  | "sight"
+  | "event"
+  | "etc";
+
+export type AdminShootLogStop = {
+  id: string;
+  shootLogId: string;
+  dayNumber: number;
+  sortOrder: number;
+  name: string;
+  category: ShootStopCategory;
+  menu: string | null;
+  naverUrl: string | null;
+  googleUrl: string | null;
+  shot: boolean;
+  rating: number | null;
+  note: string | null;
+};
+
+export type AdminShootLog = {
+  id: string;
+  roundNo: number | null;
+  title: string;
+  regionName: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  status: ShootLogStatus;
+  summary: string | null;
+  lesson: string | null;
+  productionId: string | null;
+  productionTitle: string | null;
+  updatedAt: string | null;
+  stops: AdminShootLogStop[];
+};
+
+type AdminShootLogStopRow = {
+  id: string;
+  shoot_log_id: string;
+  day_number: number;
+  sort_order: number;
+  name: string;
+  category: ShootStopCategory;
+  menu: string | null;
+  naver_url: string | null;
+  google_url: string | null;
+  shot: boolean;
+  rating: number | null;
+  note: string | null;
+};
+
+type AdminShootLogRow = {
+  id: string;
+  round_no: number | null;
+  title: string;
+  region_name: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  status: ShootLogStatus;
+  summary: string | null;
+  lesson: string | null;
+  production_id: string | null;
+  updated_at: string | null;
+  productions: { title: string } | { title: string }[] | null;
+};
+
+const adminShootLogColumns =
+  "id, round_no, title, region_name, start_date, end_date, status, summary, lesson, production_id, updated_at, productions(title)";
+
+const adminShootLogStopColumns =
+  "id, shoot_log_id, day_number, sort_order, name, category, menu, naver_url, google_url, shot, rating, note";
+
+function mapAdminShootLogStop(row: AdminShootLogStopRow): AdminShootLogStop {
+  return {
+    id: row.id,
+    shootLogId: row.shoot_log_id,
+    dayNumber: row.day_number,
+    sortOrder: row.sort_order,
+    name: row.name,
+    category: row.category,
+    menu: row.menu,
+    naverUrl: row.naver_url,
+    googleUrl: row.google_url,
+    shot: row.shot,
+    rating: row.rating,
+    note: row.note
+  };
+}
+
+function mapAdminShootLog(
+  row: AdminShootLogRow,
+  stops: AdminShootLogStop[]
+): AdminShootLog {
+  const production = Array.isArray(row.productions)
+    ? row.productions[0]
+    : row.productions;
+
+  return {
+    id: row.id,
+    roundNo: row.round_no,
+    title: row.title,
+    regionName: row.region_name,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    status: row.status,
+    summary: row.summary,
+    lesson: row.lesson,
+    productionId: row.production_id,
+    productionTitle: production?.title ?? null,
+    updatedAt: row.updated_at,
+    stops
+  };
+}
+
+/** 촬영 회차 전부 + 각 회차에 들른 곳을 함께 가져온다(최근 촬영이 위). */
+export async function getAdminShootLogs(accessToken: string) {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("shoot_logs")
+    .select(adminShootLogColumns)
+    .order("start_date", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    return [];
+  }
+
+  const logs = data as unknown as AdminShootLogRow[];
+
+  if (logs.length === 0) {
+    return [];
+  }
+
+  const { data: stopData } = await supabase
+    .from("shoot_log_stops")
+    .select(adminShootLogStopColumns)
+    .in(
+      "shoot_log_id",
+      logs.map((log) => log.id)
+    )
+    .order("day_number", { ascending: true })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  const stopsByLog = new Map<string, AdminShootLogStop[]>();
+
+  for (const row of (stopData ?? []) as unknown as AdminShootLogStopRow[]) {
+    const stop = mapAdminShootLogStop(row);
+    const existing = stopsByLog.get(stop.shootLogId);
+    if (existing) {
+      existing.push(stop);
+    } else {
+      stopsByLog.set(stop.shootLogId, [stop]);
+    }
+  }
+
+  return logs.map((log) => mapAdminShootLog(log, stopsByLog.get(log.id) ?? []));
+}
+
+export type CreateAdminShootLogInput = {
+  actorId: string;
+  endDate?: string | null;
+  lesson?: string | null;
+  productionId?: string | null;
+  regionName?: string | null;
+  roundNo?: string | number | null;
+  startDate?: string | null;
+  status: ShootLogStatus;
+  summary?: string | null;
+  title: string;
+};
+
+export type UpdateAdminShootLogInput = CreateAdminShootLogInput & {
+  shootLogId: string;
+};
+
+function toNullableInt(value: string | number | null | undefined) {
+  if (value === null || value === undefined) return null;
+  const parsed = typeof value === "number" ? value : Number(value.trim());
+  return Number.isFinite(parsed) && parsed !== 0 ? Math.trunc(parsed) : null;
+}
+
+function shootLogWritePayload(input: CreateAdminShootLogInput) {
+  return {
+    end_date: input.endDate?.trim() || null,
+    lesson: input.lesson?.trim() || null,
+    production_id: input.productionId?.trim() || null,
+    region_name: input.regionName?.trim() || null,
+    round_no: toNullableInt(input.roundNo),
+    start_date: input.startDate?.trim() || null,
+    status: input.status,
+    summary: input.summary?.trim() || null,
+    title: input.title.trim(),
+    updated_at: new Date().toISOString()
+  };
+}
+
+export async function createAdminShootLog(
+  accessToken: string,
+  input: CreateAdminShootLogInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (!input.title.trim()) {
+    return { ok: false, message: "촬영 제목은 필수입니다." };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("shoot_logs")
+    .insert({ ...shootLogWritePayload(input), created_by: input.actorId })
+    .select("*")
+    .maybeSingle();
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "촬영 일지를 만들 수 없습니다." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "shoot_log.create",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: null,
+    entity_id: (afterData as { id: string }).id,
+    entity_type: "shoot_log"
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: "촬영 일지를 만들었지만 감사 로그 기록에 실패했습니다."
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminShootLog(
+  accessToken: string,
+  input: UpdateAdminShootLogInput
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (!input.title.trim()) {
+    return { ok: false, message: "촬영 제목은 필수입니다." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("shoot_logs")
+    .select("*")
+    .eq("id", input.shootLogId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "촬영 일지를 찾을 수 없습니다." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("shoot_logs")
+    .update(shootLogWritePayload(input))
+    .eq("id", input.shootLogId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "촬영 일지를 수정할 수 없습니다." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "shoot_log.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: input.shootLogId,
+    entity_type: "shoot_log"
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: "촬영 일지를 수정했지만 감사 로그 기록에 실패했습니다."
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function deleteAdminShootLog(
+  accessToken: string,
+  input: { actorId: string; shootLogId: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("shoot_logs")
+    .select("*")
+    .eq("id", input.shootLogId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "촬영 일지를 찾을 수 없습니다." };
+  }
+
+  // 들른 곳은 shoot_log_stops의 on delete cascade로 같이 지워진다.
+  const { error: deleteError } = await supabase
+    .from("shoot_logs")
+    .delete()
+    .eq("id", input.shootLogId);
+
+  if (deleteError) {
+    return { ok: false, message: "촬영 일지를 삭제할 수 없습니다." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "shoot_log.delete",
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: beforeData,
+    entity_id: input.shootLogId,
+    entity_type: "shoot_log"
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: "촬영 일지를 삭제했지만 감사 로그 기록에 실패했습니다."
+    };
+  }
+
+  return { ok: true };
+}
+
+// ── 촬영 일지: 들른 곳(stops) ───────────────────────────────
+
+export type ShootLogStopInput = {
+  category: ShootStopCategory;
+  dayNumber?: string | number | null;
+  googleUrl?: string | null;
+  menu?: string | null;
+  name: string;
+  naverUrl?: string | null;
+  note?: string | null;
+  rating?: string | number | null;
+  shot?: boolean;
+  sortOrder?: string | number | null;
+};
+
+function stopWritePayload(input: ShootLogStopInput) {
+  const rating = toNullableInt(input.rating);
+
+  return {
+    category: input.category,
+    day_number: toNullableInt(input.dayNumber) ?? 1,
+    google_url: input.googleUrl?.trim() || null,
+    menu: input.menu?.trim() || null,
+    name: input.name.trim(),
+    naver_url: input.naverUrl?.trim() || null,
+    note: input.note?.trim() || null,
+    rating: rating && rating >= 1 && rating <= 5 ? rating : null,
+    shot: input.shot ?? false,
+    sort_order: toNullableInt(input.sortOrder) ?? 100,
+    updated_at: new Date().toISOString()
+  };
+}
+
+/** 들른 곳 한 곳 추가. */
+export async function createAdminShootLogStop(
+  accessToken: string,
+  input: ShootLogStopInput & { actorId: string; shootLogId: string }
+): Promise<AdminMutationResult> {
+  return createAdminShootLogStops(accessToken, {
+    actorId: input.actorId,
+    shootLogId: input.shootLogId,
+    stops: [input]
+  });
+}
+
+/**
+ * 들른 곳 여러 곳을 한 번에 추가한다.
+ * 메모를 붙여넣어 한 번에 등록할 때도 이 함수를 쓴다.
+ */
+export async function createAdminShootLogStops(
+  accessToken: string,
+  input: { actorId: string; shootLogId: string; stops: ShootLogStopInput[] }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const rows = input.stops
+    .filter((stop) => stop.name.trim())
+    .map((stop) => ({
+      ...stopWritePayload(stop),
+      shoot_log_id: input.shootLogId
+    }));
+
+  if (rows.length === 0) {
+    return { ok: false, message: "추가할 장소가 없습니다. 상호명을 적어주세요." };
+  }
+
+  const { data: afterData, error: insertError } = await supabase
+    .from("shoot_log_stops")
+    .insert(rows)
+    .select("*");
+
+  if (insertError || !afterData) {
+    return { ok: false, message: "다녀온 곳을 추가할 수 없습니다." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "shoot_log_stop.create",
+    actor_id: input.actorId,
+    after_data: { stops: afterData },
+    before_data: null,
+    entity_id: input.shootLogId,
+    entity_type: "shoot_log"
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: "다녀온 곳을 추가했지만 감사 로그 기록에 실패했습니다."
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function updateAdminShootLogStop(
+  accessToken: string,
+  input: ShootLogStopInput & { actorId: string; stopId: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  if (!input.name.trim()) {
+    return { ok: false, message: "상호명은 필수입니다." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("shoot_log_stops")
+    .select("*")
+    .eq("id", input.stopId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "다녀온 곳을 찾을 수 없습니다." };
+  }
+
+  const { data: afterData, error: updateError } = await supabase
+    .from("shoot_log_stops")
+    .update(stopWritePayload(input))
+    .eq("id", input.stopId)
+    .select("*")
+    .maybeSingle();
+
+  if (updateError || !afterData) {
+    return { ok: false, message: "다녀온 곳을 수정할 수 없습니다." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "shoot_log_stop.update",
+    actor_id: input.actorId,
+    after_data: afterData,
+    before_data: beforeData,
+    entity_id: (beforeData as { shoot_log_id: string }).shoot_log_id,
+    entity_type: "shoot_log"
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: "다녀온 곳을 수정했지만 감사 로그 기록에 실패했습니다."
+    };
+  }
+
+  return { ok: true };
+}
+
+export async function deleteAdminShootLogStop(
+  accessToken: string,
+  input: { actorId: string; stopId: string }
+): Promise<AdminMutationResult> {
+  const supabase = createAuthenticatedClient(accessToken);
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase admin client is not configured." };
+  }
+
+  const { data: beforeData, error: beforeError } = await supabase
+    .from("shoot_log_stops")
+    .select("*")
+    .eq("id", input.stopId)
+    .maybeSingle();
+
+  if (beforeError || !beforeData) {
+    return { ok: false, message: "다녀온 곳을 찾을 수 없습니다." };
+  }
+
+  const { error: deleteError } = await supabase
+    .from("shoot_log_stops")
+    .delete()
+    .eq("id", input.stopId);
+
+  if (deleteError) {
+    return { ok: false, message: "다녀온 곳을 삭제할 수 없습니다." };
+  }
+
+  const { error: auditError } = await supabase.from("admin_audit_logs").insert({
+    action: "shoot_log_stop.delete",
+    actor_id: input.actorId,
+    after_data: null,
+    before_data: beforeData,
+    entity_id: (beforeData as { shoot_log_id: string }).shoot_log_id,
+    entity_type: "shoot_log"
+  });
+
+  if (auditError) {
+    return {
+      ok: false,
+      message: "다녀온 곳을 삭제했지만 감사 로그 기록에 실패했습니다."
+    };
+  }
+
+  return { ok: true };
+}
+
 // ── Admin: 콘텐츠 사진 업로드 ────────────────────────────────
 // 어드민에서 고른 사진 파일을 Supabase Storage에 올리고, 공개 주소를 돌려준다.
 // 014_content_images_storage.sql의 content-images 버킷을 쓴다.
